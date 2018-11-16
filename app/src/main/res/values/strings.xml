@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SolarThing Android</string>
+    <string name="persistent_status">Persistent Status</string>
+    <string name="persistent_status_description">Persistent Notification that shows the status</string>
+    <string name="generator_notification">Generator Alert</string>
+    <string name="generator_notification_status">Sends an alert when the generator should be turned off</string>
+</resources>
