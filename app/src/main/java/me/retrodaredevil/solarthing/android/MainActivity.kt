@@ -2,6 +2,7 @@ package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.job.JobInfo
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -55,7 +56,10 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
+        stopService(Intent(this, PersistentService::class.java))
         startService(Intent(this, PersistentService::class.java))
+//        JobInfo.Builder(0, PersistentService::class.java).setPeriodic(1000 * 30)
+        println("Should have started service")
     }
     fun saveConnectionProperties(view: View){
         saveConnectionProperties()
@@ -63,7 +67,7 @@ class MainActivity : AppCompatActivity() {
     private fun saveConnectionProperties(){
         val properties = CouchDbProperties(databaseName.text.toString(), false, protocol.text.toString(),
             host.text.toString(), port.text.toString().toInt(), username.text.toString(), password.text.toString())
-        RecentData.connectionProperties = properties
+        GlobalData.connectionProperties = properties
         val settings = this.getSharedPreferences("connection_properties", 0)
 
         val editor = settings.edit()
@@ -88,6 +92,6 @@ class MainActivity : AppCompatActivity() {
         username.setText(connectionProperties.username)
         password.setText(connectionProperties.password)
 
-        RecentData.connectionProperties = connectionProperties
+        GlobalData.connectionProperties = connectionProperties
     }
 }
