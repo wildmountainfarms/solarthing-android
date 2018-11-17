@@ -16,17 +16,9 @@ import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
 
 object NotificationHandler {
 
-    fun updateStatusNotification(context: Service, data: DataRequest){
-        val notification = createStatusNotification(context, data.packetCollectionList)
-        if(notification == null){
-            println("Removing notification")
-            getManager(context).cancel(0)
-            return
-        }
-        getManager(context).notify(0, notification)
-    }
+
     fun generatorAlert(context: Context){
-        getManager(context).notify(1, createGeneratorAlert(context))
+        getManager(context).notify(2, createGeneratorAlert(context))
     }
 
     private fun getManager(context: Context) = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -45,7 +37,7 @@ object NotificationHandler {
      *
      * @param packetCollections The list of [PacketCollection]s where the last element is the most recent
      */
-    private fun createStatusNotification(context: Context, packetCollections: List<PacketCollection>): Notification? {
+    fun createStatusNotification(context: Context, packetCollections: List<PacketCollection>): Notification? {
         var dateMillis: Long? = null
         var batteryVoltageString: String? = null
         var loadString: String? = null

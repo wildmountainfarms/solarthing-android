@@ -3,6 +3,9 @@ package me.retrodaredevil.solarthing.android
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -11,6 +14,7 @@ import android.view.View
 import android.widget.EditText
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import org.lightcouch.CouchDbProperties
+import java.util.concurrent.ScheduledThreadPoolExecutor
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,8 +61,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         stopService(Intent(this, PersistentService::class.java))
-        startService(Intent(this, PersistentService::class.java))
-//        JobInfo.Builder(0, PersistentService::class.java).setPeriodic(1000 * 30)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(Intent(this, PersistentService::class.java))
+        } else {
+            startService(Intent(this, PersistentService::class.java))
+        }
         println("Should have started service")
     }
     fun saveConnectionProperties(view: View){
