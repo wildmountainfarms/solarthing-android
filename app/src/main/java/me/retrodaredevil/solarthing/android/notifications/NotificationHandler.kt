@@ -37,7 +37,7 @@ object NotificationHandler {
      *
      * @param packetCollections The list of [PacketCollection]s where the last element is the most recent
      */
-    fun createStatusNotification(context: Context, packetCollections: List<PacketCollection>): Notification? {
+    fun createStatusNotification(context: Context, packetCollections: List<PacketCollection>, summary: String = ""): Notification? {
         var dateMillis: Long? = null
         var batteryVoltageString: String? = null
         var loadString: String? = null
@@ -201,7 +201,7 @@ object NotificationHandler {
 
         return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
             .setSmallIcon(R.drawable.solar_panel)
-//            .setSubText("sub text")
+            .setSubText(summary)
             .setContentTitle("Battery Voltage: $batteryVoltageString V")
             .setContentText("load: $loadString pv: $pvWattageString generator: " + if(generatorOn) "ON" else "OFF")
             .setStyle(style)
