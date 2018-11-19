@@ -60,13 +60,13 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
-        stopService(Intent(this, PersistentService::class.java))
+        val serviceIntent = Intent(this, PersistentService::class.java)
+        stopService(serviceIntent)
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, PersistentService::class.java))
+            startForegroundService(serviceIntent)
         } else {
-            startService(Intent(this, PersistentService::class.java))
+            startService(serviceIntent)
         }
-        println("Should have started service")
     }
     fun saveConnectionProperties(view: View){
         saveConnectionProperties()

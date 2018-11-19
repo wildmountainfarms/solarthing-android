@@ -17,7 +17,7 @@ class DatabaseDataRequester(
         private set
 
     /**
-     * Takes over the current thread and runs until data is retreived or an error occured.
+     * Takes over the current thread and runs until data is retrieved or an error occurred.
      *
      * @throws IllegalStateException Thrown when [currentlyUpdating] is true
      * @return The [DataRequest] which holds data about if the request was successful or not
