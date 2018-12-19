@@ -50,11 +50,11 @@ class MainActivity : AppCompatActivity() {
                 ).apply {
                     description = notificationChannel.getDescription(this@MainActivity)
                     enableLights(notificationChannel.enableLights)
-                    if (notificationChannel.lightColor !== null) {
+                    if (notificationChannel.lightColor != null) {
                         lightColor = notificationChannel.lightColor
                     }
                     enableVibration(notificationChannel.enableVibration)
-                    if (notificationChannel.vibrationPattern !== null) {
+                    if (notificationChannel.vibrationPattern != null) {
                         vibrationPattern = notificationChannel.vibrationPattern
                     }
                 })

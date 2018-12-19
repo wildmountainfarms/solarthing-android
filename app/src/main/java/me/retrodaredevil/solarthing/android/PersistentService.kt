@@ -19,9 +19,6 @@ import java.util.*
 const val UPDATE_PERIOD: Long = 1000 * 24
 const val NOTIFICATION_ID: Int = 1
 
-var timesStarted = 0
-var lastService: PersistentService? = null
-
 class PersistentService: Service(){
     private var timer: Timer? = null
     private var task: AsyncTask<*, *, *>? = null
@@ -31,10 +28,6 @@ class PersistentService: Service(){
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        timesStarted++
-//        println("[123]starting persistent service. timesStarted: $timesStarted lastService===this: ${lastService===this} lastService==this: ${lastService==this} lastService: $lastService")
-//        println("[123] hashCode: ${hashCode()}")
-        lastService = this
         if(timer == null){
             timer = Timer()
         }
@@ -42,13 +35,12 @@ class PersistentService: Service(){
         timer?.scheduleAtFixedRate(object : TimerTask(){
             var successfulDataRequest: DataRequest? = null
             override fun run(){
-//                println("[123]Updating hashCode: ${this@PersistentService.hashCode()}")
                 if(task?.status == AsyncTask.Status.RUNNING){
                     val nullableDataRequest = successfulDataRequest
                     if(nullableDataRequest != null){
                         val notification = NotificationHandler.createStatusNotification(
                             this@PersistentService,
-                            nullableDataRequest.packetCollectionList,
+                            PacketInfo(nullableDataRequest.packetCollectionList.last()),
                             getTimedOutSummary()
                         )
                         if(notification != null){
@@ -76,9 +68,10 @@ class PersistentService: Service(){
                         summary = getFailedSummary()
                     }
                     if(usedRequest != null) {
+                        val currentInfo = PacketInfo(usedRequest.packetCollectionList.last())
                         val notification = NotificationHandler.createStatusNotification(
                             this@PersistentService,
-                            usedRequest.packetCollectionList,
+                            currentInfo,
                             summary
                         )
                         if(notification != null) {

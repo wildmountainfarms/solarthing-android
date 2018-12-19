@@ -6,12 +6,13 @@ import android.app.Service
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.os.Build
+import me.retrodaredevil.solarthing.android.PacketInfo
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.request.DataRequest
-import me.retrodaredevil.solarthing.packet.PacketCollection
-import me.retrodaredevil.solarthing.packet.PacketType
-import me.retrodaredevil.solarthing.packet.StatusPacket
+import me.retrodaredevil.solarthing.packet.*
+import me.retrodaredevil.solarthing.packet.fx.ACMode
 import me.retrodaredevil.solarthing.packet.fx.FXStatusPacket
+import me.retrodaredevil.solarthing.packet.fx.OperationalMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
 
 object NotificationHandler {
@@ -36,16 +37,11 @@ object NotificationHandler {
     /**
      *
      * @param packetCollections The list of [PacketCollection]s where the last element is the most recent
+     * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, packetCollections: List<PacketCollection>, summary: String = ""): Notification? {
-        var dateMillis: Long? = null
-        var batteryVoltageString: String? = null
-        var loadString: String? = null
-        var generatorOn: Boolean? = null
-        var generatorToBatteryWattageString: String? = null
-        var generatorWattageTotalString: String? = null
-        var pvWattageString: String? = null
-        var calculatedSolarPanelWattageString: String? = null // beta
+    fun createStatusNotification(context: Context, info: PacketInfo, summary: String = ""): Notification? {
+//        val packetCollection = packetCollections.last() // the most recent
+//        val info = PacketInfo(packetCollection)
 
         var devicesString: String? = null
 
@@ -57,141 +53,84 @@ object NotificationHandler {
         var fxErrorsString: String? = null
         var mxErrorsString: String? = null
 
-        var dailyKWHString: String? = null
+        for(fx in info.fxMap.values){
 
-        for(packetCollection in packetCollections.reversed()){ // reversed - now first packets are most recent
-            val fxMap = HashMap<Int, FXStatusPacket>()
-            val mxfmMap = HashMap<Int, MXFMStatusPacket>()
-            for(packet in packetCollection.packets){
-                if(packet is StatusPacket){
-                    when(packet.packetType){
-                        PacketType.FX_STATUS -> {
-                            val fx = packet as FXStatusPacket
-                            fxMap[fx.address] = fx
-                        }
-                        PacketType.MXFM_STATUS -> {
-                            val mx = packet as MXFMStatusPacket
-                            mxfmMap[mx.address] = mx
-                        }
-                        PacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
-                        null -> throw NullPointerException("packetType is null! packet: $packet")
-                    }
-                }
+            val deviceString = "[${fx.address} FX]"
+            if(devicesString == null){
+                devicesString = deviceString
+            } else {
+                devicesString += "|$deviceString"
             }
-            if(fxMap.isEmpty() || mxfmMap.isEmpty()){
-                continue
+
+            val prefix = "(${fx.address})"
+
+            val acModeString = "$prefix${fx.acModeName}"
+            if(fxACModesString == null){
+                fxACModesString = acModeString
+            } else {
+                fxACModesString += "|$acModeString"
             }
-            dateMillis = packetCollection.dateMillis
-            var load = 0
-            generatorOn = false
-            var generatorToBatteryWattage = 0
-            var generatorWattageTotal = 0
-            for(fx in fxMap.values){
-                batteryVoltageString = fx.batteryVoltageString
-                load += fx.outputVoltage * fx.inverterCurrent
-                if(generatorOn !== null && !generatorOn){
-                    generatorOn = fx.buyCurrent > 0
-                }
-                generatorToBatteryWattage += fx.inputVoltage * fx.chargerCurrent
-                generatorWattageTotal += fx.inputVoltage * fx.buyCurrent
 
-                val deviceString = "[${fx.address} FX]"
-                if(devicesString == null){
-                    devicesString = deviceString
-                } else {
-                    devicesString += "|$deviceString"
+            val warningsString = fx.warningsString
+            if(fxWarningsString == null){
+                if(warningsString.isNotEmpty()) {
+                    fxWarningsString = prefix + warningsString
                 }
-
-                val prefix = "(${fx.address})"
-
-                val acModeString = "$prefix${fx.acModeName}"
-                if(fxACModesString == null){
-                    fxACModesString = acModeString
-                } else {
-                    fxACModesString += "|$acModeString"
-                }
-
-                val warningsString = fx.warningsString
-                if(fxWarningsString == null){
-                    if(warningsString.isNotEmpty()) {
-                        fxWarningsString = prefix + warningsString
-                    }
-                } else {
-                    fxWarningsString += "|$prefix$warningsString"
-                }
-                val errorsString = fx.errorsString
-                if(fxErrorsString == null){
-                    if(errorsString.isNotEmpty()) {
-                        fxErrorsString = prefix + errorsString
-                    }
-                } else {
-                    fxErrorsString += "|$prefix$errorsString"
-                }
+            } else {
+                fxWarningsString += "|$prefix$warningsString"
             }
-            loadString = load.toString()
-            generatorToBatteryWattageString = generatorToBatteryWattage.toString()
-            generatorWattageTotalString = generatorWattageTotal.toString()
-
-            var pvWattage: Int? = null
-            var totalChargerCurrent: Float = 0f
-            var totalVoltage: Int = 0
-            for(mx in mxfmMap.values){
-                pvWattage = mx.pvCurrent * mx.inputVoltage
-                dailyKWHString = mx.dailyKWHString
-                totalChargerCurrent += mx.chargerCurrent + mx.ampChargerCurrent // TODO this may not be current if multiple mx are connected
-                totalVoltage += mx.inputVoltage
-
-                val deviceString = "[${mx.address} MX/FM]"
-                if(devicesString == null){
-                    devicesString = deviceString
-                } else {
-                    devicesString += "|$deviceString"
+            val errorsString = fx.errorsString
+            if(fxErrorsString == null){
+                if(errorsString.isNotEmpty()) {
+                    fxErrorsString = prefix + errorsString
                 }
-
-                val prefix = "(${mx.address})"
-
-                val chargerModeString = "$prefix${mx.chargerModeName}"
-                if(mxChargerModesString == null){
-                    mxChargerModesString = chargerModeString
-                } else {
-                    mxChargerModesString += "|$chargerModeString"
-                }
-                val auxModeString = "$prefix${mx.auxModeName}"
-                if(mxAuxModesString == null){
-                    mxAuxModesString = auxModeString
-                } else {
-                    mxAuxModesString += "|$auxModeString"
-                }
-
-                val errorsString = mx.errorsString
-                if(mxErrorsString == null){
-                    if(errorsString.isNotEmpty()) {
-                        mxErrorsString = prefix + errorsString
-                    }
-                } else {
-                    mxErrorsString += "|$prefix$errorsString"
-                }
+            } else {
+                fxErrorsString += "|$prefix$errorsString"
             }
-            pvWattageString = pvWattage.toString()
-            val totalToBatteryWattage = totalChargerCurrent * totalVoltage
-            val calculatedSolarPanelWattage = totalToBatteryWattage - generatorToBatteryWattage
-            calculatedSolarPanelWattageString = calculatedSolarPanelWattage.toString()
-            break
         }
-        if(dateMillis == null || batteryVoltageString == null || loadString == null || generatorOn == null
-            || generatorToBatteryWattageString == null || generatorWattageTotalString == null || pvWattageString == null
-            || devicesString == null || mxChargerModesString == null || fxACModesString == null || mxAuxModesString == null){
+        for(mx in info.mxMap.values){
+            val deviceString = "[${mx.address} MX/FM]"
+            if(devicesString == null){
+                devicesString = deviceString
+            } else {
+                devicesString += "|$deviceString"
+            }
+
+            val prefix = "(${mx.address})"
+
+            val chargerModeString = "$prefix${mx.chargerModeName}"
+            if(mxChargerModesString == null){
+                mxChargerModesString = chargerModeString
+            } else {
+                mxChargerModesString += "|$chargerModeString"
+            }
+            val auxModeString = "$prefix${mx.auxModeName}"
+            if(mxAuxModesString == null){
+                mxAuxModesString = auxModeString
+            } else {
+                mxAuxModesString += "|$auxModeString"
+            }
+
+            val errorsString = mx.errorsString
+            if(mxErrorsString == null){
+                if(errorsString.isNotEmpty()) {
+                    mxErrorsString = prefix + errorsString
+                }
+            } else {
+                mxErrorsString += "|$prefix$errorsString"
+            }
+        }
+        if(devicesString == null || mxChargerModesString == null || fxACModesString == null || mxAuxModesString == null){
             return null
         }
-        val isRecent = System.currentTimeMillis() - dateMillis < 1000 * 60 * 60 // true if within one hour
         val style = Notification.BigTextStyle()
-            .bigText("Load: $loadString W\n" +
-                    "Power from Solar Panels: $pvWattageString W\n" +
-                    "(Beta) Power from Solar Panels: $calculatedSolarPanelWattageString W\n" +
-                    "Generator -> Battery: $generatorToBatteryWattageString W\n" +
-                    "Generator Total: $generatorWattageTotalString W" +
-                    (if(dailyKWHString != null) "\nDaily kWH: $dailyKWHString" else "") +
-                    "\n\nDevices: $devicesString\n" +
+            .bigText("Load: ${info.loadString} W\n" +
+                    "Power from Solar Panels: ${info.pvWattageString} W\n" +
+                    "Generator -> Battery: ${info.generatorToBatteryWattageString} W\n" +
+                    "Generator Total: ${info.generatorTotalWattage} W\n" +
+                    "Daily kWH: ${info.dailyKWHoursString}\n" +
+                    "\n" +
+                    "Devices: $devicesString\n" +
                     "FX AC Mode: $fxACModesString\n" +
                     "MX/FM Charger Mode: $mxChargerModesString\n" +
                     "MX/FM Aux Mode: $mxAuxModesString" +
@@ -202,12 +141,12 @@ object NotificationHandler {
         return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Battery Voltage: $batteryVoltageString V")
-            .setContentText("load: $loadString pv: $pvWattageString generator: " + if(generatorOn) "ON" else "OFF")
+            .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V")
+            .setContentText("load: ${info.loadString} pv: ${info.pvWattageString} generator: " + if(info.generatorOn) "ON" else "OFF")
             .setStyle(style)
-            .setOngoing(isRecent) // set ongoing if from the last hour
+            .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setWhen(dateMillis)
+            .setWhen(info.dateMillis)
             .setShowWhen(true)
             .build()
     }
