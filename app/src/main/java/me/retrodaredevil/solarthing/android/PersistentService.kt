@@ -65,7 +65,7 @@ class PersistentService: Service(){
                     if(usedRequest != null) {
                         doNotify(usedRequest, summary)
                     } else {
-                        setToFailedNotification()
+                        setToFailedNotification(dataRequest)
                     }
                 }.execute()
             }
@@ -73,6 +73,10 @@ class PersistentService: Service(){
         return START_STICKY
     }
     private fun doNotify(request: DataRequest, summary: String){
+        if(request.packetCollectionList.isEmpty()){
+            setToNoData()
+            return
+        }
         val currentInfo = PacketInfo(request.packetCollectionList.last())
         var floatModeActivatedInfo: PacketInfo? = null
         for(packetCollection in request.packetCollectionList.asReversed()){ // go through latest packets first
@@ -129,12 +133,13 @@ class PersistentService: Service(){
             .build()
         notify(notification)
     }
-    private fun setToFailedNotification(){
+    private fun setToFailedNotification(request: DataRequest){
         val notification = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
-            .setContentText("Failed to load solar data. Will Try again.")
+            .setContentTitle("Failed to load solar data. Will Try again.")
+            .setContentText("Error: ${request.simpleStatus}")
             .setSubText(getFailedSummary())
             .build()
         notify(notification)

@@ -8,9 +8,10 @@ import android.os.Build
 import me.retrodaredevil.solarthing.android.NotificationClearedReceiver
 import me.retrodaredevil.solarthing.android.PacketInfo
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.millisToString
 import java.text.DateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 const val SEPARATOR = "|"
 
@@ -63,7 +64,17 @@ object NotificationHandler {
         val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.errorsString}" }
 
         val timeLeftText = if (floatModeActivatedInfo != null) {
-            millisToString((floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis) - System.currentTimeMillis())
+            val timeLeft = (floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis) - System.currentTimeMillis()
+            val absTimeLeft = abs(timeLeft)
+            val hours = TimeUnit.MILLISECONDS.toHours(absTimeLeft)
+            val minutes = TimeUnit.MILLISECONDS.toMinutes(absTimeLeft) - TimeUnit.HOURS.toMinutes(hours)
+            val minutesString = minutes.toString()
+
+            "$hours" +
+                    ":" +
+                    (if(minutesString.length == 1) "0$minutesString" else minutesString) +
+                    " " +
+                    if(timeLeft < 0) "PAST" else "left"
         } else {
             ""
         }
@@ -77,14 +88,13 @@ object NotificationHandler {
         }
 
         val style = Notification.BigTextStyle()
-            .bigText("Load: ${info.loadString} W\n" +
-                    "Power from Solar Panels: ${info.pvWattageString} W\n" +
+            .setBigContentTitle("Battery Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")
+            .bigText("Power from Solar Panels: ${info.pvWattageString} W\n" +
                     "Generator is ${if(info.generatorOn) "ON" else "OFF"} $timeLeftText\n" +
                     (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
                     "Generator -> Battery: ${info.generatorToBatteryWattageString} W\n" +
                     "Generator Total: ${info.generatorTotalWattageString} W\n" +
-                    "FX Charger Current: ${info.fxChargerCurrentString} A\n" +
-                    "FX Buy Current: ${info.fxBuyCurrentString} A\n" +
+                    "FX Charger Current: ${info.fxChargerCurrentString}A|FX Buy Current: ${info.fxBuyCurrentString}A\n" +
                     "Daily kWH: ${info.dailyKWHoursString}\n" +
                     "Devices: $devicesString\n" +
                     (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
@@ -103,7 +113,7 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V")
-            .setContentText("load: ${info.loadString} pv: ${info.pvWattageString} generator: " + if(info.generatorOn) "ON" else "OFF")
+            .setContentText("load: ${info.loadString} pv: ${info.pvWattageString} generator: " + if(info.generatorOn) "ON $timeLeftText" else "OFF")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
