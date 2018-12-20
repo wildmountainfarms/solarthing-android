@@ -78,6 +78,14 @@
             android:text="Save"
             tools:layout_editor_absoluteX="57dp"
             tools:layout_editor_absoluteY="276dp" />
+        <Button
+                android:text="Restart Service"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:id="@+id/restart_button" android:onClick="restartService"/>
+        <Button
+                android:text="Stop Service"
+                android:layout_width="143dp"
+                android:layout_height="wrap_content" android:id="@+id/stop_button" android:onClick="stopService"/>
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

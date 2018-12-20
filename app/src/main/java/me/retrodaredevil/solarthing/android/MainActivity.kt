@@ -60,6 +60,18 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
+        restartService()
+    }
+    fun saveConnectionProperties(view: View){
+        saveConnectionProperties()
+    }
+    fun restartService(view: View){
+        restartService()
+    }
+    fun stopService(view: View){
+        stopService()
+    }
+    private fun restartService(){
         val serviceIntent = Intent(this, PersistentService::class.java)
         stopService(serviceIntent)
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -68,8 +80,9 @@ class MainActivity : AppCompatActivity() {
             startService(serviceIntent)
         }
     }
-    fun saveConnectionProperties(view: View){
-        saveConnectionProperties()
+    private fun stopService(){
+        val serviceIntent = Intent(this, PersistentService::class.java)
+        stopService(serviceIntent)
     }
     private fun saveConnectionProperties(){
         val properties = CouchDbProperties(databaseName.text.toString(), false, protocol.text.toString(),

@@ -13,11 +13,13 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DatabaseDataRequester
+import me.retrodaredevil.solarthing.packet.fx.OperationalMode
 import java.text.DateFormat
 import java.util.*
 
 const val UPDATE_PERIOD: Long = 1000 * 24
 const val NOTIFICATION_ID: Int = 1
+const val GENERATOR_NOTIFICATION_ID: Int = 2
 
 class PersistentService: Service(){
     private var timer: Timer? = null
@@ -51,6 +53,7 @@ class PersistentService: Service(){
                     } else {
                         setToTimedOut()
                     }
+                    getManager().cancel(GENERATOR_NOTIFICATION_ID)
                 }
                 task?.cancel(true)
 
@@ -69,10 +72,19 @@ class PersistentService: Service(){
                     }
                     if(usedRequest != null) {
                         val currentInfo = PacketInfo(usedRequest.packetCollectionList.last())
+                        var floatModeActivatedInfo: PacketInfo? = null
+                        for(packetCollection in usedRequest.packetCollectionList.asReversed()){ // go through latest packets first
+                            val info = PacketInfo(packetCollection)
+                            if(info.fxMap.values.none { OperationalMode.FLOAT.isActive(it.operatingMode) }){
+                                break
+                            }
+                            floatModeActivatedInfo = info
+                        }
                         val notification = NotificationHandler.createStatusNotification(
                             this@PersistentService,
                             currentInfo,
-                            summary
+                            summary,
+                            floatModeActivatedInfo
                         )
                         if(notification != null) {
                             notify(notification)
@@ -94,6 +106,7 @@ class PersistentService: Service(){
     private fun setToNoData(){
         val notification = getBuilder()
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setContentText("Connection successful, but no data.")
             .setSubText(getConnectedSummary())
@@ -103,6 +116,7 @@ class PersistentService: Service(){
     private fun setToFailedNotification(){
         val notification = getBuilder()
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setContentText("Failed to load solar data. Will Try again.")
             .setSubText(getFailedSummary())
@@ -121,6 +135,7 @@ class PersistentService: Service(){
     private fun setToLoadingNotification(){
         val notification = getBuilder()
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setContentText("Loading Solar Data")
             .setSubText("started loading at ${getTimeString()}")
@@ -144,7 +159,8 @@ class PersistentService: Service(){
         println("[123]Stopping persistent service")
         timer?.cancel() // stop the timer from calling the code any more times
         task?.cancel(true) // stop the code from running if it's running
-//        getManager().cancel(NOTIFICATION_ID)
+        getManager().cancel(NOTIFICATION_ID)
+        getManager().cancel(GENERATOR_NOTIFICATION_ID)
     }
 }
 private class DataUpdaterTask(

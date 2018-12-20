@@ -32,7 +32,7 @@ class DatabaseDataRequester(
             println("Successfully connected!")
             val list = ArrayList<PacketCollection>()
             for (jsonObject in client.view("packets/millis")
-                .startKey(System.currentTimeMillis() - 1000 * 60 * 60)
+                .startKey(System.currentTimeMillis() - 1000 * 60 * 60 * 3) // 3 hours
                 .query(JsonObject::class.java)) {
                 val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
                 list.add(packetCollection)
