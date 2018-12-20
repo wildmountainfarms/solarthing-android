@@ -70,11 +70,17 @@
             tools:layout_editor_absoluteX="0dp"
             tools:layout_editor_absoluteY="230dp" />
 
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:ems="10"
+                android:id="@+id/generator_float_hours" android:hint="Generator Float Hours"/>
         <Button
             android:id="@+id/save_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="saveConnectionProperties"
+            android:onClick="saveSettings"
             android:text="Save"
             tools:layout_editor_absoluteX="57dp"
             tools:layout_editor_absoluteY="276dp" />

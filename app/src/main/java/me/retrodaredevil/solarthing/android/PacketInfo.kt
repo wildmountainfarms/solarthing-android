@@ -62,46 +62,15 @@ class PacketInfo(packetCollection: PacketCollection) {
         this.batteryVoltage = first.batteryVoltage
         this.batteryVoltageString = first.batteryVoltageString
 
-        var load = 0
-        var generatorOn = false
-        var generatorToBatteryWattage = 0
-        var generatorTotalWattage = 0
-        var fxBuyCurrent = 0
-        var fxChargerCurrent = 0
-        for(fx in fxMap.values){
-            load += fx.outputVoltage * fx.inverterCurrent
-            if((fx.buyCurrent > 0 && OperationalMode.CHARGE.isActive(fx.operatingMode))
-                || OperationalMode.FLOAT.isActive(fx.operatingMode)){
-                generatorOn = true
-            }
-            fxChargerCurrent += fx.chargerCurrent
-            fxBuyCurrent += fx.buyCurrent
+        generatorOn = fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }
+        load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
+        generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
+        generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
+        fxChargerCurrent = fxMap.values.sumBy { it.chargerCurrent }
+        fxBuyCurrent = fxMap.values.sumBy { it.buyCurrent }
 
-            generatorToBatteryWattage += fx.inputVoltage * fx.chargerCurrent
-            generatorTotalWattage += fx.inputVoltage * fx.buyCurrent
-        }
-        this.load = load
-
-        this.fxChargerCurrent = fxChargerCurrent
-        this.fxBuyCurrent = fxBuyCurrent
-
-        this.generatorToBatteryWattage = generatorToBatteryWattage
-        this.generatorTotalWattage = generatorTotalWattage
-
-        this.generatorOn = generatorOn
-
-
-        var pvWattage = 0
-        var dailyKWH = 0.0F
-        for(mx in mxMap.values){
-            pvWattage += mx.pvCurrent * mx.inputVoltage
-            dailyKWH += mx.dailyKWH
-
-            //power to battery = mx.fxChargerCurrent * mx.batteryVoltage // I don't remember if this is correct or not
-
-        }
-        this.pvWattage = pvWattage
-        this.dailyKWHours = dailyKWH
+        pvWattage = mxMap.values.sumBy { it.pvCurrent * it.inputVoltage }
+        dailyKWHours = mxMap.values.map { it.dailyKWH }.sum()
     }
 
     val pvWattageString by lazy { pvWattage.toString() }

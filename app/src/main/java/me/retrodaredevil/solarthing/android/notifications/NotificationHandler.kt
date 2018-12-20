@@ -8,34 +8,44 @@ import android.os.Build
 import me.retrodaredevil.solarthing.android.NotificationClearedReceiver
 import me.retrodaredevil.solarthing.android.PacketInfo
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.millisToString
 import java.text.DateFormat
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 
 const val SEPARATOR = "|"
 
 object NotificationHandler {
 
 
-//    fun createGeneratorCountdown(context: Context, floatModeActivatedInfo: PacketInfo, currentInfo: PacketInfo): Notification {
-//
-//        return createNotificationBuilder(context, NotificationChannels.GENERATOR_NOTIFICATION.id)
-//            .setSmallIcon(android.R.color.transparent)
-//            .setContentTitle("Generator")
-//            .setContentText(text)
-//            .setSubText("Turned on at $timeTurnedOnString")
-//            .setOnlyAlertOnce(true)
-//            .setOngoing(true)
-//            .build()
-//    }
+    fun createGeneratorAlert(context: Context, floatModeActivatedInfo: PacketInfo, currentInfo: PacketInfo, generatorFloatTimeMillis: Long): Notification {
+        val shouldHaveTurnedOffAt = floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis
+        val now = System.currentTimeMillis()
+        if(now < shouldHaveTurnedOffAt){
+            throw IllegalArgumentException("The generator alert should be to alert someone to turn it off! " +
+                    "Not to alert them when in the future they should turn it off.")
+        }
+        val turnedOnAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
+            .format(GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time)
+        val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
+            .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
+
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_NOTIFICATION.id)
+            .setSmallIcon(R.drawable.power_button)
+            .setContentTitle("Generator")
+            .setContentText("Should have turned off at $turnOffAtString!")
+            .setSubText("Float started at $turnedOnAtString")
+            .setWhen(shouldHaveTurnedOffAt)
+            .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
+            .build()
+    }
 
     /**
      *
      * @param info The PacketInfo representing a simpler view of a PacketCollection
      * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, info: PacketInfo, summary: String = "", floatModeActivatedInfo: PacketInfo? = null): Notification? {
+    fun createStatusNotification(context: Context, info: PacketInfo, summary: String = "",
+                                 floatModeActivatedInfo: PacketInfo?, generatorFloatTimeMillis: Long): Notification {
         val devicesStringList = ArrayList<String>()
         devicesStringList.addAll(info.fxMap.values.map { "[${it.address} FX]" })
         devicesStringList.addAll(info.mxMap.values.map { "[${it.address} MX]" })
@@ -53,17 +63,7 @@ object NotificationHandler {
         val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.errorsString}" }
 
         val timeLeftText = if (floatModeActivatedInfo != null) {
-            val timeLeft = (floatModeActivatedInfo.dateMillis + (1.5 * 60 * 60 * 1000).toLong()) - System.currentTimeMillis()
-            val absTimeLeft = abs(timeLeft)
-            val hours = TimeUnit.MILLISECONDS.toHours(absTimeLeft)
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(absTimeLeft) - TimeUnit.HOURS.toMinutes(hours)
-            val minutesString = minutes.toString()
-
-            "$hours" +
-                    ":" +
-                    (if(minutesString.length == 1) "0$minutesString" else minutesString) +
-                    " " +
-                    if(timeLeft < 0) "PAST" else "left"
+            millisToString((floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis) - System.currentTimeMillis())
         } else {
             ""
         }
@@ -86,15 +86,15 @@ object NotificationHandler {
                     "FX Charger Current: ${info.fxChargerCurrentString} A\n" +
                     "FX Buy Current: ${info.fxBuyCurrentString} A\n" +
                     "Daily kWH: ${info.dailyKWHoursString}\n" +
-                    "\n" +
                     "Devices: $devicesString\n" +
+                    (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
+                    (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
+                    (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                     "FX AC Mode: $fxACModesString\n" +
                     "FX Operational Mode: $fxOperationalModeString\n" +
                     "MX Charger Mode: $mxChargerModesString\n" +
-                    "MX Aux Mode: $mxAuxModesString" +
-                    (if(fxWarningsString.isNotEmpty()) "\nFX Warn: $fxWarningsString" else "") +
-                    (if(fxErrorsString.isNotEmpty()) "\nFX Errors: $fxErrorsString" else "") +
-                    (if(mxErrorsString.isNotEmpty()) "\nMX Errors: $mxErrorsString" else ""))
+                    "MX Aux Mode: $mxAuxModesString"
+            )
 
         val intent = Intent(context, NotificationClearedReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)

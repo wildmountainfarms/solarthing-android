@@ -25,6 +25,8 @@ class PersistentService: Service(){
     private var timer: Timer? = null
     private var task: AsyncTask<*, *, *>? = null
 
+    private var lastGeneratorNotification: Long? = null
+
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -40,20 +42,10 @@ class PersistentService: Service(){
                 if(task?.status == AsyncTask.Status.RUNNING){
                     val nullableDataRequest = successfulDataRequest
                     if(nullableDataRequest != null){
-                        val notification = NotificationHandler.createStatusNotification(
-                            this@PersistentService,
-                            PacketInfo(nullableDataRequest.packetCollectionList.last()),
-                            getTimedOutSummary()
-                        )
-                        if(notification != null){
-                            notify(notification)
-                        } else {
-                            setToTimedOut()
-                        }
+                        doNotify(nullableDataRequest, getTimedOutSummary())
                     } else {
                         setToTimedOut()
                     }
-                    getManager().cancel(GENERATOR_NOTIFICATION_ID)
                 }
                 task?.cancel(true)
 
@@ -71,26 +63,7 @@ class PersistentService: Service(){
                         summary = getFailedSummary()
                     }
                     if(usedRequest != null) {
-                        val currentInfo = PacketInfo(usedRequest.packetCollectionList.last())
-                        var floatModeActivatedInfo: PacketInfo? = null
-                        for(packetCollection in usedRequest.packetCollectionList.asReversed()){ // go through latest packets first
-                            val info = PacketInfo(packetCollection)
-                            if(info.fxMap.values.none { OperationalMode.FLOAT.isActive(it.operatingMode) }){
-                                break
-                            }
-                            floatModeActivatedInfo = info
-                        }
-                        val notification = NotificationHandler.createStatusNotification(
-                            this@PersistentService,
-                            currentInfo,
-                            summary,
-                            floatModeActivatedInfo
-                        )
-                        if(notification != null) {
-                            notify(notification)
-                        } else {
-                            setToNoData()
-                        }
+                        doNotify(usedRequest, summary)
                     } else {
                         setToFailedNotification()
                     }
@@ -98,6 +71,49 @@ class PersistentService: Service(){
             }
         }, 1000L, UPDATE_PERIOD)
         return START_STICKY
+    }
+    private fun doNotify(request: DataRequest, summary: String){
+        val currentInfo = PacketInfo(request.packetCollectionList.last())
+        var floatModeActivatedInfo: PacketInfo? = null
+        for(packetCollection in request.packetCollectionList.asReversed()){ // go through latest packets first
+            val info = PacketInfo(packetCollection)
+            if(info.fxMap.values.none { OperationalMode.FLOAT.isActive(it.operatingMode) }){
+                break
+            }
+            floatModeActivatedInfo = info
+        }
+        val notification = NotificationHandler.createStatusNotification(
+            this@PersistentService,
+            currentInfo,
+            summary,
+            floatModeActivatedInfo,
+            GlobalData.generatorFloatTimeMillis
+        )
+        notify(notification)
+
+        if(floatModeActivatedInfo != null){
+            // check to see if we should send a notification
+            val generatorFloatTimeMillis = GlobalData.generatorFloatTimeMillis
+            val now = System.currentTimeMillis()
+            if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
+                val last = lastGeneratorNotification
+                if (last == null || last + GlobalData.generatorNotifyIntervalMillis < now) {
+                    getManager().notify(
+                        GENERATOR_NOTIFICATION_ID,
+                        NotificationHandler.createGeneratorAlert(
+                            this@PersistentService,
+                            floatModeActivatedInfo, currentInfo, generatorFloatTimeMillis
+                        )
+                    )
+                    lastGeneratorNotification = now
+                }
+            } else {
+                cancelGenerator()
+            }
+        } else {
+            // reset the generator notification because the generator is either off or not in float mode
+            cancelGenerator()
+        }
     }
     private fun getTimedOutSummary() = "timed out at ${getTimeString()}"
     private fun getConnectedSummary() = "last connection success"
@@ -160,7 +176,11 @@ class PersistentService: Service(){
         timer?.cancel() // stop the timer from calling the code any more times
         task?.cancel(true) // stop the code from running if it's running
         getManager().cancel(NOTIFICATION_ID)
+        cancelGenerator()
+    }
+    private fun cancelGenerator(){
         getManager().cancel(GENERATOR_NOTIFICATION_ID)
+        lastGeneratorNotification = null
     }
 }
 private class DataUpdaterTask(
