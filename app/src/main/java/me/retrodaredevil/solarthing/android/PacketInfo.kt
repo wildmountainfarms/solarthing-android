@@ -3,8 +3,11 @@ package me.retrodaredevil.solarthing.android
 import me.retrodaredevil.solarthing.packet.PacketCollection
 import me.retrodaredevil.solarthing.packet.PacketType
 import me.retrodaredevil.solarthing.packet.StatusPacket
+import me.retrodaredevil.solarthing.packet.fx.FXErrorMode
 import me.retrodaredevil.solarthing.packet.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.packet.fx.OperationalMode
+import me.retrodaredevil.solarthing.packet.fx.WarningMode
+import me.retrodaredevil.solarthing.packet.mxfm.MXFMErrorMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
 
 class PacketInfo(packetCollection: PacketCollection) {
@@ -35,6 +38,9 @@ class PacketInfo(packetCollection: PacketCollection) {
     val generatorOn: Boolean
 
     val dailyKWHours: Float
+
+    val warningsCount: Int
+    val errorsCount: Int
 
     init {
         fxMap = HashMap()
@@ -71,6 +77,10 @@ class PacketInfo(packetCollection: PacketCollection) {
 
         pvWattage = mxMap.values.sumBy { it.pvCurrent * it.inputVoltage }
         dailyKWHours = mxMap.values.map { it.dailyKWH }.sum()
+
+        warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
+        errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorMode) } }
+            + MXFMErrorMode.values().count { mxfmErrorMode -> mxMap.values.any { mxfmErrorMode.isActive(it.errorMode) } }
     }
 
     val pvWattageString by lazy { pvWattage.toString() }

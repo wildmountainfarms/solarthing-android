@@ -88,7 +88,6 @@ object NotificationHandler {
         }
 
         val style = Notification.BigTextStyle()
-            .setBigContentTitle("Battery Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")
             .bigText("Power from Solar Panels: ${info.pvWattageString} W\n" +
                     "Generator is ${if(info.generatorOn) "ON" else "OFF"} $timeLeftText\n" +
                     (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
@@ -112,8 +111,8 @@ object NotificationHandler {
         return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V")
-            .setContentText("load: ${info.loadString} pv: ${info.pvWattageString} generator: " + if(info.generatorOn) "ON $timeLeftText" else "OFF")
+            .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")
+            .setContentText("pv:${info.pvWattageString} err:${info.errorsCount} warn:${info.warningsCount} generator:" + if(info.generatorOn) "ON $timeLeftText" else "OFF")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
