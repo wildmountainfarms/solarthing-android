@@ -10,7 +10,7 @@ import me.retrodaredevil.solarthing.packet.fx.WarningMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMErrorMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
 
-class PacketInfo(packetCollection: PacketCollection) {
+class PacketInfo(private val packetCollection: PacketCollection) {
     val dateMillis = packetCollection.dateMillis
     /** A map of the port number to the FX status packet associated with that device*/
     val fxMap: Map<Int, FXStatusPacket>
@@ -90,4 +90,21 @@ class PacketInfo(packetCollection: PacketCollection) {
     val generatorTotalWattageString by lazy { generatorTotalWattage.toString() }
     val fxChargerCurrentString by lazy { fxChargerCurrent.toString() }
     val fxBuyCurrentString by lazy { fxBuyCurrent.toString() }
+
+    override fun equals(other: Any?): Boolean {
+        if(super.equals(other)){
+            return true
+        }
+        if(other is PacketInfo){
+            return other.dateMillis == dateMillis
+                && other.fxMap.keys == fxMap.keys
+                && other.mxMap.keys == mxMap.keys
+                && other.packetCollection.dbId == packetCollection.dbId
+        }
+        return false
+    }
+
+    override fun hashCode(): Int {
+        return dateMillis.hashCode() - fxMap.keys.hashCode() + mxMap.keys.hashCode() - batteryVoltage.hashCode() + packetCollection.dbId.hashCode()
+    }
 }

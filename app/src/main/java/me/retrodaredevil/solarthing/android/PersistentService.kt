@@ -25,6 +25,8 @@ class PersistentService: Service(){
     private var timer: Timer? = null
     private var task: AsyncTask<*, *, *>? = null
 
+    private val packetInfoCollection: MutableCollection<PacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
+
     private var lastGeneratorNotification: Long? = null
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -36,51 +38,58 @@ class PersistentService: Service(){
             timer = Timer()
         }
         setToLoadingNotification()
-        timer?.scheduleAtFixedRate(object : TimerTask(){
-            var successfulDataRequest: DataRequest? = null
+        timer!!.scheduleAtFixedRate(object : TimerTask(){
             override fun run(){
                 if(task?.status == AsyncTask.Status.RUNNING){
-                    val nullableDataRequest = successfulDataRequest
-                    if(nullableDataRequest != null){
-                        doNotify(nullableDataRequest, getTimedOutSummary())
-                    } else {
+                    if(!doNotify(getTimedOutSummary())){
                         setToTimedOut()
                     }
                 }
                 task?.cancel(true)
 
-                task = DataUpdaterTask(DatabaseDataRequester { GlobalData.connectionProperties }) { dataRequest ->
-                    val usedRequest: DataRequest?
-                    val summary: String
-                    if(dataRequest.successful) {
-                        println("[123]Got successful data request")
-                        successfulDataRequest = dataRequest
-                        usedRequest = dataRequest
-                        summary = getConnectedSummary()
-                    } else {
-                        println("[123]Got unsuccessful data request")
-                        usedRequest = successfulDataRequest
-                        summary = getFailedSummary()
-                    }
-                    if(usedRequest != null) {
-                        doNotify(usedRequest, summary)
-                    } else {
-                        setToFailedNotification(dataRequest)
-                    }
-                }.execute()
+                task = DataUpdaterTask(
+                    DatabaseDataRequester(
+                        { GlobalData.connectionProperties },
+                        this@PersistentService::getStartKey
+                    ),
+                    this@PersistentService::onDataRequest
+                ).execute()
             }
         }, 1000L, UPDATE_PERIOD)
         return START_STICKY
     }
-    private fun doNotify(request: DataRequest, summary: String){
-        if(request.packetCollectionList.isEmpty()){
-            setToNoData()
-            return
+    private fun getStartKey(): Long = if(packetInfoCollection.isEmpty()){
+        System.currentTimeMillis() - 2 * 60 * 60 * 1000
+    } else {
+        packetInfoCollection.last().dateMillis
+    }
+    private fun onDataRequest(dataRequest: DataRequest){
+        val summary: String
+
+        if(dataRequest.successful) {
+            println("[123]Got successful data request")
+            packetInfoCollection.addAll(dataRequest.packetCollectionList.map { PacketInfo(it) })
+            summary = getConnectedSummary()
+        } else {
+            println("[123]Got unsuccessful data request")
+            summary = getFailedSummary()
         }
-        val currentInfo = PacketInfo(request.packetCollectionList.last())
+        if(!doNotify(summary)){
+            if(dataRequest.successful){
+                setToNoData()
+            } else {
+                setToFailedNotification(dataRequest)
+            }
+        }
+    }
+
+    private fun doNotify(summary: String): Boolean{
+        if(packetInfoCollection.isEmpty()){
+            return false
+        }
+        val currentInfo = packetInfoCollection.last()
         var floatModeActivatedInfo: PacketInfo? = null
-        for(packetCollection in request.packetCollectionList.asReversed()){ // go through latest packets first
-            val info = PacketInfo(packetCollection)
+        for(info in packetInfoCollection.reversed()){ // go through latest packets first
             if(info.fxMap.values.none { OperationalMode.FLOAT.isActive(it.operatingMode) }){
                 break
             }
@@ -118,6 +127,7 @@ class PersistentService: Service(){
             // reset the generator notification because the generator is either off or not in float mode
             cancelGenerator()
         }
+        return true
     }
     private fun getTimedOutSummary() = "timed out at ${getTimeString()}"
     private fun getConnectedSummary() = "last connection success"
@@ -134,6 +144,9 @@ class PersistentService: Service(){
         notify(notification)
     }
     private fun setToFailedNotification(request: DataRequest){
+        if(request.successful){
+            throw IllegalArgumentException("Use this method when request.successful == false! It equals true right now!")
+        }
         val notification = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)

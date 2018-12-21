@@ -11,8 +11,8 @@ import java.lang.NullPointerException
 import java.util.*
 
 class DatabaseDataRequester(
-    private val previousPacketsMillis: Long = 2 * 60 * 60 * 1000,
-    private val connectionPropertiesGetter: () -> CouchDbProperties
+    private val connectionPropertiesGetter: () -> CouchDbProperties,
+    private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
     override var currentlyUpdating = false
         private set
@@ -32,9 +32,7 @@ class DatabaseDataRequester(
             val client = CouchDbClientAndroid(connectionPropertiesGetter())
             println("Successfully connected!")
             val list = ArrayList<PacketCollection>()
-            for (jsonObject in client.view("packets/millis")
-                .startKey(System.currentTimeMillis() - previousPacketsMillis) // 3 hours
-                .query(JsonObject::class.java)) {
+            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
                 val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
                 list.add(packetCollection)
             }
