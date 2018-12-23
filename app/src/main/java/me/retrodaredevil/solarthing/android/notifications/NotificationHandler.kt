@@ -1,11 +1,8 @@
 package me.retrodaredevil.solarthing.android.notifications
 
 import android.app.Notification
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.os.Build
-import me.retrodaredevil.solarthing.android.NotificationClearedReceiver
 import me.retrodaredevil.solarthing.android.PacketInfo
 import me.retrodaredevil.solarthing.android.R
 import java.text.DateFormat
@@ -105,8 +102,8 @@ object NotificationHandler {
                     "MX Aux Mode: $mxAuxModesString"
             )
 
-        val intent = Intent(context, NotificationClearedReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)
+//        val intent = Intent(context, NotificationClearedReceiver::class.java)
+//        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)
 
         return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
             .setSmallIcon(R.drawable.solar_panel)
@@ -117,7 +114,6 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
             .setShowWhen(true)
-            .setDeleteIntent(pendingIntent)
             .build()
     }
     private fun createNotificationBuilder(context: Context, channelId: String): Notification.Builder {

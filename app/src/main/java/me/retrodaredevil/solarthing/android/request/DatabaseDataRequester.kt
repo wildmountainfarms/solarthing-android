@@ -37,16 +37,16 @@ class DatabaseDataRequester(
                 list.add(packetCollection)
             }
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful", null)
+            return DataRequest(list, true, "Request Successful")
         } catch(ex: CouchDbException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "Request Failed", ex.stackTrace.toString())
+            return DataRequest(Collections.emptyList(), false, "Request Failed", ex.stackTrace.toString(), ex.message)
         } catch(ex: NullPointerException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "NPE (Likely Parsing Error)", ex.stackTrace.toString())
+            return DataRequest(Collections.emptyList(), false, "(Please report) NPE (Likely Parsing Error)", ex.stackTrace.toString(), ex.message)
         } catch(ex: Exception) {
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "Unknown Error: ${ex.javaClass.simpleName}", ex.stackTrace.toString())
+            return DataRequest(Collections.emptyList(), false, "(Please report) ${ex.javaClass.simpleName} (Unknown)", ex.stackTrace.toString(), ex.message)
         } finally {
             currentlyUpdating = false
         }
