@@ -25,12 +25,13 @@ enum class UpdatePeriodType {
 }
 
 class PersistentService : Service(), Runnable{
+    private val prefs = Prefs(this)
     private val handler by lazy { Handler() }
     private val packetInfoCollection: MutableCollection<PacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
     private val dataRequester: DataRequester =
         DatabaseDataRequester(
-            { GlobalData.connectionProperties },
-            this@PersistentService::getStartKey
+            prefs::couchDbProperties,
+            this::getStartKey
         )
 
     private var task: AsyncTask<*, *, *>? = null
@@ -58,11 +59,11 @@ class PersistentService : Service(), Runnable{
         task = DataUpdaterTask(dataRequester, this@PersistentService::onDataRequest).execute()
         when(updatePeriodType){
             UpdatePeriodType.LARGE_DATA -> {
-                handler.postDelayed(this, GlobalData.initialRequestTimeSeconds * 1000L)
+                handler.postDelayed(this, prefs.initialRequestTimeSeconds * 1000L)
                 updatePeriodType = UpdatePeriodType.SMALL_DATA
             }
             UpdatePeriodType.SMALL_DATA -> {
-                handler.postDelayed(this, GlobalData.subsequentRequestTimeSeconds * 1000L)
+                handler.postDelayed(this, prefs.subsequentRequestTimeSeconds * 1000L)
             }
         }
 
@@ -109,13 +110,13 @@ class PersistentService : Service(), Runnable{
             currentInfo,
             summary,
             floatModeActivatedInfo,
-            (GlobalData.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
+            (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
         )
         notify(notification)
 
         if(floatModeActivatedInfo != null){
             // check to see if we should send a notification
-            val generatorFloatTimeMillis = (GlobalData.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
+            val generatorFloatTimeMillis = (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
             val now = System.currentTimeMillis()
             if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
                 val last = lastGeneratorNotification

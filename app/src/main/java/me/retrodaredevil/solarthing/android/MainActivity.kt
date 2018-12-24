@@ -13,6 +13,8 @@ import org.lightcouch.CouchDbProperties
 
 class MainActivity : AppCompatActivity() {
 
+    private val prefs = Prefs(this)
+
     private lateinit var databaseName: EditText
     private lateinit var protocol: EditText
     private lateinit var host: EditText
@@ -86,59 +88,34 @@ class MainActivity : AppCompatActivity() {
         stopService(serviceIntent)
     }
     private fun saveSettings(){
-        getSharedPreferences("connection_properties", 0).edit().apply {
-            putString("database_name", databaseName.text.toString())
-            putString("protocol", protocol.text.toString())
-            putString("host", host.text.toString())
-            putInt("port", port.text.toString().toIntOrNull() ?: 5984)
-            putString("username", username.text.toString())
-            putString("password", password.text.toString())
-            apply()
-        }
+        prefs.couchDbProperties = CouchDbProperties(
+            databaseName.text.toString(),
+            false,
+            protocol.text.toString(),
+            host.text.toString(),
+            port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
+            username.text.toString(),
+            password.text.toString()
+        )
 
-        getSharedPreferences("settings", 0).edit().apply {
-            val hours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-            val initialSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
-            val subsequentSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
-            putFloat("generator_float_hours", hours)
-            putInt("initial_request_timeout", initialSeconds)
-            putInt("subsequent_request_timeout", subsequentSeconds)
-            apply()
-        }
+        prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
+        prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
+        prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+
         loadSettings()
     }
     private fun loadSettings(){
-        getSharedPreferences("connection_properties", 0).apply {
-            val connectionProperties = CouchDbProperties(
-                getString("database_name", DefaultOptions.CouchDb.databaseName),
-                false,
-                getString("protocol", DefaultOptions.CouchDb.protocol),
-                getString("host", DefaultOptions.CouchDb.host),
-                getInt("port", DefaultOptions.CouchDb.port),
-                getString("username", DefaultOptions.CouchDb.username),
-                getString("password", DefaultOptions.CouchDb.password)
-            )
-            databaseName.setText(connectionProperties.dbName)
-            protocol.setText(connectionProperties.protocol)
-            host.setText(connectionProperties.host)
-            port.setText(connectionProperties.port.toString())
-            username.setText(connectionProperties.username)
-            password.setText(connectionProperties.password)
+        val connectionProperties = prefs.couchDbProperties
+        databaseName.setText(connectionProperties.dbName)
+        protocol.setText(connectionProperties.protocol)
+        host.setText(connectionProperties.host)
+        port.setText(connectionProperties.port.toString())
+        username.setText(connectionProperties.username)
+        password.setText(connectionProperties.password)
 
-            GlobalData.connectionProperties = connectionProperties
-        }
-        getSharedPreferences("settings", 0).apply {
-            val hours = getFloat("generator_float_hours", DefaultOptions.generatorFloatTimeHours)
-            GlobalData.generatorFloatTimeHours = hours
-            generatorFloatHours.setText(hours.toString())
+        generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
+        initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
+        subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
 
-            val initialSeconds = getInt("initial_request_timeout", DefaultOptions.initialRequestTimeSeconds)
-            GlobalData.initialRequestTimeSeconds = initialSeconds
-            initialRequestTimeout.setText(initialSeconds.toString())
-
-            val subsequentSeconds = getInt("subsequent_request_timeout", DefaultOptions.subsequentRequestTimeSeconds)
-            GlobalData.subsequentRequestTimeSeconds = subsequentSeconds
-            subsequentRequestTimeout.setText(subsequentSeconds.toString())
-        }
     }
 }

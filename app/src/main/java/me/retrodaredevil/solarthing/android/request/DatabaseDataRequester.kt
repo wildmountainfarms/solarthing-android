@@ -6,6 +6,8 @@ import me.retrodaredevil.solarthing.packet.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import org.lightcouch.CouchDbProperties
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.lang.IllegalStateException
 import java.lang.NullPointerException
 import java.util.*
@@ -40,15 +42,24 @@ class DatabaseDataRequester(
             return DataRequest(list, true, "Request Successful")
         } catch(ex: CouchDbException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "Request Failed", ex.stackTrace.toString(), ex.message)
+            return DataRequest(Collections.emptyList(), false,
+                "Request Failed", getStackTrace(ex), ex.message)
         } catch(ex: NullPointerException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "(Please report) NPE (Likely Parsing Error)", ex.stackTrace.toString(), ex.message)
+            return DataRequest(Collections.emptyList(), false,
+                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message)
         } catch(ex: Exception) {
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false, "(Please report) ${ex.javaClass.simpleName} (Unknown)", ex.stackTrace.toString(), ex.message)
+            return DataRequest(Collections.emptyList(), false,
+                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message)
         } finally {
             currentlyUpdating = false
         }
+    }
+    private fun getStackTrace(throwable: Throwable): String{
+        val stringWriter = StringWriter()
+        val printWriter = PrintWriter(stringWriter)
+        throwable.printStackTrace(printWriter)
+        return stringWriter.toString()
     }
 }
