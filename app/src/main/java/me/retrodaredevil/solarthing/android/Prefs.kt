@@ -2,6 +2,7 @@ package me.retrodaredevil.solarthing.android
 
 import android.content.Context
 import org.lightcouch.CouchDbProperties
+import java.lang.IllegalArgumentException
 
 class Prefs(private val context: Context) {
 
@@ -44,5 +45,19 @@ class Prefs(private val context: Context) {
     var subsequentRequestTimeSeconds: Int
         get() = settings.getInt(SaveKeys.subsequentRequestTimeSeconds, DefaultOptions.subsequentRequestTimeSeconds)
         set(value) = settings.edit().putInt(SaveKeys.subsequentRequestTimeSeconds, value).apply()
+
+    var virtualFloatModeMinimumBatteryVoltage: Float?
+        get() {
+            val r = settings.getFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, -1F)
+            if(r < 0){
+                return null
+            }
+            return r
+        }
+        set(value) = when {
+            value == null -> settings.edit().remove(SaveKeys.virtualFloatModeMinimumBatteryVoltage).apply()
+            value < 0 -> throw IllegalArgumentException("Please use null instead of a negative value!")
+            else -> settings.edit().putFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, value).apply()
+        }
 
 }

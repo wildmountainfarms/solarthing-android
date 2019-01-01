@@ -99,8 +99,9 @@ class PersistentService : Service(), Runnable{
         }
         val currentInfo = packetInfoCollection.last()
         var floatModeActivatedInfo: PacketInfo? = null
+        val virtualFloatModeMinimumBatteryVoltage = prefs.virtualFloatModeMinimumBatteryVoltage
         for(info in packetInfoCollection.reversed()){ // go through latest packets first
-            if(info.fxMap.values.none { OperationalMode.FLOAT.isActive(it.operatingMode) }){
+            if(!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)){
                 break
             }
             floatModeActivatedInfo = info

@@ -17,4 +17,5 @@ object DefaultOptions {
     const val initialRequestTimeSeconds = 60
 
     const val subsequentRequestTimeSeconds = 30
+    val virtualFloatModeMinimumBatteryVoltage: Float? = null
 }

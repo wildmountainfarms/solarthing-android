@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var generatorFloatHours: EditText
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
+    private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         generatorFloatHours = findViewById(R.id.generator_float_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
+        virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
 
         loadSettings()
 
@@ -101,6 +103,7 @@ class MainActivity : AppCompatActivity() {
         prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
         prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
         prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+        prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
 
         loadSettings()
     }
@@ -116,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
         initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
         subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
+        virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
 
     }
 }

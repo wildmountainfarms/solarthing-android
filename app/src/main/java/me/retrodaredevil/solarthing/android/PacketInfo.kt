@@ -10,6 +10,9 @@ import me.retrodaredevil.solarthing.packet.fx.WarningMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMErrorMode
 import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
 
+/**
+ * A class that deals with making a [PacketCollection] easier to retrieve values from
+ */
 class PacketInfo(private val packetCollection: PacketCollection) {
     val dateMillis = packetCollection.dateMillis
     /** A map of the port number to the FX status packet associated with that device*/
@@ -90,6 +93,20 @@ class PacketInfo(private val packetCollection: PacketCollection) {
     val generatorTotalWattageString by lazy { generatorTotalWattage.toString() }
     val fxChargerCurrentString by lazy { fxChargerCurrent.toString() }
     val fxBuyCurrentString by lazy { fxBuyCurrent.toString() }
+
+    /**
+     * Because older firmware doesn't always report the FXs being in float mode, we can use a custom battery voltage
+     * check to see if they should be in float mode.
+     * @param virtualFloatModeMinimumBatteryVoltage The minimum battery voltage this needs for this method to return true
+     *                                              or null to only check the FXs for being in float mode
+     * @return true if any of the FXs are in float mode or if the batteryVoltage >= virtualFloatModeMinimumBatteryVoltage
+     */
+    fun isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage: Float?): Boolean {
+        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage){
+            return true
+        }
+        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) }
+    }
 
     override fun equals(other: Any?): Boolean {
         if(super.equals(other)){
