@@ -30,7 +30,7 @@ class PersistentService : Service(), Runnable{
     private val packetInfoCollection: MutableCollection<PacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
     private val dataRequester: DataRequester =
         DatabaseDataRequester(
-            prefs::couchDbProperties,
+            prefs::createCouchDbProperties,
             this::getStartKey
         )
 
@@ -158,6 +158,7 @@ class PersistentService : Service(), Runnable{
         if(request.successful){
             throw IllegalArgumentException("Use this method when request.successful == false! It equals true right now!")
         }
+        val couchDbProperties = request.couchDbProperties
         val notification = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -165,7 +166,11 @@ class PersistentService : Service(), Runnable{
             .setContentTitle("Failed to load solar data. Will Try again.")
             .setContentText(request.simpleStatus)
             .setSubText(getFailedSummary())
-            .setStyle(Notification.BigTextStyle().bigText("Stack trace:\n${request.stackTrace}"))
+            .setStyle(Notification.BigTextStyle().bigText(
+                (if(couchDbProperties!= null) "Properties: ${couchDbProperties.protocol} ${couchDbProperties.host}:${couchDbProperties.port} " +
+                        "${couchDbProperties.username} ${couchDbProperties.dbName}\n" else "") +
+                    "Stack trace:\n${request.stackTrace}")
+            )
             .build()
         notify(notification)
     }

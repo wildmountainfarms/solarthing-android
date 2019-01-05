@@ -13,7 +13,7 @@ import java.lang.NullPointerException
 import java.util.*
 
 class DatabaseDataRequester(
-    private val connectionPropertiesGetter: () -> CouchDbProperties,
+    private val connectionPropertiesCreator: () -> CouchDbProperties,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
     override var currentlyUpdating = false
@@ -29,9 +29,11 @@ class DatabaseDataRequester(
         if(currentlyUpdating){
             throw IllegalStateException("The data is currently being updated!")
         }
+        var couchDbProperties: CouchDbProperties? = null
         try {
             currentlyUpdating = true
-            val client = CouchDbClientAndroid(connectionPropertiesGetter())
+            couchDbProperties = connectionPropertiesCreator()
+            val client = CouchDbClientAndroid(couchDbProperties)
             println("Successfully connected!")
             val list = ArrayList<PacketCollection>()
             for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
@@ -39,19 +41,19 @@ class DatabaseDataRequester(
                 list.add(packetCollection)
             }
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful")
+            return DataRequest(list, true, "Request Successful", couchDbProperties=couchDbProperties)
         } catch(ex: CouchDbException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "Request Failed", getStackTrace(ex), ex.message)
+                "Request Failed", getStackTrace(ex), ex.message, couchDbProperties)
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message)
+                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message, couchDbProperties)
         } catch(ex: Exception) {
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message)
+                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message, couchDbProperties)
         } finally {
             currentlyUpdating = false
         }

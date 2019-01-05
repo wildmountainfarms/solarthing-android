@@ -7,7 +7,10 @@ import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.CheckBox
+import android.widget.CompoundButton
 import android.widget.EditText
+import android.widget.RadioGroup
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import org.lightcouch.CouchDbProperties
 
@@ -21,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var port: EditText
     private lateinit var username: EditText
     private lateinit var password: EditText
+    private lateinit var useAuth: CheckBox
     private lateinit var generatorFloatHours: EditText
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
@@ -36,10 +40,15 @@ class MainActivity : AppCompatActivity() {
         port = findViewById(R.id.port)
         username = findViewById(R.id.username)
         password = findViewById(R.id.password)
+        useAuth = findViewById(R.id.use_auth)
         generatorFloatHours = findViewById(R.id.generator_float_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
+
+        useAuth.setOnCheckedChangeListener{ _, _ ->
+            onUseAuthUpdate()
+        }
 
         loadSettings()
 
@@ -90,15 +99,13 @@ class MainActivity : AppCompatActivity() {
         stopService(serviceIntent)
     }
     private fun saveSettings(){
-        prefs.couchDbProperties = CouchDbProperties(
-            databaseName.text.toString(),
-            false,
-            protocol.text.toString(),
-            host.text.toString(),
-            port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
-            username.text.toString(),
-            password.text.toString()
-        )
+        prefs.couchDb.databaseName = databaseName.text.toString()
+        prefs.couchDb.protocol = protocol.text.toString()
+        prefs.couchDb.host = host.text.toString()
+        prefs.couchDb.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
+        prefs.couchDb.username = username.text.toString()
+        prefs.couchDb.password = password.text.toString()
+        prefs.couchDb.useAuth = useAuth.isChecked
 
         prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
         prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
@@ -108,18 +115,28 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
     }
     private fun loadSettings(){
-        val connectionProperties = prefs.couchDbProperties
-        databaseName.setText(connectionProperties.dbName)
-        protocol.setText(connectionProperties.protocol)
-        host.setText(connectionProperties.host)
-        port.setText(connectionProperties.port.toString())
-        username.setText(connectionProperties.username)
-        password.setText(connectionProperties.password)
+        databaseName.setText(prefs.couchDb.databaseName)
+        protocol.setText(prefs.couchDb.protocol)
+        host.setText(prefs.couchDb.host)
+        port.setText(prefs.couchDb.port.toString())
+        username.setText(prefs.couchDb.username)
+        password.setText(prefs.couchDb.password)
+        useAuth.isChecked = prefs.couchDb.useAuth
+        onUseAuthUpdate()
 
         generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
         initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
         subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
         virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
 
+    }
+    private fun onUseAuthUpdate(){
+        if(useAuth.isChecked){
+            username.alpha = 1f
+            password.alpha = 1f
+        } else {
+            username.alpha = .5f
+            password.alpha = .5f
+        }
     }
 }

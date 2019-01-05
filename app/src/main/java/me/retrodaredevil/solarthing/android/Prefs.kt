@@ -9,30 +9,58 @@ class Prefs(private val context: Context) {
     private val connectionPreferences by lazy { context.getSharedPreferences("connection_properties", 0) }
     private val settings by lazy { context.getSharedPreferences("settings", 0) }
 
-    var couchDbProperties: CouchDbProperties
-        get() {
-            val prefs = connectionPreferences
-            return CouchDbProperties(
-                prefs.getString(SaveKeys.CouchDb.databaseName, DefaultOptions.CouchDb.databaseName),
-                false,
-                prefs.getString(SaveKeys.CouchDb.protocol, DefaultOptions.CouchDb.protocol),
-                prefs.getString(SaveKeys.CouchDb.host, DefaultOptions.CouchDb.host),
-                prefs.getInt(SaveKeys.CouchDb.port, DefaultOptions.CouchDb.port),
-                prefs.getString(SaveKeys.CouchDb.username, DefaultOptions.CouchDb.username),
-                prefs.getString(SaveKeys.CouchDb.password, DefaultOptions.CouchDb.password)
-            )
+
+    inner class CouchDb internal constructor() {
+        var databaseName: String
+            get() = connectionPreferences.getString(SaveKeys.CouchDb.databaseName, null) ?: DefaultOptions.CouchDb.databaseName
+            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.protocol, value).apply()
+
+        var protocol: String
+            get() = connectionPreferences.getString(SaveKeys.CouchDb.protocol, null) ?: DefaultOptions.CouchDb.protocol
+            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.protocol, value).apply()
+
+        var host: String
+            get() = connectionPreferences.getString(SaveKeys.CouchDb.host, null) ?: DefaultOptions.CouchDb.host
+            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.host, value).apply()
+
+        var port: Int
+            get() = connectionPreferences.getInt(SaveKeys.CouchDb.port, DefaultOptions.CouchDb.port)
+            set(value) = connectionPreferences.edit().putInt(SaveKeys.CouchDb.port, value).apply()
+
+        var username: String
+            get() = connectionPreferences.getString(SaveKeys.CouchDb.username, null) ?: DefaultOptions.CouchDb.username
+            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.username, value).apply()
+
+        var password: String
+            get() = connectionPreferences.getString(SaveKeys.CouchDb.password, null) ?: DefaultOptions.CouchDb.password
+            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.password, value).apply()
+
+        var useAuth: Boolean
+            get() = connectionPreferences.getBoolean(SaveKeys.CouchDb.useAuth, DefaultOptions.CouchDb.useAuth)
+            set(value) = connectionPreferences.edit().putBoolean(SaveKeys.CouchDb.useAuth, value).apply()
+    }
+    val couchDb = CouchDb()
+
+    fun createCouchDbProperties(): CouchDbProperties {
+        val username: String?
+        val password: String?
+        if(couchDb.useAuth){
+            username = couchDb.username
+            password = couchDb.password
+        } else {
+            username = null
+            password = null
         }
-        set(value) {
-            val prefs = connectionPreferences
-            prefs.edit()
-                .putString(SaveKeys.CouchDb.databaseName, value.dbName)
-                .putString(SaveKeys.CouchDb.protocol, value.protocol)
-                .putString(SaveKeys.CouchDb.host, value.host)
-                .putInt(SaveKeys.CouchDb.port, value.port)
-                .putString(SaveKeys.CouchDb.username, value.username)
-                .putString(SaveKeys.CouchDb.password, value.password)
-                .apply()
-        }
+        return CouchDbProperties(
+            couchDb.databaseName,
+            false,
+            couchDb.protocol,
+            couchDb.host,
+            couchDb.port,
+            username,
+            password
+        )
+    }
 
     var generatorFloatTimeHours: Float
         get() = settings.getFloat(SaveKeys.generatorFloatTimeHours, DefaultOptions.generatorFloatTimeHours)

@@ -53,6 +53,10 @@
                     tools:layout_editor_absoluteX="0dp"
                     tools:layout_editor_absoluteY="138dp"/>
 
+            <CheckBox
+                    android:text="Use Username and Password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/use_auth"/>
             <EditText
                     android:id="@+id/username"
                     android:layout_width="match_parent"

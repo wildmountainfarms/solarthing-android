@@ -8,6 +8,7 @@ object DefaultOptions {
         const val username = "admin"
         const val password = "relax"
         const val protocol = "http"
+        const val useAuth = false
     }
 
     const val generatorFloatTimeHours = 1.5F
