@@ -102,7 +102,7 @@ class PacketInfo(private val packetCollection: PacketCollection) {
      * @return true if any of the FXs are in float mode or if the batteryVoltage >= virtualFloatModeMinimumBatteryVoltage
      */
     fun isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage: Float?): Boolean {
-        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage){
+        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && generatorOn){
             return true
         }
         return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) }

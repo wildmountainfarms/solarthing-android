@@ -12,10 +12,12 @@ import java.lang.IllegalStateException
 import java.lang.NullPointerException
 import java.util.*
 
-class DatabaseDataRequester(
+class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchDbProperties,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
+
+    @Volatile
     override var currentlyUpdating = false
         private set
 
@@ -26,12 +28,14 @@ class DatabaseDataRequester(
      * @return The [DataRequest] which holds data about if the request was successful or not
      */
     override fun requestData(): DataRequest {
-        if(currentlyUpdating){
-            throw IllegalStateException("The data is currently being updated!")
+        synchronized(this) {
+            if (currentlyUpdating) {
+                throw IllegalStateException("The data is currently being updated!")
+            }
+            currentlyUpdating = true
         }
         var couchDbProperties: CouchDbProperties? = null
         try {
-            currentlyUpdating = true
             couchDbProperties = connectionPropertiesCreator()
             val client = CouchDbClientAndroid(couchDbProperties)
             println("Successfully connected!")
@@ -41,22 +45,27 @@ class DatabaseDataRequester(
                 list.add(packetCollection)
             }
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful", couchDbProperties=couchDbProperties)
+            return DataRequest(list, true, "Request Successful", getAuthDebug(couchDbProperties))
         } catch(ex: CouchDbException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "Request Failed", getStackTrace(ex), ex.message, couchDbProperties)
+                "Request Failed", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message, couchDbProperties)
+                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } catch(ex: Exception) {
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message, couchDbProperties)
+                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } finally {
             currentlyUpdating = false
         }
+    }
+    private fun getAuthDebug(couchDbProperties: CouchDbProperties?): String?{
+        return if(couchDbProperties!= null)
+            "Properties: ${couchDbProperties.protocol} ${couchDbProperties.host}:${couchDbProperties.port} ${couchDbProperties.username} ${couchDbProperties.dbName}\n"
+            else null
     }
     private fun getStackTrace(throwable: Throwable): String{
         val stringWriter = StringWriter()

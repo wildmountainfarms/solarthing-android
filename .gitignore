@@ -1,6 +1,7 @@
 
 # custom:
 /.idea/
+/projectFilesBackup/
 
 # Built application files
 *.apk

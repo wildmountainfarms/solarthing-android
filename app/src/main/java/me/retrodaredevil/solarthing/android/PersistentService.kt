@@ -11,15 +11,15 @@ import android.os.Handler
 import android.os.IBinder
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
+import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
-import me.retrodaredevil.solarthing.android.request.DatabaseDataRequester
-import me.retrodaredevil.solarthing.packet.fx.OperationalMode
 import java.text.DateFormat
 import java.util.*
 
 const val NOTIFICATION_ID: Int = 1
 const val GENERATOR_NOTIFICATION_ID: Int = 2
+
 enum class UpdatePeriodType {
     LARGE_DATA, SMALL_DATA
 }
@@ -27,12 +27,14 @@ enum class UpdatePeriodType {
 class PersistentService : Service(), Runnable{
     private val prefs = Prefs(this)
     private val handler by lazy { Handler() }
+    /** A Mutable Collection that is sorted from oldest to newest*/
     private val packetInfoCollection: MutableCollection<PacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
-    private val dataRequester: DataRequester =
-        DatabaseDataRequester(
-            prefs::createCouchDbProperties,
-            this::getStartKey
-        )
+
+//    private val dataRequesters: List<DataRequester> = listOf()
+    private val dataRequester = CouchDbDataRequester(
+        prefs::createCouchDbProperties,
+        this::getStartKey
+    )
 
     private var task: AsyncTask<*, *, *>? = null
     private var lastGeneratorNotification: Long? = null
@@ -56,7 +58,7 @@ class PersistentService : Service(), Runnable{
         }
         task?.cancel(true)
 
-        task = DataUpdaterTask(dataRequester, this@PersistentService::onDataRequest).execute()
+        task = DataUpdaterTask(dataRequester, this::onDataRequest).execute()
         when(updatePeriodType){
             UpdatePeriodType.LARGE_DATA -> {
                 handler.postDelayed(this, prefs.initialRequestTimeSeconds * 1000L)
@@ -104,7 +106,7 @@ class PersistentService : Service(), Runnable{
             if(!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)){
                 break
             }
-            floatModeActivatedInfo = info
+            floatModeActivatedInfo = info // get the oldest packet where all the packets up to the current packet have float mode active (the packet where float mode started)
         }
         val notification = NotificationHandler.createStatusNotification(
             this@PersistentService,
@@ -158,7 +160,12 @@ class PersistentService : Service(), Runnable{
         if(request.successful){
             throw IllegalArgumentException("Use this method when request.successful == false! It equals true right now!")
         }
-        val couchDbProperties = request.couchDbProperties
+        var bigText = ""
+        if(request.authDebug != null){
+            bigText += request.authDebug + "\n"
+        }
+        bigText += "Stack trace:\n${request.stackTrace}"
+
         val notification = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -166,11 +173,7 @@ class PersistentService : Service(), Runnable{
             .setContentTitle("Failed to load solar data. Will Try again.")
             .setContentText(request.simpleStatus)
             .setSubText(getFailedSummary())
-            .setStyle(Notification.BigTextStyle().bigText(
-                (if(couchDbProperties!= null) "Properties: ${couchDbProperties.protocol} ${couchDbProperties.host}:${couchDbProperties.port} " +
-                        "${couchDbProperties.username} ${couchDbProperties.dbName}\n" else "") +
-                    "Stack trace:\n${request.stackTrace}")
-            )
+            .setStyle(Notification.BigTextStyle().bigText(bigText))
             .build()
         notify(notification)
     }
