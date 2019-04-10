@@ -41,7 +41,7 @@ class Prefs(private val context: Context) {
     }
     val couchDb = CouchDb()
 
-    fun createCouchDbProperties(): CouchDbProperties {
+    fun createCouchDbProperties(): List<CouchDbProperties> {
         val username: String?
         val password: String?
         if(couchDb.useAuth){
@@ -51,15 +51,25 @@ class Prefs(private val context: Context) {
             username = null
             password = null
         }
-        return CouchDbProperties(
-            couchDb.databaseName,
-            false,
-            couchDb.protocol,
-            couchDb.host,
-            couchDb.port,
-            username,
-            password
-        )
+        val database = couchDb.databaseName
+        val protocol = couchDb.protocol
+        val port = couchDb.port
+        val hostsString = couchDb.host
+        val hosts = hostsString.split(",")
+
+        val r = ArrayList<CouchDbProperties>()
+        for(host in hosts){
+            r.add(CouchDbProperties(
+                database,
+                false,
+                protocol,
+                host,
+                port,
+                username,
+                password
+            ))
+        }
+        return r
     }
 
     var generatorFloatTimeHours: Float

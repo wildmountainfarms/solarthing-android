@@ -38,7 +38,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:hint="Host"
+                    android:hint="host1,host2,host3,etc"
                     android:inputType="textPersonName"
                     tools:layout_editor_absoluteX="0dp"
                     tools:layout_editor_absoluteY="92dp"/>

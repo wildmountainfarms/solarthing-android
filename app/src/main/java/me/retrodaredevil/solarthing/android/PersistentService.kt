@@ -14,6 +14,7 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
 import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
+import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
 import java.text.DateFormat
 import java.util.*
 
@@ -31,10 +32,14 @@ class PersistentService : Service(), Runnable{
     private val packetInfoCollection: MutableCollection<PacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
 
 //    private val dataRequesters: List<DataRequester> = listOf()
-    private val dataRequester = CouchDbDataRequester(
-        prefs::createCouchDbProperties,
-        this::getStartKey
+    private var dataRequesters = emptyList<DataRequester>()
+    private val dataRequester = DataRequesterMultiplexer(
+        this::dataRequesters
     )
+//    private val dataRequester = CouchDbDataRequester(
+//        prefs::createCouchDbProperties,
+//        this::getStartKey
+//    )
 
     private var task: AsyncTask<*, *, *>? = null
     private var lastGeneratorNotification: Long? = null
@@ -52,11 +57,12 @@ class PersistentService : Service(), Runnable{
 
     override fun run() {
         if(task?.status == AsyncTask.Status.RUNNING){
-            if(!doNotify(getTimedOutSummary())){
+            if(!doNotify(getTimedOutSummary(null))){
                 setToTimedOut()
             }
         }
         task?.cancel(true)
+        dataRequesters = prefs.createCouchDbProperties().map{ CouchDbDataRequester({it}, this::getStartKey)}
 
         task = DataUpdaterTask(dataRequester, this::onDataRequest).execute()
         when(updatePeriodType){
@@ -81,14 +87,14 @@ class PersistentService : Service(), Runnable{
         if(dataRequest.successful) {
             println("[123]Got successful data request")
             packetInfoCollection.addAll(dataRequest.packetCollectionList.map { PacketInfo(it) })
-            summary = getConnectedSummary()
+            summary = getConnectedSummary(dataRequest.host)
         } else {
             println("[123]Got unsuccessful data request")
-            summary = getFailedSummary()
+            summary = getFailedSummary(dataRequest.host)
         }
         if(!doNotify(summary)){
             if(dataRequest.successful){
-                setToNoData()
+                setToNoData(dataRequest)
             } else {
                 setToFailedNotification(dataRequest)
             }
@@ -142,17 +148,17 @@ class PersistentService : Service(), Runnable{
         }
         return true
     }
-    private fun getTimedOutSummary() = "timed out at ${getTimeString()}"
-    private fun getConnectedSummary() = "last connection success"
-    private fun getFailedSummary() = "failed at ${getTimeString()}"
+    private fun getTimedOutSummary(host: String?) = (if(host != null) "$host " else "") + "time out ${getTimeString()}"
+    private fun getConnectedSummary(host: String?) = (if(host != null) "$host " else "") + "success"
+    private fun getFailedSummary(host: String?) = (if(host != null) "$host " else "") + "fail at ${getTimeString()}"
 
-    private fun setToNoData(){
+    private fun setToNoData(dataRequest: DataRequest) {
         val notification = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setContentText("Connection successful, but no data.")
-            .setSubText(getConnectedSummary())
+            .setSubText(getConnectedSummary(dataRequest.host))
             .build()
         notify(notification)
     }
@@ -172,7 +178,7 @@ class PersistentService : Service(), Runnable{
             .setSmallIcon(R.drawable.solar_panel)
             .setContentTitle("Failed to load solar data. Will Try again.")
             .setContentText(request.simpleStatus)
-            .setSubText(getFailedSummary())
+            .setSubText(getFailedSummary(request.host))
             .setStyle(Notification.BigTextStyle().bigText(bigText))
             .build()
         notify(notification)
@@ -183,7 +189,7 @@ class PersistentService : Service(), Runnable{
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setContentText("Last request timed out. Will try again.")
-            .setSubText(getFailedSummary())
+            .setSubText(getTimedOutSummary(null))
             .build()
         notify(notification)
     }

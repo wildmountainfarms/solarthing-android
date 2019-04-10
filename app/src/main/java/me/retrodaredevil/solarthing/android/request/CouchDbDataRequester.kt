@@ -1,16 +1,19 @@
 package me.retrodaredevil.solarthing.android.request
 
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.packet.PacketCollection
 import me.retrodaredevil.solarthing.packet.PacketCollections
-import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import org.lightcouch.CouchDbProperties
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.lang.IllegalStateException
-import java.lang.NullPointerException
+import java.net.URL
 import java.util.*
+
+private val GSON = GsonBuilder().create()
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchDbProperties,
@@ -37,27 +40,46 @@ class CouchDbDataRequester(
         var couchDbProperties: CouchDbProperties? = null
         try {
             couchDbProperties = connectionPropertiesCreator()
-            val client = CouchDbClientAndroid(couchDbProperties)
+//            val client = CouchDbClientAndroid(couchDbProperties)
+
             println("Successfully connected!")
+            val url = URL(couchDbProperties.protocol + "://" + couchDbProperties.host + ":" + couchDbProperties.port
+                    + "/" + couchDbProperties.dbName + "/_design/packets/_view/millis?startkey=" + startKeyGetter())
+            val stream = url.openStream()
+            val reader = BufferedReader(InputStreamReader(stream))
+            val sb = StringBuilder()
+
+            while(true){
+                val line = reader.readLine() ?: break
+                sb.append(line + "\n")
+            }
+            val jsonString = sb.toString()
+
+            val jsonData = GSON.fromJson(jsonString, JsonObject::class.java)
             val list = ArrayList<PacketCollection>()
-            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
+            for(jsonPacket in jsonData.getAsJsonArray("rows")){
+                val jsonObject = jsonPacket.asJsonObject
                 val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
                 list.add(packetCollection)
             }
+//            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
+//                val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
+//                list.add(packetCollection)
+//            }
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful", getAuthDebug(couchDbProperties))
+            return DataRequest(list, true, "Request Successful", couchDbProperties.host, getAuthDebug(couchDbProperties))
         } catch(ex: CouchDbException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "Request Failed", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "Request Failed", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) NPE (Likely Parsing Error)", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "(Please report) NPE (Likely Parsing Error)", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } catch(ex: Exception) {
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) ${ex.javaClass.simpleName} (Unknown)", getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "(Please report) ${ex.javaClass.simpleName} (Unknown)", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
         } finally {
             currentlyUpdating = false
         }

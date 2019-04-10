@@ -9,6 +9,7 @@ data class DataRequest(
     val packetCollectionList: List<PacketCollection>,
     val successful: Boolean,
     val simpleStatus: String,
+    val host: String?,
     val stackTrace: String? = null,
     val errorMessage: String? = null,
     val authDebug: String? = null

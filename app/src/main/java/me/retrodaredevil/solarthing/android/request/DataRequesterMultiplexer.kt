@@ -1,36 +1,40 @@
 package me.retrodaredevil.solarthing.android.request
 
 
-private class RequesterState(
-    val requester: DataRequester
-){
+private class RequesterState(val index: Int){
     var failedLastTime = false
     var priorityUntil: Int? = null
 }
 
 
-class DataRequesterMultiplexer : DataRequester {
+class DataRequesterMultiplexer (
+    private val requesterListSupplier: () -> List<DataRequester>
+) : DataRequester {
 
-    private val requesterStateList: List<RequesterState>
+    private var requesterStateList: List<RequesterState>? = null
     private var requestCount = 0
+
+    constructor(requesterList: List<DataRequester>) : this({requesterList})
 
     @Volatile
     override var currentlyUpdating: Boolean = false
         private set
 
-    constructor(requesterList: List<DataRequester>){
-        if (requesterList.isEmpty()){
-            throw IllegalArgumentException("Cannot use a list of DataRequester's that is empty")
-        }
-        requesterStateList = requesterList.map { RequesterState(it) }
-    }
-
     override fun requestData(): DataRequest {
-        if(currentlyUpdating){
-            throw IllegalStateException("Cannot request data while already requesting data!")
+        synchronized(this) {
+            if (currentlyUpdating) {
+                throw IllegalStateException("The data is currently being updated!")
+            }
+            currentlyUpdating = true
         }
-        currentlyUpdating = true
         try {
+            val requesters = requesterListSupplier()
+            var requesterStateList = this.requesterStateList
+            if(requesterStateList == null || requesterStateList.size != requesters.size){
+                requesterStateList = requesters.mapIndexed { index, _ ->  RequesterState(index)}
+                this.requesterStateList = requesterStateList
+            }
+
             var lastRequesterState: RequesterState? = null
             var requesterState: RequesterState? = null
             for(element in requesterStateList.reversed()){ // go through the least priority first
@@ -55,7 +59,7 @@ class DataRequesterMultiplexer : DataRequester {
                     element.priorityUntil = null
                 }
             }
-            val dataRequest = requesterState.requester.requestData()
+            val dataRequest = requesters[requesterState.index].requestData()
             if(dataRequest.successful){
                 requesterState.failedLastTime = false
                 if(requesterState.priorityUntil == null) {
