@@ -4,16 +4,13 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.packet.PacketCollection
 import me.retrodaredevil.solarthing.packet.PacketCollections
+import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import org.lightcouch.CouchDbProperties
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.net.URL
 import java.util.*
 
-private val GSON = GsonBuilder().create()
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchDbProperties,
@@ -40,32 +37,14 @@ class CouchDbDataRequester(
         var couchDbProperties: CouchDbProperties? = null
         try {
             couchDbProperties = connectionPropertiesCreator()
-//            val client = CouchDbClientAndroid(couchDbProperties)
+            val client = CouchDbClientAndroid(couchDbProperties)
 
             println("Successfully connected!")
-            val url = URL(couchDbProperties.protocol + "://" + couchDbProperties.host + ":" + couchDbProperties.port
-                    + "/" + couchDbProperties.dbName + "/_design/packets/_view/millis?startkey=" + startKeyGetter())
-            val stream = url.openStream()
-            val reader = BufferedReader(InputStreamReader(stream))
-            val sb = StringBuilder()
-
-            while(true){
-                val line = reader.readLine() ?: break
-                sb.append(line + "\n")
-            }
-            val jsonString = sb.toString()
-
-            val jsonData = GSON.fromJson(jsonString, JsonObject::class.java)
             val list = ArrayList<PacketCollection>()
-            for(jsonPacket in jsonData.getAsJsonArray("rows")){
-                val jsonObject = jsonPacket.asJsonObject
+            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
                 val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
                 list.add(packetCollection)
             }
-//            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
-//                val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
-//                list.add(packetCollection)
-//            }
             println("Updated collections!")
             return DataRequest(list, true, "Request Successful", couchDbProperties.host, getAuthDebug(couchDbProperties))
         } catch(ex: CouchDbException){

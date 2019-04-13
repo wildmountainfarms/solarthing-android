@@ -71,7 +71,8 @@ object NotificationHandler {
                     ":" +
                     (if(minutesString.length == 1) "0$minutesString" else minutesString) +
                     " " +
-                    if(timeLeft < 0) "PAST" else "left"
+                    (if(timeLeft < 0) "PAST" else "left") +
+                    "\n"
         } else {
             ""
         }
@@ -83,15 +84,17 @@ object NotificationHandler {
         } else {
             ""
         }
+        val generatorWattageText = if(info.generatorOn || info.generatorToBatteryWattage > 0 || info.generatorTotalWattage > 0){
+            " to battery: ${info.generatorToBatteryWattageString} W | total: ${info.generatorTotalWattageString} W"
+        } else {
+            ""
+        }
 
         val style = Notification.BigTextStyle()
-            .bigText("Power from Solar Panels: ${info.pvWattageString} W\n" +
-                    "Generator is ${if(info.generatorOn) "ON" else "OFF"} $timeLeftText\n" +
+            .bigText("Power from Solar Panels: ${info.pvWattageString} W | Daily kWH: ${info.dailyKWHoursString}\n" +
+                    "Generator (${if(info.generatorOn) "ON" else "OFF"}) $timeLeftText" + generatorWattageText + "\n" +
                     (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
-                    "Generator -> Battery: ${info.generatorToBatteryWattageString} W\n" +
-                    "Generator Total: ${info.generatorTotalWattageString} W\n" +
                     "FX Charger Current: ${info.fxChargerCurrentString}A|FX Buy Current: ${info.fxBuyCurrentString}A\n" +
-                    "Daily kWH: ${info.dailyKWHoursString}\n" +
                     "Devices: $devicesString\n" +
                     (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                     (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
@@ -101,9 +104,6 @@ object NotificationHandler {
                     "MX Charger Mode: $mxChargerModesString\n" +
                     "MX Aux Mode: $mxAuxModesString"
             )
-
-//        val intent = Intent(context, NotificationClearedReceiver::class.java)
-//        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0)
 
         return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
             .setSmallIcon(R.drawable.solar_panel)

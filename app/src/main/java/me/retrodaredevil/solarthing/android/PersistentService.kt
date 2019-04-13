@@ -148,9 +148,18 @@ class PersistentService : Service(), Runnable{
         }
         return true
     }
-    private fun getTimedOutSummary(host: String?) = (if(host != null) "$host " else "") + "time out ${getTimeString()}"
-    private fun getConnectedSummary(host: String?) = (if(host != null) "$host " else "") + "success"
-    private fun getFailedSummary(host: String?) = (if(host != null) "$host " else "") + "fail at ${getTimeString()}"
+    private fun getHostString(host: String?): String {
+        if(host != null){
+            if(host.length <= 15){ // allow a host like 255.255.255.255 (15 characters)
+                return "$host "
+            }
+            return host.substring(0, 15 - 3) + "... "
+        }
+        return ""
+    }
+    private fun getTimedOutSummary(host: String?) = getHostString(host) + "time out ${getTimeString()}"
+    private fun getConnectedSummary(host: String?) = getHostString(host) + "success"
+    private fun getFailedSummary(host: String?) = getHostString(host) + "fail at ${getTimeString()}"
 
     private fun setToNoData(dataRequest: DataRequest) {
         val notification = getBuilder()
