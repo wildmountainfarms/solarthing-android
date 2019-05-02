@@ -2,6 +2,7 @@ package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -74,29 +75,16 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
-        restartService()
+        restartService(this)
     }
     fun saveSettings(view: View){
         saveSettings()
     }
     fun restartService(view: View){
-        restartService()
+        restartService(this)
     }
     fun stopService(view: View){
-        stopService()
-    }
-    private fun restartService(){
-        val serviceIntent = Intent(this, PersistentService::class.java)
-        stopService(serviceIntent)
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent)
-        } else {
-            startService(serviceIntent)
-        }
-    }
-    private fun stopService(){
-        val serviceIntent = Intent(this, PersistentService::class.java)
-        stopService(serviceIntent)
+        stopService(this)
     }
     private fun saveSettings(){
         prefs.couchDb.databaseName = databaseName.text.toString()

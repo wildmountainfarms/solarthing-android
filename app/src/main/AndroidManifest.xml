@@ -4,9 +4,9 @@
     package="me.retrodaredevil.solarthing.android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android:persistent"/>
-    <uses-permission android:name="android:RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--<uses-permission android:name="android.permission.WAKE_LOCK" />-->
 
     <application
             android:allowBackup="true"
@@ -16,9 +16,14 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true"
+            tools:ignore="GoogleAppIndexingWarning">
 
-        tools:ignore="GoogleAppIndexingWarning">
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+        <receiver android:name="me.retrodaredevil.solarthing.android.BootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -27,9 +32,10 @@
             </intent-filter>
         </activity>
         <service android:name=".PersistentService"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="true"
-            />
+                 android:permission="android.permission.BIND_JOB_SERVICE"
+                 android:enabled="true"
+                 android:exported="true"
+        />
     </application>
 
 </manifest>

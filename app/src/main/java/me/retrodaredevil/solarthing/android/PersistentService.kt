@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
@@ -9,6 +10,7 @@ import android.os.AsyncTask
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.widget.Toast
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
 import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
@@ -23,6 +25,20 @@ const val GENERATOR_NOTIFICATION_ID: Int = 2
 
 enum class UpdatePeriodType {
     LARGE_DATA, SMALL_DATA
+}
+fun restartService(context: Context){
+    val serviceIntent = Intent("me.retrodaredevil.solarthing.android.PersistentService")
+    serviceIntent.setClass(context, PersistentService::class.java)
+    context.stopService(serviceIntent)
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(serviceIntent)
+    } else {
+        context.startService(serviceIntent)
+    }
+}
+fun stopService(context: Context){
+    val serviceIntent = Intent(context, PersistentService::class.java)
+    context.stopService(serviceIntent)
 }
 
 class PersistentService : Service(), Runnable{
@@ -49,9 +65,12 @@ class PersistentService : Service(), Runnable{
         return null
     }
 
+    @SuppressLint("ShowToast")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         setToLoadingNotification()
         handler.postDelayed(this, 300)
+        Toast.makeText(this, "SolarThing Notification Service Started", Toast.LENGTH_LONG).show()
+        println("Starting service")
         return START_STICKY
     }
 
@@ -217,6 +236,7 @@ class PersistentService : Service(), Runnable{
         getManager().notify(NOTIFICATION_ID, notification)
         startForeground(NOTIFICATION_ID, notification)
     }
+    @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             return Notification.Builder(this, NotificationChannels.PERSISTENT_STATUS.id)
