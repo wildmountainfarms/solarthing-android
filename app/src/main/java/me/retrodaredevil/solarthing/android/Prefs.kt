@@ -11,10 +11,6 @@ class Prefs(private val context: Context) {
 
 
     inner class CouchDb internal constructor() {
-        @Deprecated("Will be hard-coded instead of changeable in the future")
-        var databaseName: String
-            get() = connectionPreferences.getString(SaveKeys.CouchDb.databaseName, null) ?: DefaultOptions.CouchDb.databaseName
-            set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.protocol, value).apply()
 
         var protocol: String
             get() = connectionPreferences.getString(SaveKeys.CouchDb.protocol, null) ?: DefaultOptions.CouchDb.protocol

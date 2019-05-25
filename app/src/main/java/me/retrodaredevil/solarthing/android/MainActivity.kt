@@ -15,7 +15,6 @@ class MainActivity : AppCompatActivity() {
 
     private val prefs = Prefs(this)
 
-    private lateinit var databaseName: EditText
     private lateinit var protocol: EditText
     private lateinit var host: EditText
     private lateinit var port: EditText
@@ -31,7 +30,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        databaseName = findViewById(R.id.database_name)
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -84,7 +82,6 @@ class MainActivity : AppCompatActivity() {
         me.retrodaredevil.solarthing.android.service.stopService(this)
     }
     private fun saveSettings(){
-        prefs.couchDb.databaseName = databaseName.text.toString()
         prefs.couchDb.protocol = protocol.text.toString()
         prefs.couchDb.host = host.text.toString()
         prefs.couchDb.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
@@ -100,7 +97,6 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
     }
     private fun loadSettings(){
-        databaseName.setText(prefs.couchDb.databaseName)
         protocol.setText(prefs.couchDb.protocol)
         host.setText(prefs.couchDb.host)
         port.setText(prefs.couchDb.port.toString())

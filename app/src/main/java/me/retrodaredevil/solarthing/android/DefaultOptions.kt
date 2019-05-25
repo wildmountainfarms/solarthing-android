@@ -3,7 +3,6 @@ package me.retrodaredevil.solarthing.android
 object DefaultOptions {
     object CouchDb {
         const val port = 5984
-        const val databaseName = "solarthing"
         const val host = "192.168.1.110"
         const val username = "admin"
         const val password = "relax"

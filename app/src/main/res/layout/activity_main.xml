@@ -16,14 +16,6 @@
                 android:orientation="vertical">
 
             <EditText
-                    android:id="@+id/database_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:hint="Database Name"
-                    android:inputType="textPersonName"/>
-
-            <EditText
                     android:id="@+id/protocol"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
