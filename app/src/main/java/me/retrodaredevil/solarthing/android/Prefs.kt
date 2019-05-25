@@ -11,6 +11,7 @@ class Prefs(private val context: Context) {
 
 
     inner class CouchDb internal constructor() {
+        @Deprecated("Will be hard-coded instead of changeable in the future")
         var databaseName: String
             get() = connectionPreferences.getString(SaveKeys.CouchDb.databaseName, null) ?: DefaultOptions.CouchDb.databaseName
             set(value) = connectionPreferences.edit().putString(SaveKeys.CouchDb.protocol, value).apply()
@@ -51,25 +52,22 @@ class Prefs(private val context: Context) {
             username = null
             password = null
         }
-        val database = couchDb.databaseName
         val protocol = couchDb.protocol
         val port = couchDb.port
         val hostsString = couchDb.host
         val hosts = hostsString.split(",")
 
-        val r = ArrayList<CouchDbProperties>()
-        for(host in hosts){
-            r.add(CouchDbProperties(
-                database,
+        return hosts.map {
+            CouchDbProperties(
+                null,
                 false,
                 protocol,
-                host,
+                it,
                 port,
                 username,
                 password
-            ))
+            )
         }
-        return r
     }
 
     var generatorFloatTimeHours: Float

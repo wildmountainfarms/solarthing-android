@@ -1,9 +1,8 @@
 package me.retrodaredevil.solarthing.android.request
 
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
-import me.retrodaredevil.solarthing.packet.PacketCollection
-import me.retrodaredevil.solarthing.packet.PacketCollections
+import me.retrodaredevil.iot.packets.PacketCollection
+import me.retrodaredevil.iot.packets.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import org.lightcouch.CouchDbProperties
@@ -14,6 +13,7 @@ import java.util.*
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchDbProperties,
+    private val jsonPacketGetter: PacketCollections.JsonPacketGetter,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
 
@@ -42,7 +42,7 @@ class CouchDbDataRequester(
             println("Successfully connected!")
             val list = ArrayList<PacketCollection>()
             for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
-                val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"))
+                val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"), jsonPacketGetter)
                 list.add(packetCollection)
             }
             println("Updated collections!")

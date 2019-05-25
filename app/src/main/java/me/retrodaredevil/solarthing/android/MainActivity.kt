@@ -2,18 +2,13 @@ package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.CheckBox
-import android.widget.CompoundButton
 import android.widget.EditText
-import android.widget.RadioGroup
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
-import org.lightcouch.CouchDbProperties
 
 class MainActivity : AppCompatActivity() {
 
@@ -75,16 +70,16 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
-        restartService(this)
+        me.retrodaredevil.solarthing.android.service.restartService(this)
     }
     fun saveSettings(view: View){
         saveSettings()
     }
     fun restartService(view: View){
-        restartService(this)
+        me.retrodaredevil.solarthing.android.service.restartService(this)
     }
     fun stopService(view: View){
-        stopService(this)
+        me.retrodaredevil.solarthing.android.service.stopService(this)
     }
     private fun saveSettings(){
         prefs.couchDb.databaseName = databaseName.text.toString()

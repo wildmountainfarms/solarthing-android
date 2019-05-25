@@ -3,7 +3,7 @@ package me.retrodaredevil.solarthing.android.notifications
 import android.app.Notification
 import android.content.Context
 import android.os.Build
-import me.retrodaredevil.solarthing.android.PacketInfo
+import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
 import java.text.DateFormat
 import java.util.*
@@ -15,7 +15,7 @@ const val SEPARATOR = "|"
 object NotificationHandler {
 
 
-    fun createGeneratorAlert(context: Context, floatModeActivatedInfo: PacketInfo, currentInfo: PacketInfo, generatorFloatTimeMillis: Long): Notification {
+    fun createGeneratorAlert(context: Context, floatModeActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, generatorFloatTimeMillis: Long): Notification {
         val shouldHaveTurnedOffAt = floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis
         val now = System.currentTimeMillis()
         if(now < shouldHaveTurnedOffAt){
@@ -39,11 +39,11 @@ object NotificationHandler {
 
     /**
      *
-     * @param info The PacketInfo representing a simpler view of a PacketCollection
+     * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
      * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, info: PacketInfo, summary: String = "",
-                                 floatModeActivatedInfo: PacketInfo?, generatorFloatTimeMillis: Long): Notification {
+    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = "",
+                                 floatModeActivatedInfo: SolarPacketInfo?, generatorFloatTimeMillis: Long): Notification {
         val devicesStringList = ArrayList<String>()
         devicesStringList.addAll(info.fxMap.values.map { "[${it.address} FX]" })
         devicesStringList.addAll(info.mxMap.values.map { "[${it.address} MX]" })

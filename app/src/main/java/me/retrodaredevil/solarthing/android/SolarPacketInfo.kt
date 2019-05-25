@@ -1,24 +1,25 @@
 package me.retrodaredevil.solarthing.android
 
-import me.retrodaredevil.solarthing.packet.PacketCollection
-import me.retrodaredevil.solarthing.packet.PacketType
-import me.retrodaredevil.solarthing.packet.StatusPacket
-import me.retrodaredevil.solarthing.packet.fx.FXErrorMode
-import me.retrodaredevil.solarthing.packet.fx.FXStatusPacket
-import me.retrodaredevil.solarthing.packet.fx.OperationalMode
-import me.retrodaredevil.solarthing.packet.fx.WarningMode
-import me.retrodaredevil.solarthing.packet.mxfm.MXFMErrorMode
-import me.retrodaredevil.solarthing.packet.mxfm.MXFMStatusPacket
+import me.retrodaredevil.iot.packets.PacketCollection
+import me.retrodaredevil.iot.solar.SolarPacket
+import me.retrodaredevil.iot.solar.SolarPacketType
+import me.retrodaredevil.iot.solar.fx.FXErrorMode
+import me.retrodaredevil.iot.solar.fx.FXStatusPacket
+import me.retrodaredevil.iot.solar.fx.OperationalMode
+import me.retrodaredevil.iot.solar.fx.WarningMode
+import me.retrodaredevil.iot.solar.mx.MXErrorMode
+import me.retrodaredevil.iot.solar.mx.MXStatusPacket
+
 
 /**
  * A class that deals with making a [PacketCollection] easier to retrieve values from
  */
-class PacketInfo(private val packetCollection: PacketCollection) {
+class SolarPacketInfo(private val packetCollection: PacketCollection) {
     val dateMillis = packetCollection.dateMillis
     /** A map of the port number to the FX status packet associated with that device*/
     val fxMap: Map<Int, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
-    val mxMap: Map<Int, MXFMStatusPacket>
+    val mxMap: Map<Int, MXStatusPacket>
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -49,17 +50,17 @@ class PacketInfo(private val packetCollection: PacketCollection) {
         fxMap = HashMap()
         mxMap = HashMap()
         for(packet in packetCollection.packets){
-            if(packet is StatusPacket){
+            if(packet is SolarPacket){
                 when(packet.packetType){
-                    PacketType.FX_STATUS -> {
+                    SolarPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
                         fxMap[fx.address] = fx
                     }
-                    PacketType.MXFM_STATUS -> {
-                        val mx = packet as MXFMStatusPacket
+                    SolarPacketType.MXFM_STATUS -> {
+                        val mx = packet as MXStatusPacket
                         mxMap[mx.address] = mx
                     }
-                    PacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
+                    SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                 }
             }
@@ -83,7 +84,7 @@ class PacketInfo(private val packetCollection: PacketCollection) {
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
         errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorMode) } }
-            + MXFMErrorMode.values().count { mxfmErrorMode -> mxMap.values.any { mxfmErrorMode.isActive(it.errorMode) } }
+            + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorMode) } }
     }
 
     val pvWattageString by lazy { pvWattage.toString() }
@@ -112,7 +113,7 @@ class PacketInfo(private val packetCollection: PacketCollection) {
         if(super.equals(other)){
             return true
         }
-        if(other is PacketInfo){
+        if(other is SolarPacketInfo){
             return other.dateMillis == dateMillis
                 && other.fxMap.keys == fxMap.keys
                 && other.mxMap.keys == mxMap.keys
