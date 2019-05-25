@@ -31,7 +31,10 @@ enum class NotificationChannels(
         R.string.outhouse_status_description, NotificationManager.IMPORTANCE_DEFAULT),
     GENERATOR_NOTIFICATION("generator_notification",
         R.string.generator_notification,
-        R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.CYAN, showBadge = true)
+        R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.CYAN, showBadge = true),
+    VACANT_NOTIFICATION("vacant_notification",
+        R.string.vacant_notification,
+        R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true)
     ;
 
 

@@ -8,4 +8,6 @@
     <string name="solar_status_description">Shows solar data</string>
     <string name="outhouse_status">Outhouse status</string>
     <string name="outhouse_status_description">Shows the status and weather in the outhouse</string>
+    <string name="vacant_notification">Vacant notification</string>
+    <string name="vacant_notification_status">Notifies you when the outhouse becomes vacant</string>
 </resources>
