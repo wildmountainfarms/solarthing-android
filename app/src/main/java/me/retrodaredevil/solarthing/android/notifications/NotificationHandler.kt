@@ -105,7 +105,9 @@ object NotificationHandler {
                     "MX Aux Mode: $mxAuxModesString"
             )
 
-        return createNotificationBuilder(context, NotificationChannels.PERSISTENT_STATUS.id)
+        return createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")

@@ -4,7 +4,10 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.os.Build
+import android.service.notification.NotificationListenerService
+import android.support.v4.app.NotificationManagerCompat
 import me.retrodaredevil.iot.outhouse.*
 import me.retrodaredevil.iot.packets.Modes
 import me.retrodaredevil.iot.packets.PacketCollection
@@ -22,7 +25,7 @@ class OuthouseDataService(
     override fun onInit() {
     }
 
-    override fun onEnd() {
+    override fun onCancel() {
         getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
     }
 
@@ -51,13 +54,16 @@ class OuthouseDataService(
                 }
                 notify(
                     getBuilder()
-                        .setSmallIcon(R.drawable.solar_panel) // TODO change icon
-                        .setContentTitle("Outhouse Status" + if(occupancyPacket != null) " | Occupancy: ${Modes.getActiveMode(
-                            Occupancy::class.java, occupancyPacket.occupancy).modeName}" else "")
-                        .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${weatherPacket.temperatureCelsius} (C) " +
+                        .setSmallIcon(R.drawable.potty)
+                        .setContentTitle("Outhouse occupancy: " + if(occupancyPacket != null) Modes.getActiveMode(
+                            Occupancy::class.java, occupancyPacket.occupancy).modeName else "NO OCCUPANCY DATA")
+                        .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${getTemperatureString(weatherPacket.temperatureCelsius)} " +
                                 "| Humidity: ${round(weatherPacket.humidityPercent.toDouble()).toInt()}%")
+                        .setSubText(getConnectedSummary(dataRequest.host))
                         .setOngoing(true)
                         .setOnlyAlertOnce(true)
+                        .setShowWhen(true)
+                        .setWhen(packetCollection.dateMillis)
                         .build()
                 )
             }
@@ -65,6 +71,10 @@ class OuthouseDataService(
             println("unsuccessful outhouse data request")
             getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
         }
+    }
+    private fun getTemperatureString(temperatureCelsius: Number): String {
+        val f = temperatureCelsius.toDouble() * 9 / 5 + 32
+        return "$f (F)"
     }
 
     override fun onTimeout() {
@@ -75,6 +85,9 @@ class OuthouseDataService(
     override val startKey: Long
         get() = System.currentTimeMillis() - 5 * 60 * 1000
 
+    override val shouldUpdate: Boolean
+        get() = NotificationChannels.OUTHOUSE_STATUS.isCurrentlyEnabled(service)
+
     private fun notify(notification: Notification){
         getManager().notify(OUTHOUSE_NOTIFICATION_ID, notification)
 //        service.startForeground(OUTHOUSE_NOTIFICATION_ID, notification)
@@ -82,7 +95,7 @@ class OuthouseDataService(
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            return Notification.Builder(service.applicationContext, NotificationChannels.PERSISTENT_STATUS.id)
+            return Notification.Builder(service.applicationContext, NotificationChannels.OUTHOUSE_STATUS.id)
         }
         return Notification.Builder(service.applicationContext)
     }

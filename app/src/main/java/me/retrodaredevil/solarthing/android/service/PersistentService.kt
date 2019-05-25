@@ -1,6 +1,8 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -13,7 +15,10 @@ import me.retrodaredevil.iot.outhouse.OuthousePackets
 import me.retrodaredevil.iot.packets.PacketCollections
 import me.retrodaredevil.iot.solar.SolarPackets
 import me.retrodaredevil.solarthing.android.Prefs
+import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.clone
+import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
+import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
@@ -54,10 +59,10 @@ class PersistentService : Service(), Runnable{
     /** A Mutable Collection that is sorted from oldest to newest*/
 
     private val services = listOf(
-        ServiceObject(SolarDataService(this, prefs), "solarthing",
-            PacketCollections.JsonPacketGetter { packetObject -> SolarPackets.createFromJson(packetObject) }),
         ServiceObject(OuthouseDataService(this), "outhouse",
-            PacketCollections.JsonPacketGetter { packetObject -> OuthousePackets.createFromJson(packetObject) })
+            PacketCollections.JsonPacketGetter { packetObject -> OuthousePackets.createFromJson(packetObject) }),
+        ServiceObject(SolarDataService(this, prefs), "solarthing",
+            PacketCollections.JsonPacketGetter { packetObject -> SolarPackets.createFromJson(packetObject) })
     )
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -72,17 +77,38 @@ class PersistentService : Service(), Runnable{
         handler.postDelayed(this, 300)
         Toast.makeText(this, "SolarThing Notification Service Started", Toast.LENGTH_LONG).show()
         println("Starting service")
+        val notification = getBuilder()
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setContentText("SolarThing service is running")
+                .build()
+        getManager().notify(PERSISTENT_NOTIFICATION_ID, notification)
+        startForeground(PERSISTENT_NOTIFICATION_ID, notification)
         return START_STICKY
     }
+    @SuppressWarnings("deprecated")
+    private fun getBuilder(): Notification.Builder {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            return Notification.Builder(this, NotificationChannels.PERSISTENT.id)
+        }
+        return Notification.Builder(this)
+    }
+    private fun getManager() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     override fun run() {
         var needsLargeData = false
         for(service in services){
             val task = service.task
             if(task != null){
+                service.task = null
                 if(task.cancel(true)) { // if the task was still running then...
                     service.dataService.onTimeout()
                 }
+            }
+            if(!service.dataService.shouldUpdate){
+                service.dataService.onCancel()
+                continue
             }
 
             service.dataRequesters = prefs.createCouchDbProperties().map{
@@ -110,7 +136,7 @@ class PersistentService : Service(), Runnable{
         handler.removeCallbacks(this)
         for(service in services){
             service.task?.cancel(true)
-            service.dataService.onEnd()
+            service.dataService.onCancel()
         }
     }
 }

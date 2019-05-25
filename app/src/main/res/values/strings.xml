@@ -1,7 +1,11 @@
 <resources>
-    <string name="app_name">Solar</string>
-    <string name="persistent_status">Persistent Status</string>
-    <string name="persistent_status_description">Persistent Notification that shows the status</string>
+    <string name="app_name">WMF</string>
     <string name="generator_notification">Generator Alert</string>
     <string name="generator_notification_status">Sends an alert when the generator should be turned off</string>
+    <string name="persistent">Persistent indicator</string>
+    <string name="persistent_description">Notification that shows the SolarThing service is running</string>
+    <string name="solar_status">Solar status</string>
+    <string name="solar_status_description">Shows solar data</string>
+    <string name="outhouse_status">Outhouse status</string>
+    <string name="outhouse_status_description">Shows the status and weather in the outhouse</string>
 </resources>

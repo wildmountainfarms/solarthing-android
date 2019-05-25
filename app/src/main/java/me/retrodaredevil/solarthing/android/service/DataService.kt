@@ -4,7 +4,7 @@ import me.retrodaredevil.solarthing.android.request.DataRequest
 
 interface DataService {
     fun onInit()
-    fun onEnd()
+    fun onCancel()
 
     fun onNewDataRequestLoadStart()
     fun onDataRequest(dataRequest: DataRequest)
@@ -12,4 +12,6 @@ interface DataService {
 
     val updatePeriodType: UpdatePeriodType
     val startKey: Long
+
+    val shouldUpdate: Boolean
 }

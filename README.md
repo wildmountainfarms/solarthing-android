@@ -6,4 +6,6 @@ Available at https://play.google.com/store/apps/details?id=me.retrodaredevil.sol
 
 For use with https://github.com/eidolon1138/solarthing
 
+This works best with Android 8, but will still function on older versions.
+
 ### Features to Add:

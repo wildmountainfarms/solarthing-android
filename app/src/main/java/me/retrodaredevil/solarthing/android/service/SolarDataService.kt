@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.os.Build
 import me.retrodaredevil.solarthing.android.DefaultOptions
 import me.retrodaredevil.solarthing.android.Prefs
@@ -28,7 +29,7 @@ class SolarDataService(
     override fun onInit() {
         setToLoadingNotification()
     }
-    override fun onEnd() {
+    override fun onCancel() {
         getManager().cancel(SOLAR_NOTIFICATION_ID)
         cancelGenerator()
     }
@@ -129,6 +130,9 @@ class SolarDataService(
         else
             packetInfoCollection.last().dateMillis
 
+    override val shouldUpdate: Boolean
+        get() = NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)
+
 
     private fun setToNoData(dataRequest: DataRequest) {
         val notification = getBuilder()
@@ -184,12 +188,11 @@ class SolarDataService(
     }
     private fun notify(notification: Notification){
         getManager().notify(SOLAR_NOTIFICATION_ID, notification)
-        service.startForeground(SOLAR_NOTIFICATION_ID, notification)
     }
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            return Notification.Builder(service.applicationContext, NotificationChannels.PERSISTENT_STATUS.id)
+            return Notification.Builder(service.applicationContext, NotificationChannels.SOLAR_STATUS.id)
         }
         return Notification.Builder(service.applicationContext)
     }

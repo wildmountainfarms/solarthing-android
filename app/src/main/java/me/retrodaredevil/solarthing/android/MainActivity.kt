@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
+import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
@@ -67,6 +68,7 @@ class MainActivity : AppCompatActivity() {
                     if (notificationChannel.vibrationPattern != null) {
                         vibrationPattern = notificationChannel.vibrationPattern
                     }
+                    setShowBadge(notificationChannel.showBadge)
                 })
             }
         }
