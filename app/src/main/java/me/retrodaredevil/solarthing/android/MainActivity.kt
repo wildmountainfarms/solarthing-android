@@ -1,7 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
-import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +9,8 @@ import android.view.View
 import android.widget.CheckBox
 import android.widget.EditText
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
+import me.retrodaredevil.solarthing.android.service.restartService
+import me.retrodaredevil.solarthing.android.service.stopService
 
 class MainActivity : AppCompatActivity() {
 
@@ -70,16 +71,15 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
-        me.retrodaredevil.solarthing.android.service.restartService(this)
     }
     fun saveSettings(view: View){
         saveSettings()
     }
     fun restartService(view: View){
-        me.retrodaredevil.solarthing.android.service.restartService(this)
+        restartService(this)
     }
     fun stopService(view: View){
-        me.retrodaredevil.solarthing.android.service.stopService(this)
+        stopService(this)
     }
     private fun saveSettings(){
         prefs.couchDb.protocol = protocol.text.toString()

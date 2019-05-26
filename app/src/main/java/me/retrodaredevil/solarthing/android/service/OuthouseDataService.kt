@@ -8,10 +8,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.Icon
 import android.os.Build
-import android.service.notification.NotificationListenerService
-import android.support.v4.app.NotificationManagerCompat
 import me.retrodaredevil.iot.outhouse.*
 import me.retrodaredevil.iot.packets.Modes
 import me.retrodaredevil.iot.packets.PacketCollection
@@ -19,22 +18,38 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.OUTHOUSE_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.VACANT_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import java.util.*
 import kotlin.Comparator
-import kotlin.collections.HashMap
 import kotlin.math.round
 
-private val vacantNotifyMap: MutableMap<Int, Boolean> = HashMap()
+private const val VACANT_NOTIFY_ACTION = "me.retrodaredevil.solarthing.android.service.action.enable_vacant_notify"
+private const val VACANT_NOTIFY_CLEAR_ACTION = "me.retrodaredevil.solarthing.android.service.action.disable_vacant_notify"
 
 class OuthouseDataService(
     private val service: Service
 ) : DataService {
+
+    private var vacantNotify = false
+
     override fun onInit() {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(VACANT_NOTIFY_ACTION)
+        service.registerReceiver(vacantNotifyReceiver, intentFilter)
+
+        val clearIntentFilter = IntentFilter()
+        clearIntentFilter.addAction(VACANT_NOTIFY_CLEAR_ACTION)
+        service.registerReceiver(vacantNotifyClearReceiver, clearIntentFilter)
     }
 
     override fun onCancel() {
         getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+    }
+
+    override fun onEnd() {
+        service.unregisterReceiver(vacantNotifyReceiver)
+        service.unregisterReceiver(vacantNotifyClearReceiver)
     }
 
     override fun onNewDataRequestLoadStart() {
@@ -61,10 +76,10 @@ class OuthouseDataService(
                     }
                 }
                 val occupancy: Occupancy? = if(occupancyPacket != null) Modes.getActiveMode(Occupancy::class.java, occupancyPacket.occupancy) else null
-                if(occupancy == Occupancy.OCCUPIED){
+                if(occupancy == Occupancy.OCCUPIED && !vacantNotify){
                     getManager().cancel(VACANT_NOTIFICATION_ID)
                 }
-                if(occupancy == Occupancy.VACANT && vacantNotifyMap[hashCode()] == true){
+                if(occupancy == Occupancy.VACANT && vacantNotify){
                     getManager().notify(VACANT_NOTIFICATION_ID,
                         getBuilder(NotificationChannels.VACANT_NOTIFICATION)
                             .setSmallIcon(R.drawable.potty)
@@ -73,7 +88,7 @@ class OuthouseDataService(
                             .setWhen(packetCollection.dateMillis)
                             .build()
                     )
-                    vacantNotifyMap[hashCode()] = false
+                    vacantNotify = false
                 }
                 val builder = getBuilder()
                     .setSmallIcon(if(occupancy == Occupancy.OCCUPIED) R.drawable.potty_occupied else R.drawable.potty)
@@ -85,22 +100,20 @@ class OuthouseDataService(
                     .setOnlyAlertOnce(true)
                     .setShowWhen(true)
                     .setWhen(packetCollection.dateMillis)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                    builder.setGroup(getGroup(OUTHOUSE_NOTIFICATION_ID))
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     if(occupancy == Occupancy.OCCUPIED) {
-                        val intent = Intent(service, EnableVacantNotification::class.java)
-                        intent.putExtra("hashCode", hashCode())
-                        val currentVacantNotify = vacantNotifyMap[hashCode()] ?: false
-                        intent.putExtra("newValue", !currentVacantNotify)
                         val pendingIntent = PendingIntent.getBroadcast(
                             service, 0,
-                            intent,
+                            Intent(VACANT_NOTIFY_ACTION),
                             PendingIntent.FLAG_CANCEL_CURRENT
                         )
-                        builder.setContentIntent(pendingIntent)
                         builder.addAction(
                             Notification.Action.Builder(
                                 Icon.createWithResource(service, R.drawable.potty),
-                                if(currentVacantNotify) "Disable vacant notify" else "Enable vacant notify",
+                                "Enable vacant notify",
                                 pendingIntent
                             ).build()
                         )
@@ -137,15 +150,35 @@ class OuthouseDataService(
         return Notification.Builder(service.applicationContext)
     }
     private fun getManager() = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-}
-class EnableVacantNotification : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        if(intent != null){
-            val hashCode = intent.getIntExtra("hashCode", 0)
-            val newValue = intent.getBooleanExtra("newValue", false)
-            vacantNotifyMap[hashCode] = newValue
-            println("set vacant notify map to $newValue")
+
+    private val vacantNotifyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            println("vacantNotifyReceiver")
+            vacantNotify = true
+            println("set vacantNotify to true!")
+            val builder = getBuilder(NotificationChannels.SILENT_VACANT_NOTIFICATION)
+                    .setSmallIcon(R.drawable.potty_occupied)
+                    .setContentTitle("You will be notified when outhouse is vacant")
+                    .setContentText("Clear notification to disable notification")
+                    .setDeleteIntent(
+                        PendingIntent.getBroadcast(
+                            service,
+                            0,
+                            Intent(VACANT_NOTIFY_CLEAR_ACTION),
+                            PendingIntent.FLAG_CANCEL_CURRENT
+                        )
+                    )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                builder.setGroup(getGroup(VACANT_NOTIFICATION_ID))
+            }
+            getManager().notify(VACANT_NOTIFICATION_ID, builder.build())
         }
     }
+    private val vacantNotifyClearReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            vacantNotify = false
+            println("set vacantNotify to false!")
+        }
 
+    }
 }

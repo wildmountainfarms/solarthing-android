@@ -34,7 +34,10 @@ enum class NotificationChannels(
         R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.CYAN, showBadge = true),
     VACANT_NOTIFICATION("vacant_notification",
         R.string.vacant_notification,
-        R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true)
+        R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true),
+    SILENT_VACANT_NOTIFICATION("silent_vacant_notification",
+        R.string.silent_vacant_notification,
+        R.string.silent_vacant_notification_status, NotificationManager.IMPORTANCE_LOW)
     ;
 
 

@@ -10,4 +10,8 @@
     <string name="outhouse_status_description">Shows the status and weather in the outhouse</string>
     <string name="vacant_notification">Vacant notification</string>
     <string name="vacant_notification_status">Notifies you when the outhouse becomes vacant</string>
+    <string name="silent_vacant_notification">Silent vacant notification</string>
+    <string name="silent_vacant_notification_status">This notification shows up when the vacant notification is
+        requested
+    </string>
 </resources>

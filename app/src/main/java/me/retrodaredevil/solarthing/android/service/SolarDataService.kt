@@ -10,10 +10,7 @@ import me.retrodaredevil.solarthing.android.DefaultOptions
 import me.retrodaredevil.solarthing.android.Prefs
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
-import me.retrodaredevil.solarthing.android.notifications.GENERATOR_NOTIFICATION_ID
-import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
-import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
-import me.retrodaredevil.solarthing.android.notifications.SOLAR_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import java.util.*
 import kotlin.Comparator
@@ -32,6 +29,9 @@ class SolarDataService(
     override fun onCancel() {
         getManager().cancel(SOLAR_NOTIFICATION_ID)
         cancelGenerator()
+    }
+
+    override fun onEnd() {
     }
     override fun onNewDataRequestLoadStart() {
     }
@@ -191,11 +191,17 @@ class SolarDataService(
     }
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
+        val builder =
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            return Notification.Builder(service.applicationContext, NotificationChannels.SOLAR_STATUS.id)
+            Notification.Builder(service.applicationContext, NotificationChannels.SOLAR_STATUS.id)
+        } else {
+            Notification.Builder(service.applicationContext)
         }
-        return Notification.Builder(service.applicationContext)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(getGroup(SOLAR_NOTIFICATION_ID))
+        }
+        return builder
     }
-    private fun getManager() = service.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private fun getManager() = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
 }

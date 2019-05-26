@@ -27,7 +27,7 @@ object NotificationHandler {
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
             .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_NOTIFICATION.id)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_NOTIFICATION.id, GENERATOR_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
             .setContentText("Should have turned off at $turnOffAtString!")
@@ -105,7 +105,7 @@ object NotificationHandler {
                     "MX Aux Mode: $mxAuxModesString"
             )
 
-        return createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id)
+        return createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
@@ -118,10 +118,15 @@ object NotificationHandler {
             .setShowWhen(true)
             .build()
     }
-    private fun createNotificationBuilder(context: Context, channelId: String): Notification.Builder {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return Notification.Builder(context, channelId)
+    private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int): Notification.Builder {
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, channelId)
+        } else {
+            Notification.Builder(context)
         }
-        return Notification.Builder(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(getGroup(notificationId))
+        }
+        return builder
     }
 }
