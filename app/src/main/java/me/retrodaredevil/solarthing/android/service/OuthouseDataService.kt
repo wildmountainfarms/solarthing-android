@@ -90,7 +90,7 @@ class OuthouseDataService(
                     )
                     vacantNotify = false
                 }
-                val builder = getBuilder()
+                val builder = getBuilder(if(occupancy == Occupancy.OCCUPIED) NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED else NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
                     .setSmallIcon(if(occupancy == Occupancy.OCCUPIED) R.drawable.potty_occupied else R.drawable.potty)
                     .setContentTitle("Outhouse occupancy: " + if(occupancy != null) occupancy.modeName else "NO OCCUPANCY DATA")
                     .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${getTemperatureString(weatherPacket.temperatureCelsius)} " +
@@ -140,10 +140,10 @@ class OuthouseDataService(
         get() = System.currentTimeMillis() - 5 * 60 * 1000
 
     override val shouldUpdate: Boolean
-        get() = NotificationChannels.OUTHOUSE_STATUS.isCurrentlyEnabled(service)
+        get() = NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT.isCurrentlyEnabled(service) || NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED.isCurrentlyEnabled(service)
 
     @SuppressWarnings("deprecated")
-    private fun getBuilder(notificationChannels: NotificationChannels = NotificationChannels.OUTHOUSE_STATUS): Notification.Builder {
+    private fun getBuilder(notificationChannels: NotificationChannels): Notification.Builder {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             return Notification.Builder(service.applicationContext, notificationChannels.id)
         }

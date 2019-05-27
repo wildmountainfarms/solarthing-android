@@ -6,8 +6,12 @@
     <string name="persistent_description">Notification that shows the SolarThing service is running</string>
     <string name="solar_status">Solar status</string>
     <string name="solar_status_description">Shows solar data</string>
-    <string name="outhouse_status">Outhouse status</string>
-    <string name="outhouse_status_description">Shows the status and weather in the outhouse</string>
+
+    <string name="outhouse_status_vacant">Outhouse status while vacant</string>
+    <string name="outhouse_status_vacant_description">Shows the status and weather in the outhouse while vacant</string>
+    <string name="outhouse_status_occupied">Outhouse status while occupied</string>
+    <string name="outhouse_status_occupied_description">Shows the status and weather in the outhouse while occupied</string>
+
     <string name="vacant_notification">Vacant notification</string>
     <string name="vacant_notification_status">Notifies you when the outhouse becomes vacant</string>
     <string name="silent_vacant_notification">Silent vacant notification</string>
