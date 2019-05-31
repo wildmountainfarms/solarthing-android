@@ -18,41 +18,50 @@ enum class NotificationChannels(
     val lightColor: Int? = null,
     val enableVibration: Boolean = false,
     val vibrationPattern: LongArray? = null,
-    val showBadge: Boolean = false
+    val showBadge: Boolean = false,
+    val notificationChannelGroups: NotificationChannelGroups? = null
 ) {
     PERSISTENT("persistent",
         R.string.persistent,
         R.string.persistent_description, NotificationManager.IMPORTANCE_MIN),
     SOLAR_STATUS("solar_status",
         R.string.solar_status,
-        R.string.solar_status_description, NotificationManager.IMPORTANCE_LOW),
+        R.string.solar_status_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     OUTHOUSE_STATUS_WHILE_VACANT("outhouse_status_vacant",
         R.string.outhouse_status_vacant,
-        R.string.outhouse_status_vacant_description, NotificationManager.IMPORTANCE_LOW),
+        R.string.outhouse_status_vacant_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
     OUTHOUSE_STATUS_WHILE_OCCUPIED("outhouse_status_occupied",
         R.string.outhouse_status_occupied,
-        R.string.outhouse_status_occupied_description, NotificationManager.IMPORTANCE_LOW),
+        R.string.outhouse_status_occupied_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
 
     GENERATOR_NOTIFICATION("generator_notification",
         R.string.generator_notification,
-        R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.CYAN, showBadge = true),
+        R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH,
+        enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
     VACANT_NOTIFICATION("vacant_notification",
         R.string.vacant_notification,
-        R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true),
+        R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
     SILENT_VACANT_NOTIFICATION("silent_vacant_notification",
         R.string.silent_vacant_notification,
-        R.string.silent_vacant_notification_status, NotificationManager.IMPORTANCE_LOW)
+        R.string.silent_vacant_notification_status, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE)
     ;
 
 
     fun getName(context: Context): String = context.getString(nameResId)
     fun getDescription(context: Context): String = context.getString(descriptionResId)
 
-    fun isCurrentlyEnabled(context: Context) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        val importance = (context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).getNotificationChannel(this.id).importance
-        importance != NotificationManager.IMPORTANCE_NONE
-    } else {
-        true
+    fun isCurrentlyEnabled(context: Context): Boolean {
+        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if(notificationChannelGroups != null){
+                if(manager.getNotificationChannelGroup(notificationChannelGroups.id).isBlocked){
+                    return false
+                }
+            }
+            val importance = manager.getNotificationChannel(this.id).importance
+            return importance != NotificationManager.IMPORTANCE_NONE
+        }
+        return manager.areNotificationsEnabled()
     }
 }

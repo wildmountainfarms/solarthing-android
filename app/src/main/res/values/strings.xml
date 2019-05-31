@@ -18,4 +18,8 @@
     <string name="silent_vacant_notification_status">This notification shows up when the vacant notification is
         requested
     </string>
+    <string name="solar_group">Solar</string>
+    <string name="solar_group_description">All notifications related to solar status</string>
+    <string name="outhouse_group">Outhouse</string>
+    <string name="outhouse_group_description">All notifications related to outhouse status</string>
 </resources>

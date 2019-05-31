@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import android.app.NotificationChannel
+import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.CheckBox
 import android.widget.EditText
+import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.stopService
@@ -52,6 +54,15 @@ class MainActivity : AppCompatActivity() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            for(channelGroup in NotificationChannelGroups.values()){
+                notificationManager.createNotificationChannelGroup(NotificationChannelGroup(
+                    channelGroup.id, channelGroup.getName(this)
+                ).apply {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        description = channelGroup.getDescription(this@MainActivity)
+                    }
+                })
+            }
             for(notificationChannel in NotificationChannels.values()){
                 notificationManager.createNotificationChannel(NotificationChannel(
                     notificationChannel.id,
@@ -68,6 +79,9 @@ class MainActivity : AppCompatActivity() {
                         vibrationPattern = notificationChannel.vibrationPattern
                     }
                     setShowBadge(notificationChannel.showBadge)
+                    if(notificationChannel.notificationChannelGroups != null){
+                        group = notificationChannel.notificationChannelGroups.id
+                    }
                 })
             }
         }
