@@ -61,7 +61,7 @@ class OuthouseDataService(
             sorted.addAll(dataRequest.packetCollectionList)
             if(sorted.isEmpty()){
                 println("no outhouse data!")
-                getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+//                getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
             } else {
                 val packetCollection = sorted.last()
                 var occupancyPacket: OccupancyPacket? = null
@@ -123,7 +123,7 @@ class OuthouseDataService(
             }
         } else {
             println("unsuccessful outhouse data request")
-            getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+//            getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
         }
     }
     private fun getTemperatureString(temperatureCelsius: Number): String {
@@ -132,7 +132,7 @@ class OuthouseDataService(
     }
 
     override fun onTimeout() {
-        getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+//        getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
     }
 
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA

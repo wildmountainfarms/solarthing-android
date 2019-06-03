@@ -90,7 +90,7 @@ class PersistentService : Service(), Runnable{
         val builder = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
+            .setSmallIcon(R.drawable.horse)
             .setContentText("SolarThing service is running")
             .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
             .setWhen(1) // make it the lowest priority
@@ -101,7 +101,7 @@ class PersistentService : Service(), Runnable{
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             builder.addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.solar_panel),
+                    Icon.createWithResource(this, R.drawable.horse),
                     "Stop service",
                     PendingIntent.getBroadcast(
                         this, 0,
@@ -112,7 +112,7 @@ class PersistentService : Service(), Runnable{
             )
             builder.addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.solar_panel),
+                    Icon.createWithResource(this, R.drawable.horse),
                     "Restart service",
                     PendingIntent.getBroadcast(
                         this, 0,
