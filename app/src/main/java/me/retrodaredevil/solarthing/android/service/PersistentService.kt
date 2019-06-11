@@ -1,10 +1,7 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -34,9 +31,19 @@ import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
 
 
 fun restartService(context: Context){
-    val serviceIntent = Intent("me.retrodaredevil.solarthing.android.service.PersistentService")
-    serviceIntent.setClass(context, PersistentService::class.java)
+    val serviceIntent = Intent(context, PersistentService::class.java)
     context.stopService(serviceIntent)
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(serviceIntent)
+    } else {
+        context.startService(serviceIntent)
+    }
+}
+fun startServiceIfNotRunning(context: Context){
+    if(isServiceRunning(context, PersistentService::class.java)){
+        return
+    }
+    val serviceIntent = Intent(context, PersistentService::class.java)
     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         context.startForegroundService(serviceIntent)
     } else {
@@ -46,6 +53,11 @@ fun restartService(context: Context){
 fun stopService(context: Context){
     val serviceIntent = Intent(context, PersistentService::class.java)
     context.stopService(serviceIntent)
+}
+private fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    @Suppress("DEPRECATION")
+    return manager.getRunningServices(Int.MAX_VALUE).any { serviceClass.name == it.service.className }
 }
 private const val STOP_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.stop_service"
 private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.restart_service"
@@ -83,7 +95,7 @@ class PersistentService : Service(), Runnable{
             service.dataService.onInit()
         }
         handler.postDelayed(this, 300)
-        Toast.makeText(this, "SolarThing Notification Service Started", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "SolarThing Notification Service started", Toast.LENGTH_LONG).show()
         println("Starting service")
         updateNotification(System.currentTimeMillis() + 300)
         return START_STICKY
@@ -95,7 +107,8 @@ class PersistentService : Service(), Runnable{
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.horse)
-            .setContentText("SolarThing service is running")
+            .setContentTitle("SolarThing service is running")
+            .setContentText("${services.count { it.dataService.shouldUpdate }} service(s) are running")
             .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
             .setWhen(1) // make it the lowest priority
             .setShowWhen(false)
@@ -168,7 +181,7 @@ class PersistentService : Service(), Runnable{
 
             service.dataRequesters = prefs.createCouchDbProperties().map{
                 CouchDbDataRequester(
-                    {it.clone().apply { dbName = service.databaseName }},
+                    { it.clone().apply { dbName = service.databaseName }},
                     service.jsonPacketGetter,
                     { service.dataService.startKey }
                 )

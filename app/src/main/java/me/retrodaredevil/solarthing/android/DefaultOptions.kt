@@ -18,4 +18,6 @@ object DefaultOptions {
 
     const val subsequentRequestTimeSeconds = 30
     val virtualFloatModeMinimumBatteryVoltage: Float? = null
+
+    const val startOnBoot = true
 }

@@ -94,6 +94,10 @@
                     android:inputType="number"
                     android:ems="10"
                     android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
+            <CheckBox
+                    android:text="Start on boot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/start_on_boot"/>
             <Button
                     android:id="@+id/save_button"
                     android:layout_width="wrap_content"

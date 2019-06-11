@@ -13,7 +13,11 @@ fun getHostString(host: String?): String {
         if(host.length <= 15){ // allow a host like 255.255.255.255 (15 characters)
             return "$host "
         }
-        return host.substring(0, 15 - 3) + "... "
+        val sub = host.substring(0, 15 - 3)
+        if(sub.endsWith('.')){
+            return "$sub.. "
+        }
+        return "$sub... "
     }
     return ""
 }
@@ -34,7 +38,7 @@ fun Notification.Builder.failedNotification(request: DataRequest): Notification.
 
     return setOngoing(true)
         .setOnlyAlertOnce(true)
-        .setContentTitle("Failed to load data. Will Try again.")
+        .setContentTitle("Failed to load data. Will try again.")
         .setContentText(request.simpleStatus)
         .setSubText(getFailedSummary(request.host))
         .setStyle(Notification.BigTextStyle().bigText(bigText))

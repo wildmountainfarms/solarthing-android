@@ -92,4 +92,8 @@ class Prefs(private val context: Context) {
             else -> settings.edit().putFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, value).apply()
         }
 
+    var startOnBoot: Boolean
+        get() = settings.getBoolean(SaveKeys.startOnBoot, DefaultOptions.startOnBoot)
+        set(value) = settings.edit().putBoolean(SaveKeys.startOnBoot, value).apply()
+
 }

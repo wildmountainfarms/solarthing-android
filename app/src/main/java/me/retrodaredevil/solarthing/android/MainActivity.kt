@@ -9,9 +9,11 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.Toast
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.service.restartService
+import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var subsequentRequestTimeout: EditText
     private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
 
+    private lateinit var startOnBoot: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
+        startOnBoot = findViewById(R.id.start_on_boot)
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
@@ -85,6 +89,7 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         }
+        startServiceIfNotRunning(this)
     }
     fun saveSettings(view: View){
         saveSettings()
@@ -107,8 +112,10 @@ class MainActivity : AppCompatActivity() {
         prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
         prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
+        prefs.startOnBoot = startOnBoot.isChecked
 
         loadSettings()
+        Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
     private fun loadSettings(){
         protocol.setText(prefs.couchDb.protocol)
@@ -123,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
         subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
         virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
+        startOnBoot.isChecked = prefs.startOnBoot
 
     }
     private fun onUseAuthUpdate(){

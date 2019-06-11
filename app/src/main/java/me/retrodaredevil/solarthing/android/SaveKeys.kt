@@ -17,4 +17,5 @@ object SaveKeys{
     const val subsequentRequestTimeSeconds = "subsequent_request_timeout"
     const val virtualFloatModeMinimumBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
 
+    const val startOnBoot = "start_on_boot"
 }
