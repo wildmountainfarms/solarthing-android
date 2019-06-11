@@ -15,9 +15,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
-import me.retrodaredevil.iot.outhouse.OuthousePackets
-import me.retrodaredevil.iot.packets.PacketCollections
-import me.retrodaredevil.iot.solar.SolarPackets
+import com.google.gson.JsonObject
+import me.retrodaredevil.solarthing.outhouse.OuthousePackets
+import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.PacketCollections
+import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.android.MainActivity
 import me.retrodaredevil.solarthing.android.Prefs
 import me.retrodaredevil.solarthing.android.R
@@ -51,7 +53,7 @@ private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android
 private class ServiceObject(
     val dataService: DataService,
     val databaseName: String,
-    val jsonPacketGetter: PacketCollections.JsonPacketGetter
+    val jsonPacketGetter: (JsonObject) -> Packet
 ){
     var task: AsyncTask<*, *, *>? = null
 
@@ -67,10 +69,8 @@ class PersistentService : Service(), Runnable{
     /** A Mutable Collection that is sorted from oldest to newest*/
 
     private val services = listOf(
-        ServiceObject(OuthouseDataService(this), "outhouse",
-            PacketCollections.JsonPacketGetter { packetObject -> OuthousePackets.createFromJson(packetObject) }),
-        ServiceObject(SolarDataService(this, prefs), "solarthing",
-            PacketCollections.JsonPacketGetter { packetObject -> SolarPackets.createFromJson(packetObject) })
+        ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
+        ServiceObject(SolarDataService(this, prefs), "solarthing", SolarPackets::createFromJson)
     )
 
     override fun onBind(intent: Intent?): IBinder? {

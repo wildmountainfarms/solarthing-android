@@ -24,10 +24,15 @@ class SolarDataService(
     private var lastGeneratorNotification: Long? = null
 
     override fun onInit() {
-        setToLoadingNotification()
+        notify(
+            getBuilder()
+                .loadingNotification()
+                .setSmallIcon(R.drawable.solar_panel)
+                .build()
+        )
     }
     override fun onCancel() {
-        getManager().cancel(SOLAR_NOTIFICATION_ID)
+        service.getManager().cancel(SOLAR_NOTIFICATION_ID)
         cancelGenerator()
     }
 
@@ -38,7 +43,12 @@ class SolarDataService(
 
     override fun onTimeout() {
         if(!doNotify(getTimedOutSummary(null))){
-            setToTimedOut()
+            notify(
+                getBuilder()
+                    .timedOutNotification()
+                    .setSmallIcon(R.drawable.solar_panel)
+                    .build()
+            )
         }
     }
 
@@ -59,9 +69,19 @@ class SolarDataService(
         }
         if(!doNotify(summary)){
             if(dataRequest.successful){
-                setToNoData(dataRequest)
+                notify(
+                    getBuilder()
+                        .noDataNotification(dataRequest)
+                        .setSmallIcon(R.drawable.solar_panel)
+                        .build()
+                )
             } else {
-                setToFailedNotification(dataRequest)
+                notify(
+                    getBuilder()
+                        .failedNotification(dataRequest)
+                        .setSmallIcon(R.drawable.solar_panel)
+                        .build()
+                )
             }
         }
 
@@ -95,7 +115,7 @@ class SolarDataService(
             if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
                 val last = lastGeneratorNotification
                 if (last == null || last + DefaultOptions.generatorNotifyIntervalMillis < now) {
-                    getManager().notify(
+                    service.getManager().notify(
                         GENERATOR_NOTIFICATION_ID,
                         NotificationHandler.createGeneratorAlert(
                             service.applicationContext,
@@ -114,7 +134,7 @@ class SolarDataService(
         return true
     }
     private fun cancelGenerator(){
-        getManager().cancel(GENERATOR_NOTIFICATION_ID)
+        service.getManager().cancel(GENERATOR_NOTIFICATION_ID)
         lastGeneratorNotification = null
     }
 
@@ -134,60 +154,8 @@ class SolarDataService(
         get() = NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)
 
 
-    private fun setToNoData(dataRequest: DataRequest) {
-        val notification = getBuilder()
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setContentText("Connection successful, but no data.")
-            .setSubText(getConnectedSummary(dataRequest.host))
-            .build()
-        notify(notification)
-    }
-    private fun setToFailedNotification(request: DataRequest){
-        if(request.successful){
-            throw IllegalArgumentException("Use this method when request.successful == false! It equals true right now!")
-        }
-        var bigText = ""
-        if(request.authDebug != null){
-            bigText += request.authDebug + "\n"
-        }
-        bigText += "Stack trace:\n${request.stackTrace}"
-
-        val notification = getBuilder()
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setContentTitle("Failed to load solar data. Will Try again.")
-            .setContentText(request.simpleStatus)
-            .setSubText(getFailedSummary(request.host))
-            .setStyle(Notification.BigTextStyle().bigText(bigText))
-            .build()
-        notify(notification)
-    }
-    private fun setToTimedOut(){
-        val notification = getBuilder()
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setContentText("Last request timed out. Will try again.")
-            .setSubText(getTimedOutSummary(null))
-            .build()
-        notify(notification)
-    }
-    private fun setToLoadingNotification(){
-        val notification = getBuilder()
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setContentText("Loading Solar Data")
-            .setSubText("started loading at ${getTimeString()}")
-            .setProgress(2, 1, true)
-            .build()
-        notify(notification)
-    }
     private fun notify(notification: Notification){
-        getManager().notify(SOLAR_NOTIFICATION_ID, notification)
+        service.getManager().notify(SOLAR_NOTIFICATION_ID, notification)
     }
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
@@ -202,6 +170,5 @@ class SolarDataService(
         }
         return builder
     }
-    private fun getManager() = service.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
 }

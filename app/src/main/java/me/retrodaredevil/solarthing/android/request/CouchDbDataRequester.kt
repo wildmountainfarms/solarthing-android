@@ -1,8 +1,9 @@
 package me.retrodaredevil.solarthing.android.request
 
 import com.google.gson.JsonObject
-import me.retrodaredevil.iot.packets.PacketCollection
-import me.retrodaredevil.iot.packets.PacketCollections
+import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.PacketCollection
+import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import org.lightcouch.CouchDbProperties
@@ -13,7 +14,7 @@ import java.util.*
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchDbProperties,
-    private val jsonPacketGetter: PacketCollections.JsonPacketGetter,
+    private val jsonPacketGetter: (JsonObject) -> Packet,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
 

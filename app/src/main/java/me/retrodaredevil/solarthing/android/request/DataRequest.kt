@@ -1,6 +1,6 @@
 package me.retrodaredevil.solarthing.android.request
 
-import me.retrodaredevil.iot.packets.PacketCollection
+import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 
 
 /**

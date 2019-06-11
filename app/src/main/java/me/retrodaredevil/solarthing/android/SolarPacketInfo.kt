@@ -1,14 +1,14 @@
 package me.retrodaredevil.solarthing.android
 
-import me.retrodaredevil.iot.packets.PacketCollection
-import me.retrodaredevil.iot.solar.SolarPacket
-import me.retrodaredevil.iot.solar.SolarPacketType
-import me.retrodaredevil.iot.solar.fx.FXErrorMode
-import me.retrodaredevil.iot.solar.fx.FXStatusPacket
-import me.retrodaredevil.iot.solar.fx.OperationalMode
-import me.retrodaredevil.iot.solar.fx.WarningMode
-import me.retrodaredevil.iot.solar.mx.MXErrorMode
-import me.retrodaredevil.iot.solar.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.packets.collection.PacketCollection
+import me.retrodaredevil.solarthing.solar.SolarPacket
+import me.retrodaredevil.solarthing.solar.SolarPacketType
+import me.retrodaredevil.solarthing.solar.fx.FXErrorMode
+import me.retrodaredevil.solarthing.solar.fx.FXStatusPacket
+import me.retrodaredevil.solarthing.solar.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.fx.WarningMode
+import me.retrodaredevil.solarthing.solar.mx.MXErrorMode
+import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
 
 
 /**
