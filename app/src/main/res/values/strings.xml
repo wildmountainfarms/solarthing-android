@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WMF</string>
+    <string name="app_name">ST</string>
     <string name="generator_notification">Generator Alert</string>
     <string name="generator_notification_status">Sends an alert when the generator should be turned off</string>
     <string name="persistent">Persistent indicator</string>

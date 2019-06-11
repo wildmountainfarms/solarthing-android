@@ -1,10 +1,7 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
-import android.content.Context.NOTIFICATION_SERVICE
 import android.os.Build
 import me.retrodaredevil.solarthing.android.DefaultOptions
 import me.retrodaredevil.solarthing.android.Prefs
@@ -13,14 +10,13 @@ import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import java.util.*
-import kotlin.Comparator
 
 class SolarDataService(
     private val service: Service,
     private val prefs: Prefs
 ) : DataService {
 
-    private val packetInfoCollection: MutableCollection<SolarPacketInfo> = TreeSet(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
+    private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
     private var lastGeneratorNotification: Long? = null
 
     override fun onInit() {
@@ -62,6 +58,9 @@ class SolarDataService(
                     it
                 )
             })
+            packetInfoCollection.limitSize(100_000, 90_000)
+            packetInfoCollection.removeIfBefore(System.currentTimeMillis() - 5 * 60 * 60 * 1000) { it.dateMillis }
+
             summary = getConnectedSummary(dataRequest.host)
         } else {
             println("[123]Got unsuccessful data request")

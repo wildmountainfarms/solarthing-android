@@ -85,6 +85,10 @@ class PersistentService : Service(), Runnable{
         handler.postDelayed(this, 300)
         Toast.makeText(this, "SolarThing Notification Service Started", Toast.LENGTH_LONG).show()
         println("Starting service")
+        updateNotification(System.currentTimeMillis() + 300)
+        return START_STICKY
+    }
+    private fun updateNotification(countDownWhen: Long){
         // unanswered question with problem we're having here: https://stackoverflow.com/questions/47703216/android-clicking-grouped-notifications-restarts-app
         val mainActivityIntent = Intent(this, MainActivity::class.java)
         val builder = getBuilder()
@@ -98,7 +102,14 @@ class PersistentService : Service(), Runnable{
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // countdown
+            builder.setUsesChronometer(true)
+            builder.setChronometerCountDown(true)
+            builder.setWhen(countDownWhen)
+
+            // buttons
             builder.addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, R.drawable.horse),
@@ -130,7 +141,6 @@ class PersistentService : Service(), Runnable{
         val notification = builder.build()
         getManager().notify(PERSISTENT_NOTIFICATION_ID, notification)
         startForeground(PERSISTENT_NOTIFICATION_ID, notification)
-        return START_STICKY
     }
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
@@ -169,11 +179,9 @@ class PersistentService : Service(), Runnable{
             service.task = DataUpdaterTask(service.dataRequester, service.dataService::onDataRequest).execute()
         }
 
-        if(needsLargeData){
-            handler.postDelayed(this, prefs.initialRequestTimeSeconds * 1000L)
-        } else {
-            handler.postDelayed(this, prefs.subsequentRequestTimeSeconds * 1000L)
-        }
+        val delay = if(needsLargeData){ prefs.initialRequestTimeSeconds * 1000L } else { prefs.subsequentRequestTimeSeconds * 1000L }
+        handler.postDelayed(this, delay)
+        updateNotification(System.currentTimeMillis() + delay)
     }
 
     override fun onDestroy() {

@@ -2,6 +2,7 @@ package me.retrodaredevil.solarthing.android.notifications
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.Color
 import android.os.Build
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
@@ -105,7 +106,7 @@ object NotificationHandler {
                     "MX Aux Mode: $mxAuxModesString"
             )
 
-        return createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
+        val builder = createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
@@ -116,7 +117,12 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
             .setShowWhen(true)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(Color.YELLOW)
+        }
+
+        return builder.build()
     }
     private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int): Notification.Builder {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

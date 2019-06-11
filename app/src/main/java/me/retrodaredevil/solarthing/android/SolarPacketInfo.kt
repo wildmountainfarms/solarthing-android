@@ -12,7 +12,7 @@ import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
 
 
 /**
- * A class that deals with making a [PacketCollection] easier to retrieve values from
+ * A class that deals with making a [PacketCollection] with solar data easier to retrieve values from
  */
 class SolarPacketInfo(private val packetCollection: PacketCollection) {
     val dateMillis = packetCollection.dateMillis

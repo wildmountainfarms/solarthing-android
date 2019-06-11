@@ -7,19 +7,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
-import me.retrodaredevil.solarthing.outhouse.*
-import me.retrodaredevil.solarthing.packets.Modes
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.OUTHOUSE_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.VACANT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.outhouse.*
+import me.retrodaredevil.solarthing.packets.Modes
+import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import java.util.*
-import kotlin.Comparator
 import kotlin.math.round
 
 
@@ -31,6 +31,8 @@ class OuthouseDataService(
         private const val VACANT_NOTIFY_CLEAR_ACTION = "me.retrodaredevil.solarthing.android.service.action.disable_vacant_notify"
     }
 
+    private val packetCollections = TreeSet<PacketCollection>(createComparator { it.dateMillis })
+
     private var vacantNotify = false
 
     override fun onInit() {
@@ -41,6 +43,14 @@ class OuthouseDataService(
         val clearIntentFilter = IntentFilter()
         clearIntentFilter.addAction(VACANT_NOTIFY_CLEAR_ACTION)
         service.registerReceiver(vacantNotifyClearReceiver, clearIntentFilter)
+
+        service.getManager().notify(
+            OUTHOUSE_NOTIFICATION_ID,
+            getBuilder(NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
+                .loadingNotification()
+                .setSmallIcon(R.drawable.potty)
+                .build()
+        )
     }
 
     override fun onCancel() {
@@ -57,73 +67,29 @@ class OuthouseDataService(
 
     override fun onDataRequest(dataRequest: DataRequest) {
         if(dataRequest.successful){
-            val sorted = TreeSet<PacketCollection>(Comparator { o1, o2 -> (o1.dateMillis - o2.dateMillis).toInt() })
-            sorted.addAll(dataRequest.packetCollectionList)
-            if(sorted.isEmpty()){
-                println("no outhouse data!")
-//                getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
-            } else {
-                val packetCollection = sorted.last()
-                var occupancyPacket: OccupancyPacket? = null
-                var weatherPacket: WeatherPacket? = null
-                for(packet in packetCollection.packets){
-                    if(packet is OuthousePacket){
-                        when(packet.packetType){
-                            OuthousePacketType.OCCUPANCY -> occupancyPacket = packet as OccupancyPacket
-                            OuthousePacketType.WEATHER -> weatherPacket = packet as WeatherPacket
-                            null -> throw NullPointerException()
-                        }
-                    }
-                }
-                val occupancy: Occupancy? = if(occupancyPacket != null) Modes.getActiveMode(Occupancy::class.java, occupancyPacket.occupancy) else null
-                if(occupancy == Occupancy.OCCUPIED && !vacantNotify){
-                    service.getManager().cancel(VACANT_NOTIFICATION_ID)
-                }
-                if(occupancy == Occupancy.VACANT && vacantNotify){
-                    service.getManager().notify(VACANT_NOTIFICATION_ID,
-                        getBuilder(NotificationChannels.VACANT_NOTIFICATION)
-                            .setSmallIcon(R.drawable.potty)
-                            .setContentTitle("Outhouse is now vacant!")
-                            .setShowWhen(true)
-                            .setWhen(packetCollection.dateMillis)
-                            .build()
-                    )
-                    vacantNotify = false
-                }
-                val builder = getBuilder(if(occupancy == Occupancy.OCCUPIED) NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED else NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
-                    .setSmallIcon(if(occupancy == Occupancy.OCCUPIED) R.drawable.potty_occupied else R.drawable.potty)
-                    .setContentTitle("Outhouse occupancy: " + if(occupancy != null) occupancy.modeName else "NO OCCUPANCY DATA")
-                    .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${getTemperatureString(weatherPacket.temperatureCelsius)} " +
-                            "| Humidity: ${round(weatherPacket.humidityPercent.toDouble()).toInt()}%")
-                    .setSubText(getConnectedSummary(dataRequest.host))
-                    .setOngoing(true)
-                    .setOnlyAlertOnce(true)
-                    .setShowWhen(true)
-                    .setWhen(packetCollection.dateMillis)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                    builder.setGroup(getGroup(OUTHOUSE_NOTIFICATION_ID))
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    if(occupancy == Occupancy.OCCUPIED) {
-                        val pendingIntent = PendingIntent.getBroadcast(
-                            service, 0,
-                            Intent(VACANT_NOTIFY_ACTION),
-                            PendingIntent.FLAG_CANCEL_CURRENT
-                        )
-                        builder.addAction(
-                            Notification.Action.Builder(
-                                Icon.createWithResource(service, R.drawable.potty),
-                                "Enable vacant notify",
-                                pendingIntent
-                            ).build()
-                        )
-                    }
-                }
-                service.getManager().notify(OUTHOUSE_NOTIFICATION_ID, builder.build())
+            packetCollections.addAll(dataRequest.packetCollectionList)
+            packetCollections.limitSize(100_000, 90_000)
+            packetCollections.removeIfBefore(System.currentTimeMillis() - 20 * 60 * 1000) { it.dateMillis } // keep packets 20 minutes in the past
+            if(!doNotify(getConnectedSummary(dataRequest.host))){
+                service.getManager().notify(
+                    OUTHOUSE_NOTIFICATION_ID,
+                    getBuilder(NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
+                        .noDataNotification(dataRequest)
+                        .setSmallIcon(R.drawable.potty)
+                        .build()
+                )
             }
         } else {
             println("unsuccessful outhouse data request")
-//            getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+            if(!doNotify(getFailedSummary(dataRequest.host))){
+                service.getManager().notify(
+                    OUTHOUSE_NOTIFICATION_ID,
+                    getBuilder(NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
+                        .failedNotification(dataRequest)
+                        .setSmallIcon(R.drawable.potty)
+                        .build()
+                )
+            }
         }
     }
     private fun getTemperatureString(temperatureCelsius: Number): String {
@@ -132,12 +98,95 @@ class OuthouseDataService(
     }
 
     override fun onTimeout() {
-//        getManager().cancel(OUTHOUSE_NOTIFICATION_ID)
+        if(!doNotify(getTimedOutSummary(null))){
+            service.getManager().notify(
+                OUTHOUSE_NOTIFICATION_ID,
+                getBuilder(NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
+                    .timedOutNotification()
+                    .setSmallIcon(R.drawable.potty)
+                    .build()
+            )
+        }
+    }
+
+    private fun doNotify(summary: String): Boolean{
+        if(packetCollections.isEmpty()){
+            return false
+        }
+        val packetCollection = packetCollections.last() // most recent
+
+        var occupancyPacket: OccupancyPacket? = null
+        var weatherPacket: WeatherPacket? = null
+        for(packet in packetCollection.packets){
+            if(packet is OuthousePacket){
+                when(packet.packetType){
+                    OuthousePacketType.OCCUPANCY -> occupancyPacket = packet as OccupancyPacket
+                    OuthousePacketType.WEATHER -> weatherPacket = packet as WeatherPacket
+                    null -> throw NullPointerException()
+                }
+            }
+        }
+        val occupancy: Occupancy? = if(occupancyPacket != null) Modes.getActiveMode(Occupancy::class.java, occupancyPacket.occupancy) else null
+        if(occupancy == Occupancy.OCCUPIED && !vacantNotify){
+            service.getManager().cancel(VACANT_NOTIFICATION_ID)
+        }
+        if(occupancy == Occupancy.VACANT && vacantNotify){
+            service.getManager().notify(VACANT_NOTIFICATION_ID,
+                getBuilder(NotificationChannels.VACANT_NOTIFICATION)
+                    .setSmallIcon(R.drawable.potty)
+                    .setContentTitle("Outhouse is now vacant!")
+                    .setShowWhen(true)
+                    .setWhen(packetCollection.dateMillis)
+                    .build()
+            )
+            vacantNotify = false
+        }
+        val builder = getBuilder(if(occupancy == Occupancy.OCCUPIED) NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED else NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
+            .setSmallIcon(if(occupancy == Occupancy.OCCUPIED) R.drawable.potty_occupied else R.drawable.potty)
+            .setContentTitle("Outhouse occupancy: " + if(occupancy != null) occupancy.modeName else "NO OCCUPANCY DATA")
+            .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${getTemperatureString(weatherPacket.temperatureCelsius)} " +
+                    "| Humidity: ${round(weatherPacket.humidityPercent.toDouble()).toInt()}%")
+            .setSubText(summary)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(true)
+            .setWhen(packetCollection.dateMillis)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(getGroup(OUTHOUSE_NOTIFICATION_ID))
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if(occupancy == Occupancy.OCCUPIED){
+                builder.setColor(Color.RED)
+            } else {
+                builder.setColor(Color.GREEN)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if(occupancy == Occupancy.OCCUPIED) {
+                val pendingIntent = PendingIntent.getBroadcast(
+                    service, 0,
+                    Intent(VACANT_NOTIFY_ACTION),
+                    PendingIntent.FLAG_CANCEL_CURRENT
+                )
+                builder.addAction(
+                    Notification.Action.Builder(
+                        Icon.createWithResource(service, R.drawable.potty),
+                        "Enable vacant notify",
+                        pendingIntent
+                    ).build()
+                )
+            }
+        }
+        service.getManager().notify(OUTHOUSE_NOTIFICATION_ID, builder.build())
+        return true
     }
 
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA
     override val startKey: Long
-        get() = System.currentTimeMillis() - 5 * 60 * 1000
+        get() = if(packetCollections.isEmpty())
+            System.currentTimeMillis() - 5 * 60 * 1000
+        else
+            packetCollections.last().dateMillis
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT.isCurrentlyEnabled(service) || NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED.isCurrentlyEnabled(service)
