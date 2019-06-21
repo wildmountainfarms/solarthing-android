@@ -9,6 +9,7 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.solar.mx.ChargerMode
 import java.util.*
 
 class SolarDataService(
@@ -17,7 +18,8 @@ class SolarDataService(
 ) : DataService {
 
     private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
-    private var lastGeneratorNotification: Long? = null
+    private var lastFloatGeneratorNotification: Long? = null
+    private var lastDoneGeneratorNotification: Long? = null
 
     override fun onInit() {
         notify(
@@ -29,7 +31,7 @@ class SolarDataService(
     }
     override fun onCancel() {
         service.getManager().cancel(SOLAR_NOTIFICATION_ID)
-        cancelGenerator()
+        cancelFloatGeneratorNotification()
     }
 
     override fun onEnd() {
@@ -92,12 +94,20 @@ class SolarDataService(
         val currentInfo = packetInfoCollection.last()
         var floatModeActivatedInfo: SolarPacketInfo? = null
         val virtualFloatModeMinimumBatteryVoltage = prefs.virtualFloatModeMinimumBatteryVoltage
-        for(info in packetInfoCollection.reversed()){ // go through latest packets first
-            if(!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)){
+        for (info in packetInfoCollection.reversed()) { // latest packets to oldest
+            if (!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)) {
                 break
             }
             floatModeActivatedInfo = info // get the oldest packet where all the packets up to the current packet have float mode active (the packet where float mode started)
         }
+        var doneChargingActivatedInfo: SolarPacketInfo? = null
+        for(info in packetInfoCollection.reversed()){ // latest packets to oldest
+            if(!(info.generatorOn && info.mxMap.values.any { ChargerMode.SILENT.isActive(it.chargerMode) })){
+                break
+            }
+            doneChargingActivatedInfo = info
+        }
+
         val notification = NotificationHandler.createStatusNotification(
             service.applicationContext,
             currentInfo,
@@ -112,29 +122,46 @@ class SolarDataService(
             val generatorFloatTimeMillis = (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
             val now = System.currentTimeMillis()
             if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
-                val last = lastGeneratorNotification
+                val last = lastFloatGeneratorNotification
                 if (last == null || last + DefaultOptions.generatorNotifyIntervalMillis < now) {
                     service.getManager().notify(
-                        GENERATOR_NOTIFICATION_ID,
-                        NotificationHandler.createGeneratorAlert(
+                        GENERATOR_FLOAT_NOTIFICATION_ID,
+                        NotificationHandler.createFloatGeneratorAlert(
                             service.applicationContext,
                             floatModeActivatedInfo, currentInfo, generatorFloatTimeMillis
                         )
                     )
-                    lastGeneratorNotification = now
+                    lastFloatGeneratorNotification = now
                 }
             } else {
-                cancelGenerator()
+                cancelFloatGeneratorNotification()
             }
         } else {
             // reset the generator notification because the generator is either off or not in float mode
-            cancelGenerator()
+            cancelFloatGeneratorNotification()
+        }
+        if(doneChargingActivatedInfo != null){
+            val now = System.currentTimeMillis()
+            val last = lastDoneGeneratorNotification
+            if(last == null || last + DefaultOptions.generatorNotifyIntervalMillis < now) {
+                service.getManager().notify(
+                    GENERATOR_DONE_NOTIFICATION_ID,
+                    NotificationHandler.createDoneGeneratorAlert(service.applicationContext, doneChargingActivatedInfo)
+                )
+                lastDoneGeneratorNotification = now
+            }
+        } else {
+            cancelDoneGeneratorNotification()
         }
         return true
     }
-    private fun cancelGenerator(){
-        service.getManager().cancel(GENERATOR_NOTIFICATION_ID)
-        lastGeneratorNotification = null
+    private fun cancelFloatGeneratorNotification(){
+        service.getManager().cancel(GENERATOR_FLOAT_NOTIFICATION_ID)
+        lastFloatGeneratorNotification = null
+    }
+    private fun cancelDoneGeneratorNotification(){
+        service.getManager().cancel(GENERATOR_DONE_NOTIFICATION_ID)
+        lastDoneGeneratorNotification = null
     }
 
     override val updatePeriodType: UpdatePeriodType

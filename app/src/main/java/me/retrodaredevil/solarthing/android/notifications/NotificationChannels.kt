@@ -35,10 +35,15 @@ enum class NotificationChannels(
         R.string.outhouse_status_occupied,
         R.string.outhouse_status_occupied_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
 
-    GENERATOR_NOTIFICATION("generator_notification",
-        R.string.generator_notification,
-        R.string.generator_notification_status, NotificationManager.IMPORTANCE_HIGH,
+    GENERATOR_FLOAT_NOTIFICATION("generator_float_notification",
+        R.string.generator_float_notification,
+        R.string.generator_float_notification_status, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+    GENERATOR_DONE_NOTIFICATION("generator_done_notification",
+        R.string.generator_done_notification,
+        R.string.generator_done_notification, NotificationManager.IMPORTANCE_HIGH,
+        enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+
     VACANT_NOTIFICATION("vacant_notification",
         R.string.vacant_notification,
         R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),

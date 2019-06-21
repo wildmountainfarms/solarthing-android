@@ -16,7 +16,7 @@ const val SEPARATOR = "|"
 object NotificationHandler {
 
 
-    fun createGeneratorAlert(context: Context, floatModeActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, generatorFloatTimeMillis: Long): Notification {
+    fun createFloatGeneratorAlert(context: Context, floatModeActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, generatorFloatTimeMillis: Long): Notification {
         val shouldHaveTurnedOffAt = floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis
         val now = System.currentTimeMillis()
         if(now < shouldHaveTurnedOffAt){
@@ -28,12 +28,26 @@ object NotificationHandler {
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
             .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_NOTIFICATION.id, GENERATOR_NOTIFICATION_ID)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_FLOAT_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
             .setContentText("Should have turned off at $turnOffAtString!")
             .setSubText("Float started at $turnedOnAtString")
             .setWhen(shouldHaveTurnedOffAt)
+            .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
+            .build()
+    }
+    fun createDoneGeneratorAlert(context: Context, doneChargingInfo: SolarPacketInfo): Notification {
+        val stoppedChargingAt = doneChargingInfo.dateMillis
+        val stoppedChargingAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
+            .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
+
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_FLOAT_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+            .setSmallIcon(R.drawable.power_button)
+            .setContentTitle("Generator")
+            .setContentText("The generator stopped charging the batteries. Time to turn it off")
+            .setSubText("Stopped charging at $stoppedChargingAtString")
+            .setWhen(stoppedChargingAt)
             .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
             .build()
     }

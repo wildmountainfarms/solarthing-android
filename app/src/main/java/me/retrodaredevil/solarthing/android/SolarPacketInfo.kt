@@ -3,10 +3,7 @@ package me.retrodaredevil.solarthing.android
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.fx.FXErrorMode
-import me.retrodaredevil.solarthing.solar.fx.FXStatusPacket
-import me.retrodaredevil.solarthing.solar.fx.OperationalMode
-import me.retrodaredevil.solarthing.solar.fx.WarningMode
+import me.retrodaredevil.solarthing.solar.fx.*
 import me.retrodaredevil.solarthing.solar.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
 
@@ -72,7 +69,7 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         this.batteryVoltage = first.batteryVoltage
         this.batteryVoltageString = first.batteryVoltageString
 
-        generatorOn = fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }
+        generatorOn = fxMap.values.any { ACMode.AC_USE.isActive(it.acMode) }
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
         generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }

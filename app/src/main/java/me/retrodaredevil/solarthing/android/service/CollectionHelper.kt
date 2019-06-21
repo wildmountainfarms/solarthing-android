@@ -19,7 +19,7 @@ fun <T> MutableCollection<T>.removeIfBefore(time: Long, dateMillisGetter: (T) ->
 }
 
 /**
- * Limits the size of a [TreeSet] by removing elements from the beginning of [set] if necessary
+ * Limits the size of a [NavigableSet] by removing elements from the beginning of the [NavigableSet] if necessary
  */
 fun NavigableSet<*>.limitSize(maxSize: Int, sizeIfResizeNeeded: Int = maxSize){
     if(sizeIfResizeNeeded > maxSize){
