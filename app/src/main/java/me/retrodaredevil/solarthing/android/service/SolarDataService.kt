@@ -9,6 +9,7 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.solar.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.mx.ChargerMode
 import java.util.*
 
@@ -102,7 +103,9 @@ class SolarDataService(
         }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
-            if(!(info.generatorOn && info.mxMap.values.any { ChargerMode.SILENT.isActive(it.chargerMode) })){
+            if(!(info.generatorOn
+                        && info.fxMap.values.none { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }
+                        )){
                 break
             }
             doneChargingActivatedInfo = info
