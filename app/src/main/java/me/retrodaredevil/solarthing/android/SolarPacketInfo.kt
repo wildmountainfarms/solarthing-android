@@ -87,7 +87,7 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
     }
 
     val pvWattageString by lazy { pvWattage.toString() }
-    val pvChargerWattageString by lazy { pvChargerWattage.toString() }
+    val pvChargerWattageString: String by lazy { FORMAT.format(pvChargerWattage) }
     val dailyKWHoursString: String by lazy { FORMAT.format(dailyKWHours) }
     val loadString by lazy { load.toString() }
     val generatorToBatteryWattageString by lazy { generatorToBatteryWattage.toString() }

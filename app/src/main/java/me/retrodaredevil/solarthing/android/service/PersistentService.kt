@@ -60,6 +60,7 @@ private fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean 
     return manager.getRunningServices(Int.MAX_VALUE).any { serviceClass.name == it.service.className }
 }
 private const val STOP_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.stop_service"
+private const val RELOAD_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.reload_service"
 private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.restart_service"
 
 private class ServiceObject(
@@ -137,6 +138,17 @@ class PersistentService : Service(), Runnable{
             builder.addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, R.drawable.horse),
+                    "Reload",
+                    PendingIntent.getBroadcast(
+                        this, 0,
+                        Intent(RELOAD_SERVICE_ACTION),
+                        PendingIntent.FLAG_CANCEL_CURRENT
+                    )
+                ).build()
+            )
+            builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, R.drawable.horse),
                     "Restart service",
                     PendingIntent.getBroadcast(
                         this, 0,
@@ -148,6 +160,7 @@ class PersistentService : Service(), Runnable{
             )
             val intentFilter = IntentFilter()
             intentFilter.addAction(STOP_SERVICE_ACTION)
+            intentFilter.addAction(RELOAD_SERVICE_ACTION)
             intentFilter.addAction(RESTART_SERVICE_ACTION)
             registerReceiver(receiver, intentFilter)
         }
@@ -196,6 +209,10 @@ class PersistentService : Service(), Runnable{
         handler.postDelayed(this, delay)
         updateNotification(System.currentTimeMillis() + delay)
     }
+    private fun reload(){
+        handler.removeCallbacks(this)
+        handler.postDelayed(this, 100)
+    }
 
     override fun onDestroy() {
         println("[123]Stopping persistent service")
@@ -212,7 +229,9 @@ class PersistentService : Service(), Runnable{
             if(context != null && intent != null){
                 when(intent.action){
                     STOP_SERVICE_ACTION -> stopService(context)
+                    RELOAD_SERVICE_ACTION -> reload()
                     RESTART_SERVICE_ACTION -> restartService(context)
+                    else -> println("unknown action: ${intent.action}")
                 }
             }
         }
