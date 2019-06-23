@@ -68,6 +68,9 @@ object NotificationHandler {
 
         val fxACModesString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.acModeName}" }
         val fxOperationalModeString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.operatingModeName}" }
+//        val fxChargerCurrentsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.chargerCurrent}"}
+//        val fxBuyCurrentsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.buyCurrent}"}
+//        val fxVoltagesString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.inputVoltage}"}
         val mxChargerModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.chargerModeName}" }
         val mxAuxModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.auxModeName}" }
 
@@ -106,10 +109,12 @@ object NotificationHandler {
         }
 
         val style = Notification.BigTextStyle()
-            .bigText("Power from Solar Panels: ${info.pvWattageString} W | Daily kWH: ${info.dailyKWHoursString}\n" +
+            .bigText("Solar Panels: ${info.pvWattageString} W | To Battery: ${info.pvChargerWattageString} W\n" +
+                    "Daily kWH: ${info.dailyKWHoursString}\n" +
                     "Generator (${if(info.generatorOn) "ON" else "OFF"}) $timeLeftText" + generatorWattageText + "\n" +
                     (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
-                    "FX Charger Current: ${info.fxChargerCurrentString}A|FX Buy Current: ${info.fxBuyCurrentString}A\n" +
+//                    (if(info.fxMap.values.any { it.chargerCurrent > 0 || it.buyCurrent > 0 }) "FX Currents{charger:$fxChargerCurrentsString A|buy: $fxBuyCurrentsString A\n" else "") +
+//                    "FX AC Input Voltages: $fxVoltagesString\n" +
                     "Devices: $devicesString\n" +
                     (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                     (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +

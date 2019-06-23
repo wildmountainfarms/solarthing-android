@@ -6,12 +6,16 @@ import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.fx.*
 import me.retrodaredevil.solarthing.solar.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
+import java.text.DecimalFormat
 
 
 /**
  * A class that deals with making a [PacketCollection] with solar data easier to retrieve values from
  */
 class SolarPacketInfo(private val packetCollection: PacketCollection) {
+    companion object {
+        private val FORMAT = DecimalFormat("0.0##")
+    }
     val dateMillis = packetCollection.dateMillis
     /** A map of the port number to the FX status packet associated with that device*/
     val fxMap: Map<Int, FXStatusPacket>
@@ -25,15 +29,14 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
 
     /** The PV Wattage (Power from the solar panels)*/
     val pvWattage: Int
+    /** The amount of power from the solar panels that is charging the battery*/
+    val pvChargerWattage: Float
     /** The load from the FX's */
     val load: Int
     /** The power from the generator going into the batteries*/
     val generatorToBatteryWattage: Int
     /** The total power from the generator */
     val generatorTotalWattage: Int
-
-    val fxChargerCurrent: Int
-    val fxBuyCurrent: Int
 
     /** true if the generator is on, false otherwise*/
     val generatorOn: Boolean
@@ -73,10 +76,9 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
         generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
-        fxChargerCurrent = fxMap.values.sumBy { it.chargerCurrent }
-        fxBuyCurrent = fxMap.values.sumBy { it.buyCurrent }
 
         pvWattage = mxMap.values.sumBy { it.pvCurrent * it.inputVoltage }
+        pvChargerWattage = mxMap.values.sumByDouble { (it.chargerCurrent + it.ampChargerCurrent) * it.batteryVoltage.toDouble() }.toFloat() // TODO check to see if ampChargerCurrent is correct
         dailyKWHours = mxMap.values.map { it.dailyKWH }.sum()
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
@@ -85,12 +87,11 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
     }
 
     val pvWattageString by lazy { pvWattage.toString() }
-    val dailyKWHoursString by lazy { dailyKWHours.toString() }
+    val pvChargerWattageString by lazy { pvChargerWattage.toString() }
+    val dailyKWHoursString: String by lazy { FORMAT.format(dailyKWHours) }
     val loadString by lazy { load.toString() }
     val generatorToBatteryWattageString by lazy { generatorToBatteryWattage.toString() }
     val generatorTotalWattageString by lazy { generatorTotalWattage.toString() }
-    val fxChargerCurrentString by lazy { fxChargerCurrent.toString() }
-    val fxBuyCurrentString by lazy { fxBuyCurrent.toString() }
 
     /**
      * Because older firmware doesn't always report the FXs being in float mode, we can use a custom battery voltage
