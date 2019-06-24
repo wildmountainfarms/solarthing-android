@@ -116,6 +116,9 @@ class PersistentService : Service(), Runnable{
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setCategory(Notification.CATEGORY_SERVICE)
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // countdown

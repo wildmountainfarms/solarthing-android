@@ -160,6 +160,7 @@ class OuthouseDataService(
             } else {
                 builder.setColor(Color.GREEN)
             }
+            builder.setCategory(Notification.CATEGORY_STATUS)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if(occupancy == Occupancy.OCCUPIED) {

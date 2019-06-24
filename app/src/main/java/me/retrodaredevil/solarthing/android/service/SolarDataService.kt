@@ -16,6 +16,10 @@ class SolarDataService(
     private val service: Service,
     private val prefs: Prefs
 ) : DataService {
+    companion object {
+        /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
+        const val ROUND_OFF_ERROR_DEADZONE = 0.001
+    }
 
     private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
     private var lastFloatGeneratorNotification: Long? = null
@@ -159,7 +163,7 @@ class SolarDataService(
         }
         val criticalBatteryVoltage = prefs.criticalBatteryVoltage
         val lowBatteryVoltage = prefs.lowBatteryVoltage
-        if(criticalBatteryVoltage != null && currentInfo.batteryVoltage <= criticalBatteryVoltage){ // critical alert
+        if(criticalBatteryVoltage != null && currentInfo.batteryVoltage <= criticalBatteryVoltage + ROUND_OFF_ERROR_DEADZONE){ // critical alert
             val now = System.currentTimeMillis()
             val last = lastCriticalBatteryNotification
             if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
@@ -170,7 +174,7 @@ class SolarDataService(
                 lastCriticalBatteryNotification = now
                 lastLowBatteryNotification = now
             }
-        } else if(lowBatteryVoltage != null && currentInfo.batteryVoltage <= lowBatteryVoltage){ // low alert
+        } else if(lowBatteryVoltage != null && currentInfo.batteryVoltage <= lowBatteryVoltage + ROUND_OFF_ERROR_DEADZONE){ // low alert
             val now = System.currentTimeMillis()
             val last = lastLowBatteryNotification
             if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
