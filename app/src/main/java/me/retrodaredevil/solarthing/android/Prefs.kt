@@ -80,7 +80,7 @@ class Prefs(private val context: Context) {
 
     var virtualFloatModeMinimumBatteryVoltage: Float?
         get() {
-            val r = settings.getFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, -1F)
+            val r = settings.getFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage ?: -1F)
             if(r < 0){
                 return null
             }
@@ -91,6 +91,34 @@ class Prefs(private val context: Context) {
             value < 0 -> throw IllegalArgumentException("Please use null instead of a negative value!")
             else -> settings.edit().putFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, value).apply()
         }
+
+    var lowBatteryVoltage: Float?
+        get() {
+            val r = settings.getFloat(SaveKeys.lowBatteryVoltage, DefaultOptions.lowBatteryVoltage ?: -1F)
+            if(r < 0){
+                return null
+            }
+            return r
+        }
+        set(value) = when {
+            value == null -> settings.edit().remove(SaveKeys.lowBatteryVoltage).apply()
+            value < 0 -> throw IllegalArgumentException("Please use null instead of a negative value!")
+            else -> settings.edit().putFloat(SaveKeys.lowBatteryVoltage, value).apply()
+        }
+    var criticalBatteryVoltage: Float?
+        get() {
+            val r = settings.getFloat(SaveKeys.criticalBatteryVoltage, DefaultOptions.criticalBatteryVoltage ?: -1F)
+            if(r < 0){
+                return null
+            }
+            return r
+        }
+        set(value) = when {
+            value == null -> settings.edit().remove(SaveKeys.criticalBatteryVoltage).apply()
+            value < 0 -> throw IllegalArgumentException("Please use null instead of a negative value!")
+            else -> settings.edit().putFloat(SaveKeys.criticalBatteryVoltage, value).apply()
+        }
+
 
     var startOnBoot: Boolean
         get() = settings.getBoolean(SaveKeys.startOnBoot, DefaultOptions.startOnBoot)

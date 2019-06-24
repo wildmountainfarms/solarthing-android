@@ -127,7 +127,7 @@ class PersistentService : Service(), Runnable{
             builder.addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, R.drawable.horse),
-                    "Stop service",
+                    "Stop",
                     PendingIntent.getBroadcast(
                         this, 0,
                         Intent(STOP_SERVICE_ACTION),
@@ -149,7 +149,7 @@ class PersistentService : Service(), Runnable{
             builder.addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, R.drawable.horse),
-                    "Restart service",
+                    "Restart",
                     PendingIntent.getBroadcast(
                         this, 0,
                         Intent(RESTART_SERVICE_ACTION),

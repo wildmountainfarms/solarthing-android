@@ -37,12 +37,17 @@ enum class NotificationChannels(
 
     GENERATOR_FLOAT_NOTIFICATION("generator_float_notification",
         R.string.generator_float_notification,
-        R.string.generator_float_notification_status, NotificationManager.IMPORTANCE_HIGH,
+        R.string.generator_float_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
     GENERATOR_DONE_NOTIFICATION("generator_done_notification",
         R.string.generator_done_notification,
-        R.string.generator_done_notification, NotificationManager.IMPORTANCE_HIGH,
+        R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+
+    BATTERY_NOTIFICATION("battery_notification",
+        R.string.battery_notification,
+        R.string.battery_notification_description, NotificationManager.IMPORTANCE_HIGH,
+        enableLights = true, lightColor = Color.RED, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     VACANT_NOTIFICATION("vacant_notification",
         R.string.vacant_notification,

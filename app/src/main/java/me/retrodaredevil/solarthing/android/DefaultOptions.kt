@@ -12,12 +12,15 @@ object DefaultOptions {
 
     const val generatorFloatTimeHours = 1.5F
 
-    const val generatorNotifyIntervalMillis = 5 * 60 * 1000L
+    const val importantAlertIntervalMillis = 5 * 60 * 1000L
 
     const val initialRequestTimeSeconds = 60
 
     const val subsequentRequestTimeSeconds = 30
     val virtualFloatModeMinimumBatteryVoltage: Float? = null
+
+    val lowBatteryVoltage: Float? = 22.6F
+    val criticalBatteryVoltage: Float? = 22.2F
 
     const val startOnBoot = true
 }

@@ -30,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
     private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
+    private lateinit var lowBatteryVoltage: EditText
+    private lateinit var criticalBatteryVoltage: EditText
 
     private lateinit var startOnBoot: CheckBox
 
@@ -45,6 +47,8 @@ class MainActivity : AppCompatActivity() {
         generatorFloatHours = findViewById(R.id.generator_float_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
+        lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
+        criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
 
@@ -112,6 +116,8 @@ class MainActivity : AppCompatActivity() {
         prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
         prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
+        prefs.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
+        prefs.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
         prefs.startOnBoot = startOnBoot.isChecked
 
         loadSettings()
@@ -130,6 +136,8 @@ class MainActivity : AppCompatActivity() {
         initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
         subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
         virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
+        lowBatteryVoltage.setText(prefs.lowBatteryVoltage?.toString() ?: "")
+        criticalBatteryVoltage.setText(prefs.criticalBatteryVoltage?.toString() ?: "")
         startOnBoot.isChecked = prefs.startOnBoot
 
     }

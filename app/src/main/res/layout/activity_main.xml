@@ -85,6 +85,18 @@
             <EditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:ems="10"
+                    android:id="@+id/low_battery_voltage" android:hint="Low Battery Voltage"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:ems="10"
+                    android:id="@+id/critical_battery_voltage" android:hint="Critical Battery Voltage"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:inputType="number"
                     android:ems="10"
                     android:id="@+id/initial_request_timeout" android:hint="Initial Timeout (seconds)"/>

@@ -14,7 +14,7 @@ import java.text.DecimalFormat
  */
 class SolarPacketInfo(private val packetCollection: PacketCollection) {
     companion object {
-        private val FORMAT = DecimalFormat("0.0##")
+        val FORMAT = DecimalFormat("0.0##")
     }
     val dateMillis = packetCollection.dateMillis
     /** A map of the port number to the FX status packet associated with that device*/

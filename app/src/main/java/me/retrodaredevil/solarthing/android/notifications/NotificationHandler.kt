@@ -51,6 +51,34 @@ object NotificationHandler {
             .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
             .build()
     }
+    fun createBatteryNotification(context: Context, currentInfo: SolarPacketInfo, critical: Boolean): Notification {
+        val voltageString = currentInfo.batteryVoltageString
+        val builder = createNotificationBuilder(context, NotificationChannels.BATTERY_NOTIFICATION.id, BATTERY_NOTIFICATION_ID)
+            .setSmallIcon(R.drawable.power_button)
+            .setContentText("The battery voltage is low! $voltageString!!!")
+            .setWhen(currentInfo.dateMillis)
+        if(critical) {
+            builder.setContentTitle("CRITICAL BATTERY $voltageString V")
+        } else {
+            builder.setContentTitle("Low Battery $voltageString V")
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(Color.RED)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if(critical){
+                builder.setColorized(true)
+//                builder.style = Notification.BigPictureStyle()
+            }
+        }
+
+        val r = builder.build()
+        if(critical) {
+            r.flags = r.flags or Notification.FLAG_INSISTENT
+        }
+        return r
+    }
 
     /**
      *
@@ -68,9 +96,7 @@ object NotificationHandler {
 
         val fxACModesString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.acModeName}" }
         val fxOperationalModeString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.operatingModeName}" }
-//        val fxChargerCurrentsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.chargerCurrent}"}
-//        val fxBuyCurrentsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.buyCurrent}"}
-//        val fxVoltagesString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.inputVoltage}"}
+        val mxDailyKWHString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
         val mxChargerModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.chargerModeName}" }
         val mxAuxModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.auxModeName}" }
 
@@ -110,7 +136,7 @@ object NotificationHandler {
 
         val style = Notification.BigTextStyle()
             .bigText("Solar Panels: ${info.pvWattageString} W | To Battery: ${info.pvChargerWattageString} W\n" +
-                    "Daily kWH: ${info.dailyKWHoursString}\n" +
+                    "Daily kWH: MX: $mxDailyKWHString | Total: ${info.dailyKWHoursString}\n" +
                     "Generator (${if(info.generatorOn) "ON" else "OFF"}) $timeLeftText" + generatorWattageText + "\n" +
                     (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
 //                    (if(info.fxMap.values.any { it.chargerCurrent > 0 || it.buyCurrent > 0 }) "FX Currents{charger:$fxChargerCurrentsString A|buy: $fxBuyCurrentsString A\n" else "") +

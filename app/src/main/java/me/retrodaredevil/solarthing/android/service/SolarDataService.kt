@@ -10,7 +10,6 @@ import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.fx.OperationalMode
-import me.retrodaredevil.solarthing.solar.mx.ChargerMode
 import java.util.*
 
 class SolarDataService(
@@ -21,6 +20,8 @@ class SolarDataService(
     private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
     private var lastFloatGeneratorNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
+    private var lastLowBatteryNotification: Long? = null
+    private var lastCriticalBatteryNotification: Long? = null
 
     override fun onInit() {
         notify(
@@ -126,7 +127,7 @@ class SolarDataService(
             val now = System.currentTimeMillis()
             if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
                 val last = lastFloatGeneratorNotification
-                if (last == null || last + DefaultOptions.generatorNotifyIntervalMillis < now) {
+                if (last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                     service.getManager().notify(
                         GENERATOR_FLOAT_NOTIFICATION_ID,
                         NotificationHandler.createFloatGeneratorAlert(
@@ -146,7 +147,7 @@ class SolarDataService(
         if(doneChargingActivatedInfo != null){
             val now = System.currentTimeMillis()
             val last = lastDoneGeneratorNotification
-            if(last == null || last + DefaultOptions.generatorNotifyIntervalMillis < now) {
+            if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                 service.getManager().notify(
                     GENERATOR_DONE_NOTIFICATION_ID,
                     NotificationHandler.createDoneGeneratorAlert(service.applicationContext, doneChargingActivatedInfo)
@@ -155,6 +156,30 @@ class SolarDataService(
             }
         } else {
             cancelDoneGeneratorNotification()
+        }
+        val criticalBatteryVoltage = prefs.criticalBatteryVoltage
+        val lowBatteryVoltage = prefs.lowBatteryVoltage
+        if(criticalBatteryVoltage != null && currentInfo.batteryVoltage <= criticalBatteryVoltage){ // critical alert
+            val now = System.currentTimeMillis()
+            val last = lastCriticalBatteryNotification
+            if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
+                service.getManager().notify(
+                    BATTERY_NOTIFICATION_ID,
+                    NotificationHandler.createBatteryNotification(service, currentInfo, true)
+                )
+                lastCriticalBatteryNotification = now
+                lastLowBatteryNotification = now
+            }
+        } else if(lowBatteryVoltage != null && currentInfo.batteryVoltage <= lowBatteryVoltage){ // low alert
+            val now = System.currentTimeMillis()
+            val last = lastLowBatteryNotification
+            if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
+                service.getManager().notify(
+                    BATTERY_NOTIFICATION_ID,
+                    NotificationHandler.createBatteryNotification(service, currentInfo, false)
+                )
+                lastLowBatteryNotification = now
+            }
         }
         return true
     }
