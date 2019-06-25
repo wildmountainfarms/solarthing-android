@@ -98,6 +98,15 @@ class SolarDataService(
             return false
         }
         val currentInfo = packetInfoCollection.last()
+        var generatorTurnedOnInfo: SolarPacketInfo? = null
+        var uncertainGeneratorStartInfo = true
+        for(info in packetInfoCollection.reversed()){
+            if(!info.generatorOn){
+                uncertainGeneratorStartInfo = false
+                break
+            }
+            generatorTurnedOnInfo = info
+        }
         var floatModeActivatedInfo: SolarPacketInfo? = null
         val virtualFloatModeMinimumBatteryVoltage = prefs.virtualFloatModeMinimumBatteryVoltage
         for (info in packetInfoCollection.reversed()) { // latest packets to oldest
@@ -119,10 +128,16 @@ class SolarDataService(
         val notification = NotificationHandler.createStatusNotification(
             service.applicationContext,
             currentInfo,
-            summary,
-            floatModeActivatedInfo,
-            (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
+            summary
         )
+        if(generatorTurnedOnInfo != null){
+            service.getManager().notify(
+                GENERATOR_PERSISTENT_ID,
+                NotificationHandler.createPersistentGenerator(service, currentInfo, generatorTurnedOnInfo, floatModeActivatedInfo, (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong())
+            )
+        } else {
+            service.getManager().cancel(GENERATOR_PERSISTENT_ID)
+        }
         notify(notification)
 
         if(floatModeActivatedInfo != null){

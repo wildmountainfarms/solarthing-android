@@ -58,7 +58,7 @@ fun Notification.Builder.timedOutNotification(): Notification.Builder {
 fun Notification.Builder.loadingNotification(): Notification.Builder {
     return setOngoing(true)
         .setOnlyAlertOnce(true)
-        .setContentText("Loading Solar Data")
+        .setContentText("Loading Data")
         .setSubText("started loading at ${getTimeString()}")
         .setProgress(2, 1, true)
 }

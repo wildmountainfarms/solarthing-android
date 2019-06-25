@@ -27,6 +27,9 @@ enum class NotificationChannels(
     SOLAR_STATUS("solar_status",
         R.string.solar_status,
         R.string.solar_status_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+    GENERATOR_PERSISTENT("solar_status",
+        R.string.generator_persistent,
+        R.string.generator_persistent_description, NotificationManager.IMPORTANCE_DEFAULT, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     OUTHOUSE_STATUS_WHILE_VACANT("outhouse_status_vacant",
         R.string.outhouse_status_vacant,
@@ -35,14 +38,14 @@ enum class NotificationChannels(
         R.string.outhouse_status_occupied,
         R.string.outhouse_status_occupied_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
 
-    GENERATOR_FLOAT_NOTIFICATION("generator_float_notification",
-        R.string.generator_float_notification,
-        R.string.generator_float_notification_description, NotificationManager.IMPORTANCE_HIGH,
-        enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-    GENERATOR_DONE_NOTIFICATION("generator_done_notification",
+    GENERATOR_DONE_NOTIFICATION("generator_float_notification", // keep the ID the same for legacy compatibility
         R.string.generator_done_notification,
         R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+//    GENERATOR_DONE_NOTIFICATION("generator_done_notification",
+//        R.string.generator_done_notification,
+//        R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
+//        enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     BATTERY_NOTIFICATION("battery_notification",
         R.string.battery_notification,

@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">ST</string>
 
-    <string name="generator_float_notification">Generator Float Done Alert</string>
-    <string name="generator_float_notification_description">Sends an alert when the generator should be turned off when the float charge is done</string>
-    <string name="generator_done_notification">Generator Charge Done Alert</string>
-    <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when it has stopped charging the batteries</string>
+    <!--<string name="generator_float_notification">Generator Float Done Alert</string>-->
+    <!--<string name="generator_float_notification_description">Sends an alert when the generator should be turned off when the float charge is done</string>-->
+    <string name="generator_done_notification">Generator Done Alert</string>
+    <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when it has stopped charging the batteries or is done with float mode</string>
     <string name="battery_notification">Low Battery Alert</string>
     <string name="battery_notification_description">Sends an alert when the battery voltage is below a configurable value</string>
 
@@ -12,6 +12,8 @@
     <string name="persistent_description">Notification that shows the SolarThing service is running</string>
     <string name="solar_status">Solar status</string>
     <string name="solar_status_description">Shows solar data</string>
+    <string name="generator_persistent">Generator running status</string>
+    <string name="generator_persistent_description">Shows info about the generator while it is running</string>
 
     <string name="outhouse_status_vacant">Outhouse status while vacant</string>
     <string name="outhouse_status_vacant_description">Shows the status and weather in the outhouse while vacant</string>

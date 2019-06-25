@@ -3,14 +3,9 @@ package me.retrodaredevil.solarthing.android.notifications
 import android.app.Notification
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Build
 import android.text.Html
-import android.text.SpannableString
-import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.style.ForegroundColorSpan
-import android.text.style.StyleSpan
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.solar.SolarPacket
@@ -25,6 +20,7 @@ import kotlin.math.abs
 
 object NotificationHandler {
     private const val SEPARATOR = "<span style=\"overflow-wrap:break-word\">|</span>"
+    private const val DOUBLE_SEPARATOR = "<span style=\"overflow-wrap:break-word\">||</span>"
     private const val MX_COLOR = "#000077"
     private const val FX_COLOR = "#770000"
 
@@ -41,7 +37,7 @@ object NotificationHandler {
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
             .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_FLOAT_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
             .setContentText("Should have turned off at $turnOffAtString!")
@@ -55,7 +51,7 @@ object NotificationHandler {
         val stoppedChargingAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
             .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_FLOAT_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
             .setContentText("The generator stopped charging the batteries. Time to turn it off")
@@ -70,6 +66,7 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.power_button)
             .setContentText("The battery voltage is low! $voltageString!!!")
             .setWhen(currentInfo.dateMillis)
+            .setShowWhen(true)
         if(critical) {
             builder.setContentTitle("CRITICAL BATTERY $voltageString V")
         } else {
@@ -84,8 +81,7 @@ object NotificationHandler {
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if(critical){
-                builder.setColorized(true)
-//                builder.style = Notification.BigPictureStyle()
+                builder.setColorized(true) // TODO this won't do anything unless we convince android that this notification is important
             }
         }
 
@@ -96,6 +92,59 @@ object NotificationHandler {
         return r
     }
 
+    fun createPersistentGenerator(context: Context, info: SolarPacketInfo,
+                                  generatorTurnedOnInfo: SolarPacketInfo, floatModeActivatedInfo: SolarPacketInfo?,
+                                  generatorFloatTimeMillis: Long): Notification{
+        if(!info.generatorOn){
+            throw IllegalStateException("Only call this method if the generator is on!")
+        }
+        val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = generatorTurnedOnInfo.dateMillis }.time)
+        val floatStartedText = if(floatModeActivatedInfo != null){
+            val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
+                GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
+            )
+            if(floatModeActivatedInfo.isGeneratorInFloat(null)){
+                "Float start at $timeTurnedOnString\n"
+            } else {
+                "Virtual float start at $timeTurnedOnString\n"
+            }
+        } else {
+            ""
+        }
+
+        val text = "" +
+                "Started at: $startTime\n" +
+                floatStartedText +
+                "Charger: ${info.generatorToBatteryWattageString} W\n" +
+                "Total: ${info.generatorTotalWattageString} W\n" +
+                "Pass Thru: ${info.generatorTotalWattage - info.generatorToBatteryWattage} W\n" +
+                "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.inputVoltage} + "\n" +
+                "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.chargerCurrent } + "\n" +
+                "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.buyCurrent }
+
+        val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_PERSISTENT.id, GENERATOR_PERSISTENT_ID)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setContentTitle("Generator ON")
+            .setContentText("charger:${info.generatorToBatteryWattageString} total:${info.generatorTotalWattageString}")
+            .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
+            .setShowWhen(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(0x654321)
+        }
+        if(floatModeActivatedInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            builder.setWhen(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis)
+            builder.setUsesChronometer(true)
+            builder.setChronometerCountDown(true)
+        } else {
+            builder.setWhen(generatorTurnedOnInfo.dateMillis)
+            builder.setUsesChronometer(true)
+        }
+        return builder.build()
+    }
+
     private fun getDeviceString(packet: SolarPacket): String{
         return when(packet.packetType){
             SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR\">${packet.address}</span>)"
@@ -104,14 +153,20 @@ object NotificationHandler {
             null -> throw NullPointerException()
         }
     }
+    private fun fromHtml(text: String): Spanned {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(text.replace("\n", "<br/>"), 0)
+        } else {
+            Html.fromHtml(text.replace("\n", "<br/>"))
+        }
+    }
 
     /**
      *
      * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
      * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = "",
-                                 floatModeActivatedInfo: SolarPacketInfo?, generatorFloatTimeMillis: Long): Notification {
+    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = ""): Notification {
         val devicesStringList = ArrayList<String>()
         devicesStringList.addAll(info.fxMap.values.map { "<span style=\"white-space: nowrap\">[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR\">FX</span>]</span>" })
         devicesStringList.addAll(info.mxMap.values.map { "<span style=\"white-space: nowrap\">[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR\">MX</span>]</span>" })
@@ -123,11 +178,26 @@ object NotificationHandler {
             info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
             else -> "???V"
         }
+        var auxCount = 0
         val auxModesString = run {
             var r = ""
-            r += info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + (if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) "ON" else "OFF") }
-            r += SEPARATOR
-            r += info.mxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.auxModeName + (if(AuxMode.isAuxModeActive(it.auxMode)) "(ON)" else "")}
+            r += info.fxMap.values.joinToString(SEPARATOR) {
+                val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) {
+                    auxCount++
+                    "ON"
+                } else {
+                    "Off"
+                }
+                getDeviceString(it) + auxString
+            }
+            r += DOUBLE_SEPARATOR
+            r += info.mxMap.values.joinToString(SEPARATOR) {
+                val auxActive = AuxMode.isAuxModeActive(it.auxMode)
+                if(auxActive || (!AuxMode.UNKNOWN.isActive(it.auxMode) && !AuxMode.DISABLED.isActive(it.auxMode))){
+                    auxCount++
+                }
+                getDeviceString(it) + it.auxModeName + (if(auxActive) "(ON)" else "")
+            }
             r
         }
 
@@ -146,62 +216,22 @@ object NotificationHandler {
         val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
         val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
 
-        val timeTurnedOnText = if(floatModeActivatedInfo != null){
-            val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
-                GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
-            )
-            if(floatModeActivatedInfo.isGeneratorInFloat(null)){
-                "float start at $timeTurnedOnString\n"
-            } else {
-                "v float start at $timeTurnedOnString\n"
-            }
-        } else {
-            ""
-        }
-
-        val timeLeftText = if (floatModeActivatedInfo != null) {
-            val timeLeft = (floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis) - System.currentTimeMillis()
-            val absTimeLeft = abs(timeLeft)
-            val hours = TimeUnit.MILLISECONDS.toHours(absTimeLeft)
-            val minutes = TimeUnit.MILLISECONDS.toMinutes(absTimeLeft) - TimeUnit.HOURS.toMinutes(hours)
-            val minutesString = minutes.toString()
-
-            " $hours" +
-                    ":" +
-                    (if(minutesString.length == 1) "0$minutesString" else minutesString) +
-                    " " +
-                    (if(timeLeft < 0) "PAST" else "left") +
-                    "|"
-        } else {
-            ""
-        }
-        val generatorWattageText = if(info.generatorOn || info.generatorToBatteryWattage > 0 || info.generatorTotalWattage > 0){
-            " to battery: ${info.generatorToBatteryWattageString} W | total: ${info.generatorTotalWattageString} W"
-        } else {
-            ""
-        }
         val text = "" +
                 "PV: $mxPVWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $mxChargerWattagesString | Total: <strong>${info.pvChargerWattageString}</strong> W\n" +
                 "Daily kWH: $mxDailyKWHString | Total: <strong>${info.dailyKWHoursString}</strong>\n" +
-                (if(info.generatorOn) "Generator <strong>ON</strong>$timeLeftText$timeTurnedOnText$generatorWattageText\n" else "") +
-                "Devices: $devicesString$SEPARATOR$unitVoltage" + (if(info.generatorOn) "" else "${SEPARATOR}Generator Off") + "\n" +
+                "System: $devicesString$SEPARATOR$unitVoltage${SEPARATOR}Generator " + (if(info.generatorOn) "<strong>ON</strong>" else "Off") + "\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
-                "FX AC Mode: $fxACModesString\n" +
-                "Modes: $fxOperationalModeString$SEPARATOR$SEPARATOR$mxChargerModesString\n" +
-                "Aux Modes: $auxModesString"
+                "AC Mode: $fxACModesString\n" +
+                "Mode: $fxOperationalModeString$DOUBLE_SEPARATOR$mxChargerModesString\n" +
+                "Aux: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
 
-        val html = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Html.fromHtml(text.replace("\n", "<br/>"), 0)
-        } else {
-            Html.fromHtml(text.replace("\n", "<br/>"))
-        }
-        val style = Notification.BigTextStyle().bigText(html)
+        val style = Notification.BigTextStyle().bigText(fromHtml(text))
 
         val builder = createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
             .setOngoing(true)
@@ -209,7 +239,7 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle("Battery Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")
-            .setContentText("pv:${info.pvWattageString} err:${info.errorsCount} warn:${info.warningsCount} generator:" + if(info.generatorOn) "ON $timeLeftText" else "OFF")
+            .setContentText("pv:${info.pvWattageString} kWH:${info.dailyKWHoursString} err:${info.errorsCount} warn:${info.warningsCount} aux:$auxCount generator:" + if(info.generatorOn) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
