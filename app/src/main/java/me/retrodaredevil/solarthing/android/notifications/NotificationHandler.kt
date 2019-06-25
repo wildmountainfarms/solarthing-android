@@ -13,14 +13,20 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.solar.SolarPacket
+import me.retrodaredevil.solarthing.solar.SolarPacketType
+import me.retrodaredevil.solarthing.solar.fx.MiscMode
+import me.retrodaredevil.solarthing.solar.mx.AuxMode
 import java.text.DateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
-const val SEPARATOR = "|"
 
 object NotificationHandler {
+    private const val SEPARATOR = "<span style=\"overflow-wrap:break-word\">|</span>"
+    private const val MX_COLOR = "#000077"
+    private const val FX_COLOR = "#770000"
 
 
     fun createFloatGeneratorAlert(context: Context, floatModeActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, generatorFloatTimeMillis: Long): Notification {
@@ -90,6 +96,15 @@ object NotificationHandler {
         return r
     }
 
+    private fun getDeviceString(packet: SolarPacket): String{
+        return when(packet.packetType){
+            SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR\">${packet.address}</span>)"
+            SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR\">${packet.address}</span>)"
+            SolarPacketType.FLEXNET_DC_STATUS -> throw UnsupportedOperationException("FM not supported!")
+            null -> throw NullPointerException()
+        }
+    }
+
     /**
      *
      * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
@@ -98,27 +113,51 @@ object NotificationHandler {
     fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = "",
                                  floatModeActivatedInfo: SolarPacketInfo?, generatorFloatTimeMillis: Long): Notification {
         val devicesStringList = ArrayList<String>()
-        devicesStringList.addAll(info.fxMap.values.map { "[<strong>${it.address}</strong> <span style=\"color:#770000\">FX</span>]" })
-        devicesStringList.addAll(info.mxMap.values.map { "[<strong>${it.address}</strong> <span style=\"color:#000077\">MX</span>]" })
+        devicesStringList.addAll(info.fxMap.values.map { "<span style=\"white-space: nowrap\">[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR\">FX</span>]</span>" })
+        devicesStringList.addAll(info.mxMap.values.map { "<span style=\"white-space: nowrap\">[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR\">MX</span>]</span>" })
 
         val devicesString = devicesStringList.joinToString("")
 
+        val unitVoltage = when {
+            info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "230V"
+            info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
+            else -> "???V"
+        }
+        val auxModesString = run {
+            var r = ""
+            r += info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + (if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) "ON" else "OFF") }
+            r += SEPARATOR
+            r += info.mxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.auxModeName + (if(AuxMode.isAuxModeActive(it.auxMode)) "(ON)" else "")}
+            r
+        }
 
-        val fxACModesString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.acModeName}" }
-        val fxOperationalModeString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.operatingModeName}" }
-        val mxDailyKWHString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
-        val mxChargerModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.chargerModeName}" }
-        val mxAuxModesString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.auxModeName}" }
+        val fxACModesString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.acModeName}" }
+        val fxOperationalModeString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.operatingModeName}" }
+        val mxDailyKWHString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
+        val mxChargerModesString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargerModeName}" }
         val mxPVWattagesString = info.mxMap.values.joinToString(SEPARATOR) {
-            "(${it.address})${it.pvCurrent * it.inputVoltage}"
+            "${getDeviceString(it)}${it.pvCurrent * it.inputVoltage}"
         }
         val mxChargerWattagesString = info.mxMap.values.joinToString(SEPARATOR) {
-            "(${it.address})${(it.chargerCurrent * it.batteryVoltage).toInt()}"
+            "${getDeviceString(it)}${(it.chargerCurrent * it.batteryVoltage).toInt()}"
         }
 
-        val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.warningsString}" }
-        val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.errorsString}" }
-        val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "(${it.address})${it.errorsString}" }
+        val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.warningsString}" }
+        val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
+        val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
+
+        val timeTurnedOnText = if(floatModeActivatedInfo != null){
+            val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
+                GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
+            )
+            if(floatModeActivatedInfo.isGeneratorInFloat(null)){
+                "float start at $timeTurnedOnString\n"
+            } else {
+                "v float start at $timeTurnedOnString\n"
+            }
+        } else {
+            ""
+        }
 
         val timeLeftText = if (floatModeActivatedInfo != null) {
             val timeLeft = (floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis) - System.currentTimeMillis()
@@ -132,15 +171,7 @@ object NotificationHandler {
                     (if(minutesString.length == 1) "0$minutesString" else minutesString) +
                     " " +
                     (if(timeLeft < 0) "PAST" else "left") +
-                    "\n"
-        } else {
-            ""
-        }
-        val timeTurnedOnText = if(floatModeActivatedInfo != null){
-            val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
-                GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
-            )
-            "Generator entered float mode at $timeTurnedOnString"
+                    "|"
         } else {
             ""
         }
@@ -153,16 +184,14 @@ object NotificationHandler {
                 "PV: $mxPVWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $mxChargerWattagesString | Total: <strong>${info.pvChargerWattageString}</strong> W\n" +
                 "Daily kWH: $mxDailyKWHString | Total: <strong>${info.dailyKWHoursString}</strong>\n" +
-                (if(info.generatorOn) "Generator <strong>ON</strong>$timeLeftText$generatorWattageText\n" else "") +
-                (if(timeTurnedOnText.isNotEmpty()) timeTurnedOnText + "\n" else "") +
-                "Devices: $devicesString" + (if(info.generatorOn) "" else " Generator OFF") + "\n" +
+                (if(info.generatorOn) "Generator <strong>ON</strong>$timeLeftText$timeTurnedOnText$generatorWattageText\n" else "") +
+                "Devices: $devicesString$SEPARATOR$unitVoltage" + (if(info.generatorOn) "" else "${SEPARATOR}Generator Off") + "\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 "FX AC Mode: $fxACModesString\n" +
-                "FX Operational Mode: $fxOperationalModeString\n" +
-                "MX Charger Mode: $mxChargerModesString\n" +
-                "MX Aux Mode: $mxAuxModesString"
+                "Modes: $fxOperationalModeString$SEPARATOR$SEPARATOR$mxChargerModesString\n" +
+                "Aux Modes: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
