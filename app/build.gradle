@@ -10,8 +10,8 @@ android {
         applicationId "me.retrodaredevil.solarthing.android"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 110
-        versionName "1.11"
+        versionCode 120
+        versionName "1.12"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
