@@ -152,6 +152,7 @@ class OuthouseDataService(
             .setShowWhen(true)
             .setWhen(packetCollection.dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+//            builder.setSortKey("d")
             builder.setGroup(getGroup(OUTHOUSE_NOTIFICATION_ID))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -218,6 +219,7 @@ class OuthouseDataService(
                         )
                     )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+//                builder.setSortKey("b")
                 builder.setGroup(getGroup(VACANT_NOTIFICATION_ID))
             }
             service.getManager().notify(VACANT_NOTIFICATION_ID, builder.build())

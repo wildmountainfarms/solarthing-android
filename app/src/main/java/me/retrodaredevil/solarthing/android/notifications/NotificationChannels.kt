@@ -27,7 +27,7 @@ enum class NotificationChannels(
     SOLAR_STATUS("solar_status",
         R.string.solar_status,
         R.string.solar_status_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-    GENERATOR_PERSISTENT("solar_status",
+    GENERATOR_PERSISTENT("generator_persistent",
         R.string.generator_persistent,
         R.string.generator_persistent_description, NotificationManager.IMPORTANCE_DEFAULT, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
@@ -42,10 +42,10 @@ enum class NotificationChannels(
         R.string.generator_done_notification,
         R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-//    GENERATOR_DONE_NOTIFICATION("generator_done_notification",
-//        R.string.generator_done_notification,
-//        R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
-//        enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+    MX_END_OF_DAY("mx_end_of_day", // keep the ID the same for legacy compatibility
+        R.string.mx_end_of_day,
+        R.string.mx_end_of_day_description, NotificationManager.IMPORTANCE_LOW,
+        showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     BATTERY_NOTIFICATION("battery_notification",
         R.string.battery_notification,

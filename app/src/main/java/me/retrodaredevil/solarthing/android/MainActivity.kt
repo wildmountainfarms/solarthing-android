@@ -62,6 +62,8 @@ class MainActivity : AppCompatActivity() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.deleteNotificationChannel("generator_done_notification") // this was used in a previous version but is not longer used
+
             for(channelGroup in NotificationChannelGroups.values()){
                 notificationManager.createNotificationChannelGroup(NotificationChannelGroup(
                     channelGroup.id, channelGroup.getName(this)

@@ -8,6 +8,9 @@
     <string name="battery_notification">Low Battery Alert</string>
     <string name="battery_notification_description">Sends an alert when the battery voltage is below a configurable value</string>
 
+    <string name="mx_end_of_day">MX End of Day</string>
+    <string name="mx_end_of_day_description">Sends information on each MX device after daily kWH is reset back to 0 indicating a new day</string>
+
     <string name="persistent">Persistent indicator</string>
     <string name="persistent_description">Notification that shows the SolarThing service is running</string>
     <string name="solar_status">Solar status</string>

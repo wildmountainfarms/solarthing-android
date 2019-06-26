@@ -22,6 +22,7 @@ class SolarDataService(
     }
 
     private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
+    private var lastPacketInfo: SolarPacketInfo? = null
     private var lastFloatGeneratorNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
     private var lastLowBatteryNotification: Long? = null
@@ -125,20 +126,43 @@ class SolarDataService(
             doneChargingActivatedInfo = info
         }
 
-        val notification = NotificationHandler.createStatusNotification(
-            service.applicationContext,
-            currentInfo,
-            summary
+        notify(
+            NotificationHandler.createStatusNotification(
+                service.applicationContext,
+                currentInfo,
+                summary
+            )
         )
         if(generatorTurnedOnInfo != null){
             service.getManager().notify(
                 GENERATOR_PERSISTENT_ID,
-                NotificationHandler.createPersistentGenerator(service, currentInfo, generatorTurnedOnInfo, floatModeActivatedInfo, (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong())
+                NotificationHandler.createPersistentGenerator(service, currentInfo, generatorTurnedOnInfo, floatModeActivatedInfo, (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo)
             )
         } else {
             service.getManager().cancel(GENERATOR_PERSISTENT_ID)
         }
-        notify(notification)
+        val lastPacketInfo = this.lastPacketInfo
+        if(lastPacketInfo != null){
+            for(mx in currentInfo.mxMap.values){
+                if(mx.dailyKWH == 0f){
+                    val lastMX = lastPacketInfo.mxMap.values.firstOrNull { it.address == mx.address } ?: continue
+                    val dailyKWH = lastMX.dailyKWH
+                    if(dailyKWH != 0f){
+                        val notificationAndSummary = NotificationHandler.createMXEndOfDay(service, lastMX, currentInfo.dateMillis)
+                        service.getManager().notify(
+                            getMXEndOfDayInfoID(lastMX.address),
+                            notificationAndSummary.first
+                        )
+                        service.getManager().notify(
+                            MX_END_OF_DAY_SUMMARY_ID,
+                            notificationAndSummary.second
+                        )
+                    }
+                }
+            }
+        }
+        this.lastPacketInfo = currentInfo
+
 
         if(floatModeActivatedInfo != null){
             // check to see if we should send a notification

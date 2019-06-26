@@ -13,4 +13,12 @@ const val BATTERY_NOTIFICATION_ID = 6
 const val OUTHOUSE_NOTIFICATION_ID = 7
 const val VACANT_NOTIFICATION_ID = 8
 
+const val MX_END_OF_DAY_SUMMARY_ID = 9
+
+const val MX_END_OF_DAY_GROUP = "mx"
+
 fun getGroup(id: Int) = "group$id"
+
+fun getMXEndOfDayInfoID(address: Int): Int{
+    return 100 + address
+}
