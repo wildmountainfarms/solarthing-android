@@ -8,9 +8,12 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
+import me.retrodaredevil.solarthing.solar.fx.ACMode
 import me.retrodaredevil.solarthing.solar.fx.MiscMode
+import me.retrodaredevil.solarthing.solar.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
 import java.text.DateFormat
@@ -62,7 +65,7 @@ object NotificationHandler {
         return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
-            .setContentText("The generator stopped charging the batteries. Time to turn it off")
+            .setContentText("The generator stopped charging the batteries")
             .setSubText("Stopped charging at $stoppedChargingAtString")
             .setWhen(stoppedChargingAt)
             .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
@@ -108,14 +111,38 @@ object NotificationHandler {
         return r
     }
 
+    /**
+     * @param context the context
+     * @param info The current packet
+     * @param beginningACDropInfo The packet where the ac mode is [ACMode.AC_DROP] but packets before this packet the ac mode was [ACMode.NO_AC]
+     * @param lastACDropInfo The last packet where the ac mode is [ACMode.AC_DROP]. This is normally the same as [lastACDropInfo] but may be a more recent packet
+     * @param acUseInfo The first packet where the ac mode is [ACMode.AC_USE]. If [beginningACDropInfo] is not null, this should be right after it.
+     * @param floatModeActivatedInfo The packet where float or virtual float was activated
+     * @param generatorFloatTimeMillis The amount of time in milliseconds that the generator stays in float mode
+     * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
+     */
     fun createPersistentGenerator(context: Context, info: SolarPacketInfo,
-                                  generatorTurnedOnInfo: SolarPacketInfo, floatModeActivatedInfo: SolarPacketInfo?,
+                                  beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
+                                  acUseInfo: SolarPacketInfo?,
+                                  floatModeActivatedInfo: SolarPacketInfo?,
                                   generatorFloatTimeMillis: Long,
                                   uncertainGeneratorStartInfo: Boolean): Notification{
-        if(!info.generatorOn){
-            throw IllegalStateException("Only call this method if the generator is on!")
-        }
-        val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = generatorTurnedOnInfo.dateMillis }.time)
+        val acMode = info.acMode
+        if(acMode == ACMode.NO_AC) throw IllegalStateException("Only call this method if the generator is on!")
+
+        val acDropStartString = if(beginningACDropInfo != null){
+            val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = beginningACDropInfo.dateMillis }.time)
+            "Generator (AC Drop) started at: $startTime" + (if(uncertainGeneratorStartInfo) " (uncertain start time)" else "") +"\n"
+        } else ""
+        val acUseStartString = if(acUseInfo != null){
+            val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = acUseInfo.dateMillis }.time)
+            "AC Use started at: $startTime" + (if(uncertainGeneratorStartInfo) " (uncertain start time)" else "") +"\n"
+        } else ""
+        val lastACDropString = if(lastACDropInfo != null && acUseInfo != null && lastACDropInfo.dateMillis > acUseInfo.dateMillis){
+            val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = lastACDropInfo.dateMillis }.time)
+            "Last AC Drop at $time\n"
+        } else ""
+
         val floatStartedText = if(floatModeActivatedInfo != null){
             val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
                 GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
@@ -128,23 +155,38 @@ object NotificationHandler {
         } else {
             ""
         }
+        val passThru = info.generatorTotalWattage - info.generatorToBatteryWattage
 
         val text = "" +
-                "Started at: $startTime" + (if(uncertainGeneratorStartInfo) " (uncertain start time)" else "") +"\n" +
+                acDropStartString +
+                acUseStartString +
+                lastACDropString +
                 floatStartedText +
                 "Charger: ${info.generatorToBatteryWattageString} W\n" +
                 "Total: ${info.generatorTotalWattageString} W\n" +
-                "Pass Thru: ${info.generatorTotalWattage - info.generatorToBatteryWattage} W\n" +
+                "Pass Thru: $passThru W\n" +
                 "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.inputVoltage} + "\n" +
                 "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.chargerCurrent } + "\n" +
                 "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.buyCurrent }
+
+        val title = if(acUseInfo == null){
+            "Generator Starting"
+        } else {
+            val onText = if(acMode == ACMode.AC_DROP) "DROP" else "ON"
+            "Generator $onText | " + when {
+                info.fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) } -> "float charge"
+                info.fxMap.values.any { OperationalMode.EQ.isActive(it.operatingMode) } -> "EQ charge"
+                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) } -> "normal charge"
+                else -> "not charging"
+            }
+        }
 
         val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_PERSISTENT.id, GENERATOR_PERSISTENT_ID)
             .setSmallIcon(R.drawable.solar_panel)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
-            .setContentTitle("Generator ON")
-            .setContentText("charger:${info.generatorToBatteryWattageString} total:${info.generatorTotalWattageString}")
+            .setContentTitle(title)
+            .setContentText("charger:${info.generatorToBatteryWattageString} total:${info.generatorTotalWattageString} pass thru:$passThru")
             .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
             .setShowWhen(true)
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -152,14 +194,18 @@ object NotificationHandler {
 //        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(0x654321)
+            builder.setColor(0x654321) // brown
         }
         if(floatModeActivatedInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
             builder.setWhen(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis)
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
         } else {
-            builder.setWhen(generatorTurnedOnInfo.dateMillis)
+            if(acUseInfo != null) {
+                builder.setWhen(acUseInfo.dateMillis)
+            } else {
+                builder.setWhen(beginningACDropInfo!!.dateMillis)
+            }
             builder.setUsesChronometer(true)
         }
         return builder.build()
@@ -213,7 +259,7 @@ object NotificationHandler {
             r += DOUBLE_SEPARATOR
             r += info.mxMap.values.joinToString(SEPARATOR) {
                 val auxActive = AuxMode.isAuxModeActive(it.auxMode)
-                if(auxActive || (!AuxMode.UNKNOWN.isActive(it.auxMode) && !AuxMode.DISABLED.isActive(it.auxMode))){
+                if(auxActive || !AuxMode.DISABLED.isActive(it.auxMode)){
                     auxCount++
                 }
                 oneWord(getDeviceString(it) + it.auxModeName + (if(auxActive) "(ON)" else ""))
@@ -244,7 +290,7 @@ object NotificationHandler {
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
-                "AC: $fxACModesString $SEPARATOR Generator " + (if(info.generatorOn) "<strong>ON</strong>" else "Off") + "\n" +
+                "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" +
                 "Mode: $fxOperationalModeString$DOUBLE_SEPARATOR$mxChargerModesString\n" +
                 "Aux: $auxModesString"
         if(text.length > 5 * 1024){
@@ -258,8 +304,8 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Voltage: ${info.batteryVoltageString} V Load: ${info.loadString} W")
-            .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount} warn:${info.warningsCount}" +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.generatorOn) "ON" else "off")
+            .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W")
+            .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount} warn:${info.warningsCount}" +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)

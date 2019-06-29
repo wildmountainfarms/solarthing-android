@@ -1,8 +1,6 @@
 <resources>
     <string name="app_name">ST</string>
 
-    <!--<string name="generator_float_notification">Generator Float Done Alert</string>-->
-    <!--<string name="generator_float_notification_description">Sends an alert when the generator should be turned off when the float charge is done</string>-->
     <string name="generator_done_notification">Generator Done Alert</string>
     <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when it has stopped charging the batteries or is done with float mode</string>
     <string name="battery_notification">Low Battery Alert</string>

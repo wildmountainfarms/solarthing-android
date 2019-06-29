@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
+import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
@@ -38,8 +39,10 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
     /** The total power from the generator */
     val generatorTotalWattage: Int
 
-    /** true if the generator is on, false otherwise*/
-    val generatorOn: Boolean
+    /**
+     * The AC Mode which can be used to determine the state of the generator
+     */
+    val acMode: ACMode
 
     val dailyKWHours: Float
 
@@ -72,7 +75,7 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         this.batteryVoltage = first.batteryVoltage
         this.batteryVoltageString = first.batteryVoltageString
 
-        generatorOn = fxMap.values.any { ACMode.AC_USE.isActive(it.acMode) }
+        acMode = Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode)
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
         generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
@@ -101,7 +104,7 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
      * @return true if any of the FXs are in float mode or if the batteryVoltage >= virtualFloatModeMinimumBatteryVoltage
      */
     fun isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage: Float?): Boolean {
-        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && generatorOn){
+        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && acMode == ACMode.AC_USE){
             return true
         }
         return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) }

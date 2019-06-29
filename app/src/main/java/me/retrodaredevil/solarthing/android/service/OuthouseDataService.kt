@@ -143,7 +143,7 @@ class OuthouseDataService(
         }
         val builder = getBuilder(if(occupancy == Occupancy.OCCUPIED) NotificationChannels.OUTHOUSE_STATUS_WHILE_OCCUPIED else NotificationChannels.OUTHOUSE_STATUS_WHILE_VACANT)
             .setSmallIcon(if(occupancy == Occupancy.OCCUPIED) R.drawable.potty_occupied else R.drawable.potty)
-            .setContentTitle("Outhouse occupancy: " + if(occupancy != null) occupancy.modeName else "NO OCCUPANCY DATA")
+            .setContentTitle("Outhouse: " + if(occupancy != null) occupancy.modeName else "NO OCCUPANCY DATA")
             .setContentText(if(weatherPacket == null) "no weather data" else "Temperature: ${getTemperatureString(weatherPacket.temperatureCelsius)} " +
                     "| Humidity: ${round(weatherPacket.humidityPercent.toDouble()).toInt()}%")
             .setSubText(summary)

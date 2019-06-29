@@ -9,6 +9,7 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.solar.fx.ACMode
 import me.retrodaredevil.solarthing.solar.fx.OperationalMode
 import java.util.*
 
@@ -37,7 +38,10 @@ class SolarDataService(
         )
     }
     override fun onCancel() {
-        service.getManager().cancel(SOLAR_NOTIFICATION_ID)
+        service.getManager().apply {
+            cancel(SOLAR_NOTIFICATION_ID)
+            cancel(GENERATOR_PERSISTENT_ID)
+        }
         cancelFloatGeneratorNotification()
     }
 
@@ -99,14 +103,26 @@ class SolarDataService(
             return false
         }
         val currentInfo = packetInfoCollection.last()
-        var generatorTurnedOnInfo: SolarPacketInfo? = null
+        var beginningACDropInfo: SolarPacketInfo? = null
+        var lastACDropInfo: SolarPacketInfo? = null
+        var acUseInfo: SolarPacketInfo? = null
+
         var uncertainGeneratorStartInfo = true
         for(info in packetInfoCollection.reversed()){
-            if(!info.generatorOn){
+            if(info.acMode == ACMode.NO_AC){
                 uncertainGeneratorStartInfo = false
                 break
             }
-            generatorTurnedOnInfo = info
+            when(info.acMode){
+                ACMode.AC_USE -> acUseInfo = info
+                ACMode.AC_DROP -> {
+                    lastACDropInfo = info
+                    beginningACDropInfo = info
+                }
+            }
+        }
+        if(beginningACDropInfo != null && acUseInfo != null && beginningACDropInfo.dateMillis > acUseInfo.dateMillis){
+            beginningACDropInfo = null // beginningACDropInfo didn't actually happen before AC Use started so set it to null
         }
         var floatModeActivatedInfo: SolarPacketInfo? = null
         val virtualFloatModeMinimumBatteryVoltage = prefs.virtualFloatModeMinimumBatteryVoltage
@@ -118,9 +134,7 @@ class SolarDataService(
         }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
-            if(!(info.generatorOn
-                        && info.fxMap.values.none { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }
-                        )){
+            if(info.acMode != ACMode.AC_USE || info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }){
                 break
             }
             doneChargingActivatedInfo = info
@@ -133,10 +147,15 @@ class SolarDataService(
                 summary
             )
         )
-        if(generatorTurnedOnInfo != null){
+        if(beginningACDropInfo != null || acUseInfo != null){
             service.getManager().notify(
                 GENERATOR_PERSISTENT_ID,
-                NotificationHandler.createPersistentGenerator(service, currentInfo, generatorTurnedOnInfo, floatModeActivatedInfo, (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo)
+                NotificationHandler.createPersistentGenerator(
+                    service, currentInfo,
+                    beginningACDropInfo, lastACDropInfo, acUseInfo,
+                    floatModeActivatedInfo,
+                    (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo
+                )
             )
         } else {
             service.getManager().cancel(GENERATOR_PERSISTENT_ID)
