@@ -42,9 +42,13 @@ enum class NotificationChannels(
         R.string.generator_done_notification,
         R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-    MX_END_OF_DAY("mx_end_of_day", // keep the ID the same for legacy compatibility
+    MX_END_OF_DAY("mx_end_of_day",
         R.string.mx_end_of_day,
         R.string.mx_end_of_day_description, NotificationManager.IMPORTANCE_LOW,
+        showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+    CONNECTION_STATUS("connection_status",
+        R.string.connection_status,
+        R.string.connection_status_description, NotificationManager.IMPORTANCE_DEFAULT,
         showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     BATTERY_NOTIFICATION("battery_notification",

@@ -27,7 +27,7 @@ object NotificationHandler {
     private const val MX_COLOR_HEX_STRING = "#000077"
     private const val FX_COLOR_HEX_STRING = "#770000"
 
-    fun oneWord(string: String): String {
+    private fun oneWord(string: String): String {
         return "<span style=\"white-space: nowrap\">$string</span>"
     }
 
@@ -43,19 +43,18 @@ object NotificationHandler {
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
             .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+        val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
             .setSmallIcon(R.drawable.power_button)
             .setContentTitle("Generator")
             .setContentText("Should have turned off at $turnOffAtString!")
             .setSubText("Float started at $turnedOnAtString")
             .setWhen(shouldHaveTurnedOffAt)
             .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
-//            .apply {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//                    setSortKey("b")
-//                }
-//            }
-            .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setCategory(Notification.CATEGORY_ALARM)
+        }
+
+        return builder.build()
     }
     fun createDoneGeneratorAlert(context: Context, doneChargingInfo: SolarPacketInfo): Notification {
         val stoppedChargingAt = doneChargingInfo.dateMillis
@@ -292,7 +291,8 @@ object NotificationHandler {
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" +
                 "Mode: $fxOperationalModeString$DOUBLE_SEPARATOR$mxChargerModesString\n" +
-                "Aux: $auxModesString"
+                "Aux: $auxModesString\n" +
+                "Battery: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.batteryVoltageString} + DOUBLE_SEPARATOR + info.mxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.batteryVoltageString} + "${DOUBLE_SEPARATOR}est: ${info.estimatedBatteryVoltageString} V"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
@@ -345,6 +345,40 @@ object NotificationHandler {
             summary.setCategory(Notification.CATEGORY_STATUS)
         }
 
+
+        return Pair(builder.build(), summary.build())
+    }
+
+    /**
+     * @param context The context
+     * @param device The most recent status packet representing a device that has been connected or disconnected
+     * @param justConnected true if [device] has just been connected, false if [device] has just been disconnected
+     */
+    fun createDeviceConnectionStatus(context: Context, device: SolarPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
+        val name = when(device.packetType){
+            SolarPacketType.FX_STATUS -> "FX"
+            SolarPacketType.MXFM_STATUS -> "MX"
+            else -> device.packetType.toString()
+        }
+        val deviceName = "$name on port ${device.address}"
+        val builder = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+            .setContentTitle(deviceName + " " + (if(justConnected) "connected" else "disconnected"))
+
+        val summary = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(DEVICE_CONNECTION_STATUS_GROUP)
+            summary.setGroup(DEVICE_CONNECTION_STATUS_GROUP).setGroupSummary(true)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setCategory(Notification.CATEGORY_STATUS)
+            summary.setCategory(Notification.CATEGORY_STATUS)
+        }
 
         return Pair(builder.build(), summary.build())
     }

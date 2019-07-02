@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
+import me.retrodaredevil.solarthing.android.service.SolarDataService
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.solar.SolarPacket
@@ -23,10 +24,15 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
     /** A map of the port number to the MX/FM status packet associated with device*/
     val mxMap: Map<Int, MXStatusPacket>
 
+    val deviceMap: Map<Int, SolarPacket>
+
     /** The battery voltage */
     val batteryVoltage: Float
     /** The battery voltage as a string (in base 10)*/
     val batteryVoltageString: String
+
+    val estimatedBatteryVoltage: Float
+    val estimatedBatteryVoltageString: String
 
     /** The PV Wattage (Power from the solar panels)*/
     val pvWattage: Int
@@ -52,8 +58,10 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
     init {
         fxMap = HashMap()
         mxMap = HashMap()
+        deviceMap = HashMap()
         for(packet in packetCollection.packets){
             if(packet is SolarPacket){
+                deviceMap[packet.address] = packet
                 when(packet.packetType){
                     SolarPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
@@ -72,8 +80,16 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
             throw IllegalArgumentException("The packet collection must have both FX and MX/FM packets!")
         }
         val first = fxMap.values.first()
-        this.batteryVoltage = first.batteryVoltage
-        this.batteryVoltageString = first.batteryVoltageString
+        batteryVoltage = first.batteryVoltage
+        batteryVoltageString = first.batteryVoltageString
+
+        estimatedBatteryVoltage = when {
+            mxMap.values.count { it.batteryVoltage > batteryVoltage + SolarDataService.ROUND_OFF_ERROR_DEADZONE } > mxMap.size / 2 -> batteryVoltage + .1f
+            mxMap.values.count { it.batteryVoltage < batteryVoltage - SolarDataService.ROUND_OFF_ERROR_DEADZONE } > mxMap.size / 2 -> batteryVoltage - .1f
+            else -> batteryVoltage
+        }
+        // this only works for a 24V system and will likely mess up a 12V one. (It might also help a 48V system a little bit)
+        estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
         acMode = Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode)
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }

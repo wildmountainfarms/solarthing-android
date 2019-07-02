@@ -14,11 +14,16 @@ const val OUTHOUSE_NOTIFICATION_ID = 7
 const val VACANT_NOTIFICATION_ID = 8
 
 const val MX_END_OF_DAY_SUMMARY_ID = 9
+const val DEVICE_CONNECTION_STATUS_SUMMARY_ID = 10
 
 const val MX_END_OF_DAY_GROUP = "mx"
+const val DEVICE_CONNECTION_STATUS_GROUP = "connection"
 
 fun getGroup(id: Int) = "group$id"
 
 fun getMXEndOfDayInfoID(address: Int): Int{
     return 100 + address
+}
+fun getDeviceConnectionStatusID(address: Int): Int {
+    return 200 + address
 }

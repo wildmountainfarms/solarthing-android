@@ -9,6 +9,9 @@
     <string name="mx_end_of_day">MX End of Day</string>
     <string name="mx_end_of_day_description">Sends information on each MX device after daily kWH is reset back to 0 indicating a new day</string>
 
+    <string name="connection_status">Connection Status</string>
+    <string name="connection_status_description">Sends updates when a device has been connected or disconnected</string>
+
     <string name="persistent">Persistent indicator</string>
     <string name="persistent_description">Notification that shows the SolarThing service is running</string>
     <string name="solar_status">Solar status</string>

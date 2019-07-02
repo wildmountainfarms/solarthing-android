@@ -164,7 +164,7 @@ class SolarDataService(
         if(lastPacketInfo != null){
             for(mx in currentInfo.mxMap.values){
                 if(mx.dailyKWH == 0f){
-                    val lastMX = lastPacketInfo.mxMap.values.firstOrNull { it.address == mx.address } ?: continue
+                    val lastMX = lastPacketInfo.mxMap[mx.address] ?: continue
                     val dailyKWH = lastMX.dailyKWH
                     if(dailyKWH != 0f){
                         val notificationAndSummary = NotificationHandler.createMXEndOfDay(service, lastMX, currentInfo.dateMillis)
@@ -174,6 +174,38 @@ class SolarDataService(
                         )
                         service.getManager().notify(
                             MX_END_OF_DAY_SUMMARY_ID,
+                            notificationAndSummary.second
+                        )
+                    }
+                }
+            }
+            for(device in currentInfo.deviceMap.values){
+                val presentInLast = device.address in lastPacketInfo.deviceMap
+                if(!presentInLast){ // device just connected
+                    val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentInfo.dateMillis)
+                    service.getManager().apply {
+                        notify(
+                            getDeviceConnectionStatusID(device.address),
+                            notificationAndSummary.first
+                        )
+                        notify(
+                            DEVICE_CONNECTION_STATUS_SUMMARY_ID,
+                            notificationAndSummary.second
+                        )
+                    }
+                }
+            }
+            for(device in lastPacketInfo.deviceMap.values){
+                val presentNow = device.address in currentInfo.deviceMap
+                if(!presentNow){ // device just disconnected
+                    val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)
+                    service.getManager().apply {
+                        notify(
+                            getDeviceConnectionStatusID(device.address),
+                            notificationAndSummary.first
+                        )
+                        notify(
+                            DEVICE_CONNECTION_STATUS_SUMMARY_ID,
                             notificationAndSummary.second
                         )
                     }
