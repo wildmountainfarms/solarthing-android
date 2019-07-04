@@ -9,8 +9,9 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
-import me.retrodaredevil.solarthing.solar.fx.ACMode
-import me.retrodaredevil.solarthing.solar.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import java.util.*
 
 class SolarDataService(
@@ -66,13 +67,17 @@ class SolarDataService(
 
         if(dataRequest.successful) {
             println("[123]Got successful data request")
-            packetInfoCollection.addAll(dataRequest.packetCollectionList.map {
-                SolarPacketInfo(
-                    it
-                )
+            packetInfoCollection.addAll(dataRequest.packetCollectionList.mapNotNull {
+                try {
+                    SolarPacketInfo(it)
+                } catch (ex: IllegalArgumentException) {
+                    ex.printStackTrace()
+                    println("${it.dateMillis} is a packet collection without both packets")
+                    null
+                }
             })
             packetInfoCollection.limitSize(100_000, 90_000)
-            packetInfoCollection.removeIfBefore(System.currentTimeMillis() - 5 * 60 * 60 * 1000) { it.dateMillis }
+            packetInfoCollection.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
 
             summary = getConnectedSummary(dataRequest.host)
         } else {
@@ -180,6 +185,7 @@ class SolarDataService(
                 }
             }
             for(device in currentInfo.deviceMap.values){
+                if(device !is OutbackPacket) continue
                 val presentInLast = device.address in lastPacketInfo.deviceMap
                 if(!presentInLast){ // device just connected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentInfo.dateMillis)
@@ -196,6 +202,7 @@ class SolarDataService(
                 }
             }
             for(device in lastPacketInfo.deviceMap.values){
+                if(device !is OutbackPacket) continue
                 val presentNow = device.address in currentInfo.deviceMap
                 if(!presentNow){ // device just disconnected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)

@@ -48,12 +48,9 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.github.eidolon1138:solarthing:v2.0.2'
+    implementation 'com.github.wildmountainfarms:solarthing:v2.1.0'
 
-//    implementation 'org.apache.httpcomponents:httpcore:4.3.6'
-//    implementation 'org.apache.httpcomponents:httpcore:4.4.1'
     // https://mvnrepository.com/artifact/org.lightcouch/lightcouch
     implementation 'org.lightcouch:lightcouch:0.2.0'
-//    implementation 'org.ektorp:org.ektorp:1.4.4'
 
 }

@@ -8,14 +8,14 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.fx.ACMode
-import me.retrodaredevil.solarthing.solar.fx.MiscMode
-import me.retrodaredevil.solarthing.solar.fx.OperationalMode
-import me.retrodaredevil.solarthing.solar.mx.AuxMode
-import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.fx.MiscMode
+import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
+import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import java.text.DateFormat
 import java.util.*
 
@@ -210,12 +210,12 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(packet: SolarPacket): String{
+    private fun getDeviceString(packet: OutbackPacket): String{
         return when(packet.packetType){
             SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR_HEX_STRING\">${packet.address}</span>)"
             SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR_HEX_STRING\">${packet.address}</span>)"
-            SolarPacketType.FLEXNET_DC_STATUS -> throw UnsupportedOperationException("FM not supported!")
             null -> throw NullPointerException()
+            else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
         }
     }
     private fun fromHtml(text: String): Spanned {
@@ -354,7 +354,7 @@ object NotificationHandler {
      * @param device The most recent status packet representing a device that has been connected or disconnected
      * @param justConnected true if [device] has just been connected, false if [device] has just been disconnected
      */
-    fun createDeviceConnectionStatus(context: Context, device: SolarPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
+    fun createDeviceConnectionStatus(context: Context, device: OutbackPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
         val name = when(device.packetType){
             SolarPacketType.FX_STATUS -> "FX"
             SolarPacketType.MXFM_STATUS -> "MX"

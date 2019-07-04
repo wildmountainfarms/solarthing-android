@@ -5,10 +5,13 @@ import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.fx.*
-import me.retrodaredevil.solarthing.solar.mx.MXErrorMode
-import me.retrodaredevil.solarthing.solar.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.common.BatteryVoltagePacket
+import me.retrodaredevil.solarthing.solar.outback.OutbackIdentifier
+import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.*
+import me.retrodaredevil.solarthing.solar.outback.mx.*
 import java.text.DecimalFormat
+import kotlin.math.round
 
 
 /**
@@ -19,12 +22,16 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         val FORMAT = DecimalFormat("0.0##")
     }
     val dateMillis = packetCollection.dateMillis
+
+    // TODO eventually we will have to stop using ints to represent devices and will have to use Identifiers
+
     /** A map of the port number to the FX status packet associated with that device*/
     val fxMap: Map<Int, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
     val mxMap: Map<Int, MXStatusPacket>
 
     val deviceMap: Map<Int, SolarPacket>
+    val batteryMap: Map<Int, BatteryVoltagePacket>
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -59,20 +66,25 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         fxMap = HashMap()
         mxMap = HashMap()
         deviceMap = HashMap()
+        batteryMap = HashMap()
         for(packet in packetCollection.packets){
-            if(packet is SolarPacket){
+            if(packet is OutbackPacket){
                 deviceMap[packet.address] = packet
                 when(packet.packetType){
                     SolarPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
                         fxMap[fx.address] = fx
+                        batteryMap[fx.address] = fx
                     }
                     SolarPacketType.MXFM_STATUS -> {
                         val mx = packet as MXStatusPacket
                         mxMap[mx.address] = mx
+                        batteryMap[mx.address] = mx
                     }
                     SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
+                    SolarPacketType.RENOGY_ROVER_STATUS -> System.err.println("Not set up for renogy packets yet!")
                     null -> throw NullPointerException("packetType is null! packet: $packet")
+                    else -> System.err.println("Unknown packet type: ${packet.packetType}")
                 }
             }
         }
@@ -83,12 +95,7 @@ class SolarPacketInfo(private val packetCollection: PacketCollection) {
         batteryVoltage = first.batteryVoltage
         batteryVoltageString = first.batteryVoltageString
 
-        estimatedBatteryVoltage = when {
-            mxMap.values.count { it.batteryVoltage > batteryVoltage + SolarDataService.ROUND_OFF_ERROR_DEADZONE } > mxMap.size / 2 -> batteryVoltage + .1f
-            mxMap.values.count { it.batteryVoltage < batteryVoltage - SolarDataService.ROUND_OFF_ERROR_DEADZONE } > mxMap.size / 2 -> batteryVoltage - .1f
-            else -> batteryVoltage
-        }
-        // this only works for a 24V system and will likely mess up a 12V one. (It might also help a 48V system a little bit)
+        estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
         acMode = Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode)
