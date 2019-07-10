@@ -1,19 +1,19 @@
 package me.retrodaredevil.solarthing.android.request
 
 import com.google.gson.JsonObject
+import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
-import org.lightcouch.CouchDbProperties
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.*
 
 
 class CouchDbDataRequester(
-    private val connectionPropertiesCreator: () -> CouchDbProperties,
+    private val connectionPropertiesCreator: () -> CouchProperties,
     private val jsonPacketGetter: (JsonObject) -> Packet,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
@@ -35,10 +35,10 @@ class CouchDbDataRequester(
             }
             currentlyUpdating = true
         }
-        var couchDbProperties: CouchDbProperties? = null
+        var couchProperties: CouchProperties? = null
         try {
-            couchDbProperties = connectionPropertiesCreator()
-            val client = CouchDbClientAndroid(couchDbProperties)
+            couchProperties = connectionPropertiesCreator()
+            val client = CouchDbClientAndroid(couchProperties.createProperties())
 
             println("Successfully connected!")
             val list = ArrayList<PacketCollection>()
@@ -47,26 +47,26 @@ class CouchDbDataRequester(
                 list.add(packetCollection)
             }
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful", couchDbProperties.host, getAuthDebug(couchDbProperties))
+            return DataRequest(list, true, "Request Successful", couchProperties.host, getAuthDebug(couchProperties))
         } catch(ex: CouchDbException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "Request Failed", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "Request Failed", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) NPE (Likely Parsing Error)", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "(Please report) NPE (Likely Parsing Error)", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
         } catch(ex: Exception) {
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
-                "(Please report) ${ex.javaClass.simpleName} (Unknown)", couchDbProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchDbProperties))
+                "(Please report) ${ex.javaClass.simpleName} (Unknown)", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
         } finally {
             currentlyUpdating = false
         }
     }
-    private fun getAuthDebug(couchDbProperties: CouchDbProperties?): String?{
-        return if(couchDbProperties!= null)
-            "Properties: ${couchDbProperties.protocol} ${couchDbProperties.host}:${couchDbProperties.port} ${couchDbProperties.username} ${couchDbProperties.dbName}\n"
+    private fun getAuthDebug(couchProperties: CouchProperties?): String?{
+        return if(couchProperties!= null)
+            "Properties: ${couchProperties.protocol} ${couchProperties.host}:${couchProperties.port} ${couchProperties.username} ${couchProperties.database}\n"
             else null
     }
     private fun getStackTrace(throwable: Throwable): String{

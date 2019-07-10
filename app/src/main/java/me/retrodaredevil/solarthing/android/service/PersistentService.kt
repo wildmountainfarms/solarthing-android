@@ -13,14 +13,13 @@ import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
 import com.google.gson.JsonObject
+import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.outhouse.OuthousePackets
 import me.retrodaredevil.solarthing.packets.Packet
-import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.android.MainActivity
 import me.retrodaredevil.solarthing.android.Prefs
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.clone
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
@@ -196,9 +195,9 @@ class PersistentService : Service(), Runnable{
                 continue
             }
 
-            service.dataRequesters = prefs.createCouchDbProperties().map{
+            service.dataRequesters = prefs.createCouchProperties().map{
                 CouchDbDataRequester(
-                    { it.clone().apply { dbName = service.databaseName }},
+                    { CouchPropertiesBuilder(it).setDatabase(service.databaseName).build()},
                     service.jsonPacketGetter,
                     { service.dataService.startKey }
                 )

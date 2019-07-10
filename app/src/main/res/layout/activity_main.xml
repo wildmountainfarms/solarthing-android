@@ -69,6 +69,24 @@
                     tools:layout_editor_absoluteX="0dp"
                     tools:layout_editor_absoluteY="230dp"/>
 
+            <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="100px"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/initial_request_timeout" android:hint="Initial Timeout (seconds)"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
+            <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="100px"/>
             <EditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -94,18 +112,9 @@
                     android:inputType="numberDecimal"
                     android:ems="10"
                     android:id="@+id/critical_battery_voltage" android:hint="Critical Battery Voltage"/>
-            <EditText
+            <Space
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:ems="10"
-                    android:id="@+id/initial_request_timeout" android:hint="Initial Timeout (seconds)"/>
-            <EditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:ems="10"
-                    android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
+                    android:layout_height="100px"/>
             <CheckBox
                     android:text="Start on boot"
                     android:layout_width="match_parent"
@@ -127,6 +136,11 @@
                     android:text="Stop Service"
                     android:layout_width="143dp"
                     android:layout_height="wrap_content" android:id="@+id/stop_button" android:onClick="stopService"/>
+            <Button
+                    android:text="Commands"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/open_commands"
+                    android:onClick="openCommands"/>
         </LinearLayout>
     </ScrollView>
 

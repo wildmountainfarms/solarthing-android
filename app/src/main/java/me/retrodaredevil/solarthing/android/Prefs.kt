@@ -1,8 +1,8 @@
 package me.retrodaredevil.solarthing.android
 
 import android.content.Context
-import org.lightcouch.CouchDbProperties
-import java.lang.IllegalArgumentException
+import me.retrodaredevil.couchdb.CouchProperties
+import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 
 class Prefs(private val context: Context) {
 
@@ -38,7 +38,7 @@ class Prefs(private val context: Context) {
     }
     val couchDb = CouchDb()
 
-    fun createCouchDbProperties(): List<CouchDbProperties> {
+    fun createCouchProperties(): List<CouchProperties> {
         val username: String?
         val password: String?
         if(couchDb.useAuth){
@@ -54,7 +54,7 @@ class Prefs(private val context: Context) {
         val hosts = hostsString.split(",")
 
         return hosts.map {
-            CouchDbProperties(
+            CouchPropertiesBuilder(
                 null,
                 false,
                 protocol,
@@ -62,7 +62,7 @@ class Prefs(private val context: Context) {
                 port,
                 username,
                 password
-            )
+            ).build()
         }
     }
 

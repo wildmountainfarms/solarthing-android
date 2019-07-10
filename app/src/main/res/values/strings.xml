@@ -2,12 +2,18 @@
     <string name="app_name">ST</string>
 
     <string name="generator_done_notification">Generator Done Alert</string>
-    <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when it has stopped charging the batteries or is done with float mode</string>
+    <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when
+        it has stopped charging the batteries or is done with float mode
+    </string>
     <string name="battery_notification">Low Battery Alert</string>
-    <string name="battery_notification_description">Sends an alert when the battery voltage is below a configurable value</string>
+    <string name="battery_notification_description">Sends an alert when the battery voltage is below a configurable
+        value
+    </string>
 
     <string name="mx_end_of_day">MX End of Day</string>
-    <string name="mx_end_of_day_description">Sends information on each MX device after daily kWH is reset back to 0 indicating a new day</string>
+    <string name="mx_end_of_day_description">Sends information on each MX device after daily kWH is reset back to 0
+        indicating a new day
+    </string>
 
     <string name="connection_status">Connection Status</string>
     <string name="connection_status_description">Sends updates when a device has been connected or disconnected</string>
@@ -22,12 +28,15 @@
     <string name="outhouse_status_vacant">Outhouse status while vacant</string>
     <string name="outhouse_status_vacant_description">Shows the status and weather in the outhouse while vacant</string>
     <string name="outhouse_status_occupied">Outhouse status while occupied</string>
-    <string name="outhouse_status_occupied_description">Shows the status and weather in the outhouse while occupied</string>
+    <string name="outhouse_status_occupied_description">Shows the status and weather in the outhouse while occupied
+    </string>
 
     <string name="vacant_notification">Vacant notification</string>
     <string name="vacant_notification_status">Notifies you when the outhouse becomes vacant</string>
     <string name="silent_vacant_notification">Silent vacant notification</string>
-    <string name="silent_vacant_notification_status">This notification shows up when the vacant notification is requested</string>
+    <string name="silent_vacant_notification_status">This notification shows up when the vacant notification is
+        requested
+    </string>
     <string name="solar_group">Solar</string>
     <string name="solar_group_description">All notifications related to solar status</string>
     <string name="outhouse_group">Outhouse</string>
