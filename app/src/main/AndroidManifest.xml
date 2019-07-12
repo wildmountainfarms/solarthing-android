@@ -16,7 +16,24 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true"
-            tools:ignore="GoogleAppIndexingWarning">
+            tools:ignore="GoogleAppIndexingWarning"
+            tools:targetApi="m">
+        <receiver android:name=".BatteryVoltageWidget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="me.retrodaredevil.solarthing.android.service.solar-packet-collection"/>
+            </intent-filter>
+
+            <meta-data
+                    android:name="android.appwidget.provider"
+                    android:resource="@xml/battery_voltage_widget_info"/>
+        </receiver>
+        <receiver android:name=".WidgetHandler">
+            <intent-filter>
+                <action android:name="me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"/>
+            </intent-filter>
+        </receiver>
+
         <activity android:name=".CommandActivity">
         </activity>
 
@@ -26,7 +43,8 @@
 
         <receiver
                 android:name=".BootReceiver"
-                android:directBootAware="true">
+                android:directBootAware="true"
+                tools:targetApi="n">
             <intent-filter>
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>

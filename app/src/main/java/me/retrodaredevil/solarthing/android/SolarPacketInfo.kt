@@ -1,15 +1,14 @@
 package me.retrodaredevil.solarthing.android
 
-import me.retrodaredevil.solarthing.android.service.SolarDataService
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltagePacket
-import me.retrodaredevil.solarthing.solar.outback.OutbackIdentifier
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
-import me.retrodaredevil.solarthing.solar.outback.mx.*
+import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
+import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import java.text.DecimalFormat
 import kotlin.math.round
 
@@ -17,7 +16,7 @@ import kotlin.math.round
 /**
  * A class that deals with making a [PacketCollection] with solar data easier to retrieve values from
  */
-class SolarPacketInfo(private val packetCollection: PacketCollection) {
+class SolarPacketInfo(val packetCollection: PacketCollection) {
     companion object {
         val FORMAT = DecimalFormat("0.0##")
     }

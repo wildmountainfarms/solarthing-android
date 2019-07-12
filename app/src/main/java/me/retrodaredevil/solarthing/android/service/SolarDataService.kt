@@ -2,17 +2,21 @@ package me.retrodaredevil.solarthing.android.service
 
 import android.app.Notification
 import android.app.Service
+import android.content.Intent
 import android.os.Build
-import me.retrodaredevil.solarthing.android.DefaultOptions
-import me.retrodaredevil.solarthing.android.Prefs
-import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.SolarPacketInfo
+import com.google.gson.GsonBuilder
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
-import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import java.util.*
+
+object SolarPacketCollectionBroadcast {
+    const val ACTION = "me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"
+    const val JSON = "json"
+}
 
 class SolarDataService(
     private val service: Service,
@@ -21,6 +25,7 @@ class SolarDataService(
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
+        val GSON = GsonBuilder().create()
     }
 
     private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
@@ -79,7 +84,13 @@ class SolarDataService(
             packetInfoCollection.limitSize(100_000, 90_000)
             packetInfoCollection.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
 
-            summary = getConnectedSummary(dataRequest.host)
+            summary = if(dataRequest.packetCollectionList.isNotEmpty()) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
+
+            val intent = Intent(service, WidgetHandler::class.java)
+            intent.action = SolarPacketCollectionBroadcast.ACTION
+            val latest = packetInfoCollection.last()
+            intent.putExtra(SolarPacketCollectionBroadcast.JSON, GSON.toJson(latest.packetCollection))
+            service.sendBroadcast(intent)
         } else {
             println("[123]Got unsuccessful data request")
             summary = getFailedSummary(dataRequest.host)

@@ -23,6 +23,7 @@ fun getHostString(host: String?): String {
 }
 fun getTimedOutSummary(host: String?) = getHostString(host) + "time out ${getTimeString()}"
 fun getConnectedSummary(host: String?) = getHostString(host) + "success"
+fun getConnectedNoNewDataSummary(host: String? ) = getHostString(host) + "no new data"
 fun getFailedSummary(host: String?) = getHostString(host) + "fail at ${getTimeString()}"
 fun getTimeString(): String = DateFormat.getTimeInstance().format(Calendar.getInstance().time)
 
