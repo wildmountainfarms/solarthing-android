@@ -175,7 +175,7 @@ object NotificationHandler {
             "Generator $onText | " + when {
                 info.fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) } -> "float charge"
                 info.fxMap.values.any { OperationalMode.EQ.isActive(it.operatingMode) } -> "EQ charge"
-                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) } -> "normal charge"
+                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) } -> "charging"
                 else -> "not charging"
             }
         }

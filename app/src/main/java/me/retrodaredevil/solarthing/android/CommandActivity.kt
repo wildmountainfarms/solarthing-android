@@ -37,8 +37,11 @@ class CommandActivity : AppCompatActivity() {
     private lateinit var sender: String
     private lateinit var publicKeyText: TextView
     private lateinit var commandText: EditText
+    private lateinit var currentTaskText: TextView
 
     private var keyPair: KeyPair? = null
+
+    private var currentTask: AsyncTask<*, *, *>? = null
 
     @SuppressLint("HardwareIds")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +52,9 @@ class CommandActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.sender_name).text = sender
         commandText = findViewById(R.id.command_text)
         publicKeyText = findViewById(R.id.public_key)
+        currentTaskText = findViewById(R.id.current_task)
         updateKeyPair()
+        setToNoTask()
     }
     fun generateNewKey(view: View){
         if(keyPair == null){
@@ -100,11 +105,15 @@ class CommandActivity : AppCompatActivity() {
         }
     }
     private fun sendAuthRequest(publicKey: PublicKey){
+        if(checkCurrentTask()) return
+
         val packet = ImmutableAuthNewSenderPacket(sender, KeyUtil.encodePublicKey(publicKey))
 
-        UploadToDatabase(
+        currentTaskText.text = "Sending Auth Request"
+        currentTask = UploadToDatabase(
             Prefs(this).createCouchProperties()[0], // TODO figure out a better option than just choosing the first value
-            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR)
+            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
+            ::onPostExecute
         ).execute()
     }
     fun sendCommand(view: View){
@@ -113,15 +122,54 @@ class CommandActivity : AppCompatActivity() {
             Toast.makeText(this, "Please generate a key!", Toast.LENGTH_SHORT).show()
             return
         }
+        if(checkCurrentTask()) return
+
         val text = System.currentTimeMillis().toString(16) + "," + commandText.text.toString()
         println("Going to send text: $text")
         val encrypted = Encrypt.encrypt(cipher, keyPair.private, text)
 
         val packet = ImmutableIntegrityPacket(sender, encrypted)
-        UploadToDatabase(
+        currentTaskText.text = "Sending command"
+        currentTask = UploadToDatabase(
             Prefs(this).createCouchProperties()[0], // TODO figure out a better option than just choosing the first value
-            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR)
+            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
+            ::onPostExecute
         ).execute()
+    }
+    private fun onPostExecute(result: Boolean?){
+        if(false == result || result == null){
+            Toast.makeText(this, "Failed to connect", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Task executed successfully", Toast.LENGTH_SHORT).show()
+        }
+        currentTask = null
+        setToNoTask()
+    }
+    private fun setToNoTask(){
+        currentTaskText.text = "None"
+    }
+
+    /**
+     * If true, you should return and do nothing else because a message has already been sent to the user
+     * @return true if there is a current task, false otherwise
+     */
+    private fun checkCurrentTask(): Boolean{
+        if(currentTask != null){
+            Toast.makeText(this, "Please cancel the current task!", Toast.LENGTH_SHORT).show()
+            return true
+        }
+        return false
+    }
+    fun cancelCurrentTask(view: View){
+        val currentTask = this.currentTask
+        if(currentTask != null){
+            currentTask.cancel(true)
+            Toast.makeText(this, "Cancelled task!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "No task to cancel!", Toast.LENGTH_SHORT).show()
+        }
+        this.currentTask = null
+        setToNoTask()
     }
     @SuppressLint("SetTextI18n")
     private fun updateKeyPair(){
@@ -166,12 +214,22 @@ class CommandActivity : AppCompatActivity() {
 }
 private class UploadToDatabase(
     private val couchProperties: CouchProperties,
-    private val packetCollection: PacketCollection
-) : AsyncTask<Void, Void, Void?>() {
-    override fun doInBackground(vararg params: Void?): Void? {
-        val client = CouchDbClientAndroid(CouchPropertiesBuilder(couchProperties).setDatabase("commands").setCreateIfNotExist(true).build().createProperties())
-        client.save(packetCollection)
-        return null
+    private val packetCollection: PacketCollection,
+    private val onFinish: (Boolean?) -> Unit
+) : AsyncTask<Void, Void, Boolean>() {
+    override fun doInBackground(vararg params: Void?): Boolean {
+        try {
+            val client = CouchDbClientAndroid(CouchPropertiesBuilder(couchProperties).setDatabase("commands").setCreateIfNotExist(true).build().createProperties())
+            client.save(packetCollection)
+        } catch(ex: Exception){
+            ex.printStackTrace()
+            return false
+        }
+        return true
+    }
+
+    override fun onPostExecute(result: Boolean?) {
+        onFinish(result)
     }
 
 }

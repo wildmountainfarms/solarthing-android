@@ -86,11 +86,13 @@ class SolarDataService(
 
             summary = if(dataRequest.packetCollectionList.isNotEmpty()) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
-            val intent = Intent(service, WidgetHandler::class.java)
-            intent.action = SolarPacketCollectionBroadcast.ACTION
-            val latest = packetInfoCollection.last()
-            intent.putExtra(SolarPacketCollectionBroadcast.JSON, GSON.toJson(latest.packetCollection))
-            service.sendBroadcast(intent)
+            if(packetInfoCollection.isNotEmpty()) {
+                val intent = Intent(service, WidgetHandler::class.java)
+                intent.action = SolarPacketCollectionBroadcast.ACTION
+                val latest = packetInfoCollection.last()
+                intent.putExtra(SolarPacketCollectionBroadcast.JSON, GSON.toJson(latest.packetCollection))
+                service.sendBroadcast(intent)
+            }
         } else {
             println("[123]Got unsuccessful data request")
             summary = getFailedSummary(dataRequest.host)
@@ -150,7 +152,7 @@ class SolarDataService(
         }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
-            if(info.acMode != ACMode.AC_USE || info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) || OperationalMode.FLOAT.isActive(it.operatingMode) }){
+            if(info.acMode != ACMode.AC_USE || info.generatorChargingBatteries){
                 break
             }
             doneChargingActivatedInfo = info

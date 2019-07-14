@@ -55,6 +55,7 @@ class SolarPacketInfo(val packetCollection: PacketCollection) {
      * The AC Mode which can be used to determine the state of the generator
      */
     val acMode: ACMode
+    val generatorChargingBatteries: Boolean
 
     val dailyKWHours: Float
 
@@ -98,6 +99,11 @@ class SolarPacketInfo(val packetCollection: PacketCollection) {
         estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
         acMode = Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode)
+        generatorChargingBatteries = fxMap.values.any {
+            OperationalMode.CHARGE.isActive(it.operatingMode)
+                    || OperationalMode.FLOAT.isActive(it.operatingMode)
+                    || OperationalMode.EQ.isActive(it.operatingMode)
+        }
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
         generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
