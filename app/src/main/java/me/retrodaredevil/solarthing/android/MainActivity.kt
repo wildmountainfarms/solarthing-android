@@ -3,7 +3,11 @@ package me.retrodaredevil.solarthing.android
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
+import android.content.ContentResolver
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -16,6 +20,7 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -63,7 +68,9 @@ class MainActivity : AppCompatActivity() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.deleteNotificationChannel("generator_done_notification") // this was used in a previous version but is not longer used
+            for(channel in NotificationChannels.OLD_CHANNELS) {
+                notificationManager.deleteNotificationChannel(channel)
+            }
 
             for(channelGroup in NotificationChannelGroups.values()){
                 notificationManager.createNotificationChannelGroup(NotificationChannelGroup(
@@ -92,6 +99,14 @@ class MainActivity : AppCompatActivity() {
                     setShowBadge(notificationChannel.showBadge)
                     if(notificationChannel.notificationChannelGroups != null){
                         group = notificationChannel.notificationChannelGroups.id
+                    }
+                    if(notificationChannel.sound != null){
+                        val soundId = notificationChannel.sound
+                        val uri = Uri.parse("android.resource://$packageName/raw/$soundId")
+                        setSound(
+                            uri,
+                            AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT).build()
+                        )
                     }
                 })
             }

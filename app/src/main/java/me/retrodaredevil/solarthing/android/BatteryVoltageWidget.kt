@@ -17,7 +17,6 @@ import me.retrodaredevil.solarthing.solar.SolarPackets
 class BatteryVoltageWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetIds: IntArray?) {
-        throw IllegalStateException()
     }
 
     fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, latestInfo: SolarPacketInfo?) {
