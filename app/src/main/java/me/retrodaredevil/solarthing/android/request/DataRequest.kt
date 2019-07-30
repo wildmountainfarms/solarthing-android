@@ -1,13 +1,13 @@
 package me.retrodaredevil.solarthing.android.request
 
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
+import me.retrodaredevil.solarthing.android.PacketGroup
 
 
 /**
  * Represents a completed data request that may or may not have been successful
  */
 data class DataRequest(
-    val packetCollectionList: List<PacketCollection>,
+    val packetGroupList: List<PacketGroup>,
     val successful: Boolean,
     val simpleStatus: String,
     val host: String?,

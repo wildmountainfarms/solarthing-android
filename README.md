@@ -10,8 +10,13 @@ This works best with Android 8, but will still function on older versions.
 
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
-* Notification when a device has been connected or disconnected
 * Daily summaries (MX end of day notifications are a start, but a more useful summary would be helpful too)
+* Integrate with Renogy Rover Packets
+* Drop down menu for the command to send to the MATE
+* A packet that the MATE pi uploads that communicates available commands to display
+* Allow different packet types in a single packet collection
+* Add more widgets
+* Tolerate unknown packet types
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
@@ -19,6 +24,7 @@ This works best with Android 8, but will still function on older versions.
 * Implementing a "sell" status. Some systems are able to give power back to the grid, it might be useful to have
 information that dynamically appears if we are selling
 * On the current system I test with, amp hours is not supported, this would be a useful feature to have if the system supports it.
+* I am unable to test 230V FX setups. I believe the implementation is correct, but it is mostly untested
 
 ### Future changes to make
 * Add option to rename generator to something like "Power Grid" for systems that use

@@ -8,14 +8,19 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.MiscMode
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
 import java.text.DateFormat
 import java.util.*
 
@@ -24,8 +29,10 @@ object NotificationHandler {
     private const val SEPARATOR = "<span style=\"overflow-wrap:break-word\">|</span>"
     private const val DOUBLE_SEPARATOR = "<span style=\"overflow-wrap:break-word\">||</span>"
     private const val MX_COLOR = 0x000077
-    private const val MX_COLOR_HEX_STRING = "#000077"
+
     private const val FX_COLOR_HEX_STRING = "#770000"
+    private const val MX_COLOR_HEX_STRING = "#000077"
+    private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
 
     private fun oneWord(string: String): String {
         return "<span style=\"white-space: nowrap\">$string</span>"
@@ -128,6 +135,7 @@ object NotificationHandler {
                                   uncertainGeneratorStartInfo: Boolean): Notification{
         val acMode = info.acMode
         if(acMode == ACMode.NO_AC) throw IllegalStateException("Only call this method if the generator is on!")
+        acMode!!
 
         val acDropStartString = if(beginningACDropInfo != null){
             val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = beginningACDropInfo.dateMillis }.time)
@@ -210,10 +218,11 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(packet: OutbackPacket): String{
+    private fun getDeviceString(packet: SolarPacket): String{
         return when(packet.packetType){
-            SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR_HEX_STRING\">${packet.address}</span>)"
-            SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR_HEX_STRING\">${packet.address}</span>)"
+            SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>)"
+            SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>)"
+            SolarPacketType.RENOGY_ROVER_STATUS -> "(<span style=\"color:$ROVER_COLOR_HEX_STRING\">${(packet as RoverStatusPacket).address}</span>)"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
         }
@@ -235,64 +244,98 @@ object NotificationHandler {
         val devicesStringList = ArrayList<String>()
         devicesStringList.addAll(info.fxMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]") })
         devicesStringList.addAll(info.mxMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]") })
+        devicesStringList.addAll(info.roverMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RR</span>]") })
 
         val devicesString = devicesStringList.joinToString("")
 
         val unitVoltage = when {
+            info.fxMap.isEmpty() -> "(no inv)"
             info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "230V"
             info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
             else -> "???V"
         }
         var auxCount = 0
         val auxModesString = run {
-            var r = ""
-            r += info.fxMap.values.joinToString(SEPARATOR) {
-                val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) {
-                    auxCount++
-                    "ON"
-                } else {
-                    "Off"
-                }
-                getDeviceString(it) + auxString
+            val list = mutableListOf<String>()
+
+            if(info.fxMap.isNotEmpty()) {
+                list.add(info.fxMap.values.joinToString(SEPARATOR) {
+                    val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) {
+                        auxCount++
+                        "ON"
+                    } else {
+                        "Off"
+                    }
+                    getDeviceString(it) + auxString
+                })
             }
-            r += DOUBLE_SEPARATOR
-            r += info.mxMap.values.joinToString(SEPARATOR) {
-                val auxActive = AuxMode.isAuxModeActive(it.auxMode)
-                if(auxActive || !AuxMode.DISABLED.isActive(it.auxMode)){
-                    auxCount++
-                }
-                oneWord(getDeviceString(it) + it.auxModeName + (if(auxActive) "(ON)" else ""))
+            if(info.fxMap.isNotEmpty()) {
+                list.add(info.mxMap.values.joinToString(SEPARATOR) {
+                    val auxActive = AuxMode.isAuxModeActive(it.auxMode)
+                    if (auxActive || !AuxMode.DISABLED.isActive(it.auxMode)) {
+                        auxCount++
+                    }
+                    oneWord(getDeviceString(it) + it.auxModeName + (if (auxActive) "(ON)" else ""))
+                })
             }
-            r
+            if(info.roverMap.isNotEmpty()){
+                list.add(info.roverMap.values.joinToString(SEPARATOR){
+                    val on = it.streetLightStatus == StreetLight.ON
+                    if(on){
+                        auxCount++
+                    }
+                    oneWord(getDeviceString(it) + (if(on) "ON" else "Off"))
+                })
+            }
+            list.joinToString(DOUBLE_SEPARATOR)
         }
 
-        val fxACModesString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.acModeName}" }
-        val fxOperationalModeString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.operatingModeName}" }
-        val mxDailyKWHString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
-        val mxChargerModesString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargerModeName}" }
-        val mxPVWattagesString = info.mxMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(it)}${it.pvCurrent * it.inputVoltage}"
+        val fxACModesString = if(info.fxMap.values.map { Modes.getActiveMode(ACMode::class.java, it.acMode) }.toSet().size > 1){
+            info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.acModeName}" }
+        } else {
+            info.acMode.modeName
         }
-        val mxChargerWattagesString = info.mxMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(it)}${(it.chargerCurrent * it.batteryVoltage).toInt()}"
+        val dailyKWHString = info.dailyDataMap.values.joinToString(SEPARATOR) { "${getDeviceString(it as SolarPacket)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
+        val modesString = run {
+            val list = mutableListOf<String>()
+            if(info.fxMap.isNotEmpty()){
+                list.add(info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.operatingModeName}" })
+            }
+            if(info.mxMap.isNotEmpty()){
+                list.add(info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargerModeName}" })
+            }
+            if(info.roverMap.isNotEmpty()){
+                list.add(info.roverMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargingState.modeName}"})
+            }
+            list.joinToString(DOUBLE_SEPARATOR)
+        }
+        val pvWattagesString = info.chargeControllerMap.values.joinToString(SEPARATOR) {
+            "${getDeviceString(it as SolarPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
+        }
+        val chargerWattagesString = info.chargeControllerMap.values.joinToString(SEPARATOR) {
+            "${getDeviceString(it as SolarPacket)}${it.chargingPower.toInt()}"
         }
 
         val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.warningsString}" }
         val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
         val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
+        val roverErrorsString = info.roverMap.values.joinToString(SEPARATOR) {
+            "${getDeviceString(it)}${Modes.toString(RoverErrorMode::class.java, it.errorMode)}"
+        }
 
         val text = "" +
-                "PV: $mxPVWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
-                "Charger: $mxChargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
-                "Daily kWH: $mxDailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
+                "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
+                "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
+                "Daily kWH: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
                 "System: $devicesString$SEPARATOR$unitVoltage\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
+                (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
-                "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" +
-                "Mode: $fxOperationalModeString$DOUBLE_SEPARATOR$mxChargerModesString\n" +
+                (if(info.fxMap.isNotEmpty()) { "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
+                "Mode: $modesString\n" +
                 "Aux: $auxModesString\n" +
-                "Battery: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.batteryVoltageString} + DOUBLE_SEPARATOR + info.mxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.batteryVoltageString} + "${DOUBLE_SEPARATOR}est: ${info.estimatedBatteryVoltageString} V"
+                "Battery: " + info.batteryMap.values.joinToString(SEPARATOR) { getDeviceString(it as SolarPacket) + SolarPacketInfo.TENTHS_FORMAT.format(it.batteryVoltage) } + "${DOUBLE_SEPARATOR}est: ${info.estimatedBatteryVoltageString} V"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
@@ -305,7 +348,7 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W")
-            .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount} warn:${info.warningsCount}" +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
+            .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)

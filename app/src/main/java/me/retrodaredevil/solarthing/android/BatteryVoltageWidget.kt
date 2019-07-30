@@ -38,9 +38,15 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                     println("got json:")
                     println(json)
                     val jsonObject = GSON.fromJson(json, JsonObject::class.java)
-                    val packetCollection = PacketCollections.createFromJson(jsonObject, SolarPackets::createFromJson)
-                    val info = SolarPacketInfo(packetCollection)
-                    onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
+                    when(val packetParse = parsePacketGroup(jsonObject, SolarPackets::createFromJson)){
+                        is PacketParse.Success -> {
+                            val info = SolarPacketInfo(packetParse.packetGroup)
+                            onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
+                        }
+                        is PacketParse.Failure -> {
+                            packetParse.exception.printStackTrace()
+                        }
+                    }
                 }
             }
         } else {

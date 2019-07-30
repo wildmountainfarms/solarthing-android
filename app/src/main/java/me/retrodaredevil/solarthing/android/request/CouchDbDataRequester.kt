@@ -2,7 +2,11 @@ package me.retrodaredevil.solarthing.android.request
 
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchProperties
+import me.retrodaredevil.solarthing.android.PacketGroup
+import me.retrodaredevil.solarthing.android.PacketParse
+import me.retrodaredevil.solarthing.android.parsePacketGroup
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.UnknownPacketTypeException
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
@@ -41,13 +45,28 @@ class CouchDbDataRequester(
             val client = CouchDbClientAndroid(couchProperties.createProperties())
 
             println("Successfully connected!")
-            val list = ArrayList<PacketCollection>()
+            val list = ArrayList<PacketGroup>()
+            var exception: Exception? = null
             for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
-                val packetCollection = PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"), jsonPacketGetter)
-                list.add(packetCollection)
+                val packetCollection = jsonObject.getAsJsonObject("value")
+                when(val packetParse = parsePacketGroup(packetCollection, jsonPacketGetter)){
+                    is PacketParse.Success -> list.add(packetParse.packetGroup)
+                    is PacketParse.Failure -> exception = packetParse.exception
+                }
             }
+            if(list.isEmpty() && exception != null){
+                return DataRequest(
+                    emptyList(),
+                    false, "Got all unknown packets",
+                    couchProperties.host,
+                    getStackTrace(exception),
+                    exception.message,
+                    getAuthDebug(couchProperties)
+                )
+            }
+            exception?.printStackTrace()
             println("Updated collections!")
-            return DataRequest(list, true, "Request Successful", couchProperties.host, getAuthDebug(couchProperties))
+            return DataRequest(list, true, "Request Successful", couchProperties.host, authDebug = getAuthDebug(couchProperties))
         } catch(ex: CouchDbException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,

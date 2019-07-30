@@ -1,36 +1,42 @@
 package me.retrodaredevil.solarthing.android
 
 import me.retrodaredevil.solarthing.packets.Modes
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
+import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.common.BatteryVoltagePacket
+import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
+import me.retrodaredevil.solarthing.solar.common.ChargeController
+import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.text.DecimalFormat
 import kotlin.math.round
 
 
 /**
- * A class that deals with making a [PacketCollection] with solar data easier to retrieve values from
+ * A class that deals with making a [PacketGroup] with solar data easier to retrieve values from
  */
-class SolarPacketInfo(val packetCollection: PacketCollection) {
+class SolarPacketInfo(val packetGroup: PacketGroup) {
     companion object {
+        val TENTHS_FORMAT = DecimalFormat("0.0")
         val FORMAT = DecimalFormat("0.0##")
     }
-    val dateMillis = packetCollection.dateMillis
+    val dateMillis = packetGroup.dateMillis
 
-    // TODO eventually we will have to stop using ints to represent devices and will have to use Identifiers
 
     /** A map of the port number to the FX status packet associated with that device*/
-    val fxMap: Map<Int, FXStatusPacket>
+    val fxMap: Map<Identifier, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
-    val mxMap: Map<Int, MXStatusPacket>
+    val mxMap: Map<Identifier, MXStatusPacket>
+    val roverMap: Map<Identifier, RoverStatusPacket>
 
-    val deviceMap: Map<Int, SolarPacket>
-    val batteryMap: Map<Int, BatteryVoltagePacket>
+    val deviceMap: Map<Identifier, SolarPacket>
+    val chargeControllerMap: Map<Identifier, ChargeController>
+    val dailyDataMap: Map<Identifier, DailyData>
+    val batteryMap: Map<Identifier, BatteryVoltage>
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -60,46 +66,56 @@ class SolarPacketInfo(val packetCollection: PacketCollection) {
     val dailyKWHours: Float
 
     val warningsCount: Int
+    val hasWarnings: Boolean
     val errorsCount: Int
 
     init {
         fxMap = HashMap()
         mxMap = HashMap()
+        roverMap = HashMap()
         deviceMap = HashMap()
+        chargeControllerMap = HashMap()
+        dailyDataMap = HashMap()
         batteryMap = HashMap()
-        for(packet in packetCollection.packets){
-            if(packet is OutbackPacket){
-                deviceMap[packet.address] = packet
+        for(packet in packetGroup.packets){
+            println(packet)
+            if(packet is SolarPacket){
+                deviceMap[packet.identifier] = packet
                 when(packet.packetType){
                     SolarPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
-                        fxMap[fx.address] = fx
-                        batteryMap[fx.address] = fx
+                        fxMap[fx.identifier] = fx
+                        batteryMap[fx.identifier] = fx
                     }
                     SolarPacketType.MXFM_STATUS -> {
                         val mx = packet as MXStatusPacket
-                        mxMap[mx.address] = mx
-                        batteryMap[mx.address] = mx
+                        mxMap[mx.identifier] = mx
+                        batteryMap[mx.identifier] = mx
+                        chargeControllerMap[mx.identifier] = mx
+                        dailyDataMap[mx.identifier] = mx
                     }
                     SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
-                    SolarPacketType.RENOGY_ROVER_STATUS -> System.err.println("Not set up for renogy packets yet!")
+                    SolarPacketType.RENOGY_ROVER_STATUS -> {
+                        val rover = packet as RoverStatusPacket
+                        roverMap[rover.identifier] = rover
+                        batteryMap[rover.identifier] = rover
+                        chargeControllerMap[rover.identifier] = rover
+                        dailyDataMap[rover.identifier] = rover
+                    }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
                 }
             }
         }
-        if(fxMap.isEmpty() || mxMap.isEmpty()){
-            throw IllegalArgumentException("The packet collection must have both FX and MX/FM packets!")
-        }
-        val first = fxMap.values.first()
-        batteryVoltage = first.batteryVoltage
-        batteryVoltageString = first.batteryVoltageString
+        val firstBattery: BatteryVoltage = (fxMap.values.firstOrNull() ?: mxMap.values.firstOrNull() ?: roverMap.values.firstOrNull() ?: throw IllegalArgumentException("No FX, MX or rover packets!")) as BatteryVoltage
+        batteryVoltage = firstBattery.batteryVoltage
+        batteryVoltageString = TENTHS_FORMAT.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
-        acMode = Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode)
-        generatorChargingBatteries = fxMap.values.any {
+        acMode = if(fxMap.isNotEmpty()) Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode) else ACMode.NO_AC
+        generatorChargingBatteries = if(fxMap.isEmpty()) false else fxMap.values.any {
             OperationalMode.CHARGE.isActive(it.operatingMode)
                     || OperationalMode.FLOAT.isActive(it.operatingMode)
                     || OperationalMode.EQ.isActive(it.operatingMode)
@@ -108,13 +124,15 @@ class SolarPacketInfo(val packetCollection: PacketCollection) {
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
         generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
 
-        pvWattage = mxMap.values.sumBy { it.pvCurrent * it.inputVoltage }
-        pvChargerWattage = mxMap.values.sumByDouble { (it.chargerCurrent + it.ampChargerCurrent) * it.batteryVoltage.toDouble() }.toFloat() // TODO check to see if ampChargerCurrent is correct
-        dailyKWHours = mxMap.values.map { it.dailyKWH }.sum()
+        pvWattage = chargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
+        pvChargerWattage = chargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
+        dailyKWHours = dailyDataMap.values.map { it.dailyKWH }.sum()
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
+        hasWarnings = fxMap.isNotEmpty()
         errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorMode) } }
             + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorMode) } }
+            + roverMap.values.sumBy { it.activeErrors.size }
     }
 
     val pvWattageString by lazy { pvWattage.toString() }
@@ -146,12 +164,11 @@ class SolarPacketInfo(val packetCollection: PacketCollection) {
             return other.dateMillis == dateMillis
                 && other.fxMap.keys == fxMap.keys
                 && other.mxMap.keys == mxMap.keys
-                && other.packetCollection.dbId == packetCollection.dbId
         }
         return false
     }
 
     override fun hashCode(): Int {
-        return dateMillis.hashCode() - fxMap.keys.hashCode() + mxMap.keys.hashCode() - batteryVoltage.hashCode() + packetCollection.dbId.hashCode()
+        return dateMillis.hashCode() - fxMap.keys.hashCode() + mxMap.keys.hashCode() - batteryVoltage.hashCode()
     }
 }

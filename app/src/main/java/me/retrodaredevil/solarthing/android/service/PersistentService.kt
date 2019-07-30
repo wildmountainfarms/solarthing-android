@@ -27,6 +27,10 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
+import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetter
+import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplexer
+import me.retrodaredevil.solarthing.packets.instance.InstancePackets
+import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
 
 
 fun restartService(context: Context){
@@ -82,7 +86,11 @@ class PersistentService : Service(), Runnable{
 
     private val services = listOf(
         ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
-        ServiceObject(SolarDataService(this, prefs), "solarthing", SolarPackets::createFromJson)
+        ServiceObject(
+            SolarDataService(this, prefs), "solarthing",
+            JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it)})::createFromJson
+        )
+//        ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
     )
 
     override fun onBind(intent: Intent?): IBinder? {

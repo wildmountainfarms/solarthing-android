@@ -10,6 +10,7 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
+import me.retrodaredevil.solarthing.android.PacketGroup
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.OUTHOUSE_NOTIFICATION_ID
@@ -18,7 +19,6 @@ import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.outhouse.*
 import me.retrodaredevil.solarthing.packets.Modes
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import java.util.*
 import kotlin.math.round
 
@@ -31,7 +31,7 @@ class OuthouseDataService(
         private const val VACANT_NOTIFY_CLEAR_ACTION = "me.retrodaredevil.solarthing.android.service.action.disable_vacant_notify"
     }
 
-    private val packetCollections = TreeSet<PacketCollection>(createComparator { it.dateMillis })
+    private val packetCollections = TreeSet<PacketGroup>(createComparator { it.dateMillis })
 
     private var vacantNotify = false
 
@@ -67,7 +67,7 @@ class OuthouseDataService(
 
     override fun onDataRequest(dataRequest: DataRequest) {
         if(dataRequest.successful){
-            packetCollections.addAll(dataRequest.packetCollectionList)
+            packetCollections.addAll(dataRequest.packetGroupList)
             packetCollections.limitSize(100_000, 90_000)
             packetCollections.removeIfBefore(System.currentTimeMillis() - 20 * 60 * 1000) { it.dateMillis } // keep packets 20 minutes in the past
             if(!doNotify(getConnectedSummary(dataRequest.host))){
