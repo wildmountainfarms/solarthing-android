@@ -6,9 +6,6 @@ import me.retrodaredevil.solarthing.android.PacketGroup
 import me.retrodaredevil.solarthing.android.PacketParse
 import me.retrodaredevil.solarthing.android.parsePacketGroup
 import me.retrodaredevil.solarthing.packets.Packet
-import me.retrodaredevil.solarthing.packets.UnknownPacketTypeException
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
-import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import java.io.PrintWriter

@@ -135,7 +135,6 @@ object NotificationHandler {
                                   uncertainGeneratorStartInfo: Boolean): Notification{
         val acMode = info.acMode
         if(acMode == ACMode.NO_AC) throw IllegalStateException("Only call this method if the generator is on!")
-        acMode!!
 
         val acDropStartString = if(beginningACDropInfo != null){
             val startTime = DateFormat.getTimeInstance(DateFormat.SHORT).format(GregorianCalendar().apply { timeInMillis = beginningACDropInfo.dateMillis }.time)
@@ -231,6 +230,7 @@ object NotificationHandler {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             Html.fromHtml(text.replace("\n", "<br/>"), 0)
         } else {
+            @Suppress("DEPRECATION")
             Html.fromHtml(text.replace("\n", "<br/>"))
         }
     }

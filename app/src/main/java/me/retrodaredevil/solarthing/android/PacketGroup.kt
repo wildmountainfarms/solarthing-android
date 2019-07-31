@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
+import android.annotation.SuppressLint
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.instance.InstanceFragmentIndicatorPacket
 import me.retrodaredevil.solarthing.packets.instance.InstancePacket
@@ -46,6 +47,7 @@ fun sortPackets(groups: Collection<PacketGroup>, maxTimeDistance: Long = (60 * 1
         val sourceId = entry.key // sourceId will be the same for everything in list
         val list = entry.value
 
+        @SuppressLint("UseSparseArrays") // TODO we could actually make this a SparseArray later
         val fragmentMap = HashMap<Int?, MutableList<ParsedPacketGroup>>()
         for(packetGroup in list){
             fragmentMap.getOrPut(packetGroup.fragmentId, ::mutableListOf).add(packetGroup)

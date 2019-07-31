@@ -56,6 +56,7 @@ class CommandActivity : AppCompatActivity() {
         updateKeyPair()
         setToNoTask()
     }
+    @Suppress("UNUSED_PARAMETER")
     fun generateNewKey(view: View){
         if(keyPair == null){
             generateNewKey()
@@ -73,6 +74,7 @@ class CommandActivity : AppCompatActivity() {
         setKeyPair(KeyUtil.generateKeyPair())
         Toast.makeText(this, "Generated a new key pair!", Toast.LENGTH_SHORT).show()
     }
+    @Suppress("UNUSED_PARAMETER")
     fun deleteKey(view: View){
         if(keyPair == null){
             Toast.makeText(this, "You haven't generated a key pair key!", Toast.LENGTH_SHORT).show()
@@ -87,6 +89,7 @@ class CommandActivity : AppCompatActivity() {
             }
             .create().show()
     }
+    @Suppress("UNUSED_PARAMETER")
     fun sendAuthRequest(view: View){
         val keyPair = this.keyPair
         if(keyPair == null){
@@ -104,6 +107,7 @@ class CommandActivity : AppCompatActivity() {
                 .create().show()
         }
     }
+    @SuppressLint("SetTextI18n")
     private fun sendAuthRequest(publicKey: PublicKey){
         if(checkCurrentTask()) return
 
@@ -116,6 +120,8 @@ class CommandActivity : AppCompatActivity() {
             ::onPostExecute
         ).execute()
     }
+    @SuppressLint("SetTextI18n")
+    @Suppress("UNUSED_PARAMETER")
     fun sendCommand(view: View){
         val keyPair = this.keyPair
         if(keyPair == null){
@@ -145,6 +151,7 @@ class CommandActivity : AppCompatActivity() {
         currentTask = null
         setToNoTask()
     }
+    @SuppressLint("SetTextI18n")
     private fun setToNoTask(){
         currentTaskText.text = "None"
     }
@@ -160,6 +167,7 @@ class CommandActivity : AppCompatActivity() {
         }
         return false
     }
+    @Suppress("UNUSED_PARAMETER")
     fun cancelCurrentTask(view: View){
         val currentTask = this.currentTask
         if(currentTask != null){

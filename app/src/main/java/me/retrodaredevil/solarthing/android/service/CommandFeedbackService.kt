@@ -3,6 +3,7 @@ package me.retrodaredevil.solarthing.android.service
 import android.app.Service
 import me.retrodaredevil.solarthing.android.request.DataRequest
 
+@Suppress("unused")
 class CommandFeedbackService(
     private val service: Service
 ) : DataService {

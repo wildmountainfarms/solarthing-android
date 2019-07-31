@@ -2,13 +2,12 @@ package me.retrodaredevil.solarthing.android
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.*
-import android.support.v4.content.LocalBroadcastManager
+import android.content.Context
+import android.content.Intent
 import android.widget.RemoteViews
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
-import me.retrodaredevil.solarthing.packets.collection.PacketCollections
 import me.retrodaredevil.solarthing.solar.SolarPackets
 
 /**

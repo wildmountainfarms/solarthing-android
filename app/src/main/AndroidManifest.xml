@@ -17,7 +17,7 @@
             android:theme="@style/AppTheme"
             android:usesCleartextTraffic="true"
             tools:ignore="GoogleAppIndexingWarning"
-            tools:targetApi="m">
+            tools:targetApi="m" android:fullBackupContent="@xml/backup_descriptor">
         <receiver android:name=".BatteryVoltageWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -28,7 +28,7 @@
                     android:name="android.appwidget.provider"
                     android:resource="@xml/battery_voltage_widget_info"/>
         </receiver>
-        <receiver android:name=".WidgetHandler">
+        <receiver android:name=".WidgetHandler" android:permission="" tools:ignore="ExportedReceiver">
             <intent-filter>
                 <action android:name="me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"/>
             </intent-filter>

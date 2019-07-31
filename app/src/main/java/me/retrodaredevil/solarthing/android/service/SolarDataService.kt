@@ -141,6 +141,7 @@ class SolarDataService(
                     lastACDropInfo = info
                     beginningACDropInfo = info
                 }
+                else -> {}
             }
         }
         if(beginningACDropInfo != null && acUseInfo != null && beginningACDropInfo.dateMillis > acUseInfo.dateMillis){

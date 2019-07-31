@@ -123,6 +123,7 @@ class OuthouseDataService(
                     OuthousePacketType.OCCUPANCY -> occupancyPacket = packet as OccupancyPacket
                     OuthousePacketType.WEATHER -> weatherPacket = packet as WeatherPacket
                     null -> throw NullPointerException()
+                    else -> {}
                 }
             }
         }

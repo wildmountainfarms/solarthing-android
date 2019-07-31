@@ -14,9 +14,6 @@ import android.os.IBinder
 import android.widget.Toast
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
-import me.retrodaredevil.solarthing.outhouse.OuthousePackets
-import me.retrodaredevil.solarthing.packets.Packet
-import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.android.MainActivity
 import me.retrodaredevil.solarthing.android.Prefs
 import me.retrodaredevil.solarthing.android.R
@@ -27,10 +24,12 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
+import me.retrodaredevil.solarthing.outhouse.OuthousePackets
+import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetter
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplexer
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
-import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
+import me.retrodaredevil.solarthing.solar.SolarPackets
 
 
 fun restartService(context: Context){
@@ -184,6 +183,7 @@ class PersistentService : Service(), Runnable{
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             return Notification.Builder(this, NotificationChannels.PERSISTENT.id)
         }
+        @Suppress("DEPRECATION")
         return Notification.Builder(this)
     }
     private fun getManager() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

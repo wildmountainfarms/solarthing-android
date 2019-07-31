@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import me.retrodaredevil.solarthing.android.R
 

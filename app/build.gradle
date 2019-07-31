@@ -5,13 +5,20 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
+    lintOptions {
+        // I have to do this for the CouchDB library that is being used. It requires an old version of httpclient which conflicts with new classes or something...
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "me.retrodaredevil.solarthing.android"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 130
-        versionName "1.13"
+        versionCode 141
+        versionName "1.14"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -3,10 +3,8 @@ package me.retrodaredevil.solarthing.android
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
-import android.content.ContentResolver
 import android.content.Intent
 import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,7 +18,6 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -113,12 +110,15 @@ class MainActivity : AppCompatActivity() {
         }
         startServiceIfNotRunning(this)
     }
+    @Suppress("UNUSED_PARAMETER")
     fun saveSettings(view: View){
         saveSettings()
     }
+    @Suppress("UNUSED_PARAMETER")
     fun restartService(view: View){
         restartService(this)
     }
+    @Suppress("UNUSED_PARAMETER")
     fun stopService(view: View){
         stopService(this)
     }
@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
             password.alpha = .5f
         }
     }
+    @Suppress("UNUSED_PARAMETER")
     fun openCommands(view: View){
         startActivity(Intent(this, CommandActivity::class.java))
     }
