@@ -11,12 +11,11 @@ This works best with Android 8, but will still function on older versions.
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
 * Daily summaries (MX end of day notifications are a start, but a more useful summary would be helpful too)
-* Integrate with Renogy Rover Packets
 * Drop down menu for the command to send to the MATE
 * A packet that the MATE pi uploads that communicates available commands to display
 * Allow different packet types in a single packet collection
 * Add more widgets
-* Tolerate unknown packet types
+* If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
@@ -31,6 +30,11 @@ information that dynamically appears if we are selling
 the power grid as backup power instead of a generator that can be turned on and off
 * Modularize the solar and outhouse parts of the program so new users aren't confused as to why there's an
 outhouse status
+
+### Features Completed
+* Tolerate unknown packet types
+* Integrate with Renogy Rover Packets
+* Fragmented packets
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:

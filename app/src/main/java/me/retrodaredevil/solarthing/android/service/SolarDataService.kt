@@ -24,10 +24,11 @@ class SolarDataService(
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
-        val GSON = GsonBuilder().create()
+        private val GSON = GsonBuilder().create()
     }
 
-    private val packetInfoCollection = TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
+    private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
+    private var packetInfoCollection: Collection<SolarPacketInfo> = emptySet() //= TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
     private var lastPacketInfo: SolarPacketInfo? = null
     private var lastFloatGeneratorNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
@@ -71,8 +72,14 @@ class SolarDataService(
 
         if(dataRequest.successful) {
             println("[123]Got successful data request")
-            val sizeBefore = packetInfoCollection.size
-            packetInfoCollection.addAll(dataRequest.packetGroupList.mapNotNull {
+            val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
+            packetGroups.limitSize(100_000, 90_000)
+            packetGroups.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
+
+            summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
+
+
+            packetInfoCollection = sortPackets(packetGroups).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
                     SolarPacketInfo(it)
                 } catch (ex: IllegalArgumentException) {
@@ -80,11 +87,8 @@ class SolarDataService(
 //                    println("${it.dateMillis} is a packet collection without packets")
                     null
                 }
-            })
-            packetInfoCollection.limitSize(100_000, 90_000)
-            packetInfoCollection.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
+            }
 
-            summary = if(sizeBefore < packetInfoCollection.size) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
             if(packetInfoCollection.isNotEmpty()) {
                 val intent = Intent(service, WidgetHandler::class.java)

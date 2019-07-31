@@ -1,6 +1,5 @@
 
 # custom:
-/.idea/
 /projectFilesBackup/
 
 # Built application files
@@ -69,3 +68,7 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 fastlane/readme.md
+
+#Idea stuff
+.idea/*
+!.idea/dictionaries/
