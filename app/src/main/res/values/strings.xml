@@ -10,8 +10,8 @@
         value
     </string>
 
-    <string name="mx_end_of_day">MX End of Day</string>
-    <string name="mx_end_of_day_description">Sends information on each MX device after daily kWH is reset back to 0
+    <string name="mx_end_of_day">Charge Controller End of Day</string>
+    <string name="mx_end_of_day_description">Sends information on each charge controller device after daily kWH is reset back to 0
         indicating a new day
     </string>
 

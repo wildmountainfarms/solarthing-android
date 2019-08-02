@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import java.util.*
@@ -157,7 +158,7 @@ class SolarDataService(
         }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
-            if(info.acMode != ACMode.AC_USE || info.generatorChargingBatteries == true){
+            if(info.acMode != ACMode.AC_USE || info.generatorChargingBatteries){
                 break
             }
             doneChargingActivatedInfo = info
@@ -185,31 +186,31 @@ class SolarDataService(
         }
         val lastPacketInfo = this.lastPacketInfo
         if(lastPacketInfo != null){
-            for(mx in currentInfo.mxMap.values){
-                if(mx.dailyKWH == 0f){
-                    val lastMX = lastPacketInfo.mxMap[mx.identifier] ?: continue
-                    val dailyKWH = lastMX.dailyKWH
+            for(dailyData in currentInfo.dailyDataMap.values){
+                if(dailyData !is SolarPacket) error("dailyDataMap must have SolarPackets!")
+                if(dailyData.dailyKWH == 0f){
+                    val lastDailyData = lastPacketInfo.dailyDataMap[dailyData.identifier] ?: continue
+                    val dailyKWH = lastDailyData.dailyKWH
                     if(dailyKWH != 0f){
-                        val notificationAndSummary = NotificationHandler.createMXEndOfDay(service, lastMX, currentInfo.dateMillis)
+                        val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyData, currentInfo.dateMillis)
                         service.getManager().notify(
-                            getMXEndOfDayInfoID(lastMX.address),
+                            getEndOfDayInfoID(lastDailyData),
                             notificationAndSummary.first
                         )
                         service.getManager().notify(
-                            MX_END_OF_DAY_SUMMARY_ID,
+                            END_OF_DAY_SUMMARY_ID,
                             notificationAndSummary.second
                         )
                     }
                 }
             }
             for(device in currentInfo.deviceMap.values){
-                if(device !is OutbackPacket) continue
                 val presentInLast = device.identifier in lastPacketInfo.deviceMap
                 if(!presentInLast){ // device just connected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusID(device.address),
+                            getDeviceConnectionStatusID(device),
                             notificationAndSummary.first
                         )
                         notify(
@@ -226,7 +227,7 @@ class SolarDataService(
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusID(device.address),
+                            getDeviceConnectionStatusID(device),
                             notificationAndSummary.first
                         )
                         notify(

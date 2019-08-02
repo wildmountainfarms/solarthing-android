@@ -6,11 +6,11 @@ import android.graphics.Color
 import android.os.Build
 import android.text.Html
 import android.text.Spanned
-import me.retrodaredevil.solarthing.android.SolarPacketInfo
-import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
+import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
@@ -171,9 +171,9 @@ object NotificationHandler {
                 "Charger: ${info.generatorToBatteryWattageString} W\n" +
                 "Total: ${info.generatorTotalWattageString} W\n" +
                 "Pass Thru: $passThru W\n" +
-                "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.inputVoltage} + "\n" +
-                "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.chargerCurrent } + "\n" +
-                "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(it) + it.buyCurrent }
+                "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.inputVoltage} + "\n" +
+                "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.chargerCurrent } + "\n" +
+                "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.buyCurrent }
 
         val title = if(acUseInfo == null){
             "Generator Starting"
@@ -217,11 +217,11 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(packet: SolarPacket): String{
+    private fun getDeviceString(info: SolarPacketInfo, packet: SolarPacket): String{
         return when(packet.packetType){
             SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>)"
             SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>)"
-            SolarPacketType.RENOGY_ROVER_STATUS -> "(<span style=\"color:$ROVER_COLOR_HEX_STRING\">${(packet as RoverStatusPacket).address}</span>)"
+            SolarPacketType.RENOGY_ROVER_STATUS -> "(<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>)"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
         }
@@ -241,93 +241,96 @@ object NotificationHandler {
      * @param summary The sub text (or summary) of the notification.
      */
     fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = ""): Notification {
-        val devicesStringList = ArrayList<String>()
-        devicesStringList.addAll(info.fxMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]") })
-        devicesStringList.addAll(info.mxMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]") })
-        devicesStringList.addAll(info.roverMap.values.map { oneWord("[<strong>${it.address}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RR</span>]") })
+        val devicesString = getOrderedValues(info.deviceMap).joinToString("") {
+            when (it) {
+                is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
+                is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]")
+                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverID(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RV</span>]")
+                else -> it.toString()
+            }
+        }
 
-        val devicesString = devicesStringList.joinToString("")
-
-        val unitVoltage = when {
-            info.fxMap.isEmpty() -> "(no inv)"
-            info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "230V"
-            info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
-            else -> "???V"
+        val inverterVoltageString = SEPARATOR + when {
+            info.fxMap.isEmpty() -> ""
+            info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "${SEPARATOR}230V"
+            info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "${SEPARATOR}120V"
+            else -> "$SEPARATOR???V"
+        }
+        val batteryVoltageString = when {
+            info.roverMap.isEmpty() -> ""
+            else -> SEPARATOR + " " + info.roverMap.values.first().batteryType.modeName
         }
         var auxCount = 0
         val auxModesString = run {
             val list = mutableListOf<String>()
 
-            if(info.fxMap.isNotEmpty()) {
-                list.add(info.fxMap.values.joinToString(SEPARATOR) {
-                    val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(it.misc)) {
-                        auxCount++
-                        "ON"
-                    } else {
-                        "Off"
+            for(device in getOrderedValues(info.deviceMap)) {
+                val string = when(device){
+                    is FXStatusPacket -> {
+                        val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) {
+                            auxCount++
+                            "ON"
+                        } else {
+                            "Off"
+                        }
+                        oneWord(getDeviceString(info, device) + auxString)
                     }
-                    getDeviceString(it) + auxString
-                })
-            }
-            if(info.fxMap.isNotEmpty()) {
-                list.add(info.mxMap.values.joinToString(SEPARATOR) {
-                    val auxActive = AuxMode.isAuxModeActive(it.auxMode)
-                    if (auxActive || !AuxMode.DISABLED.isActive(it.auxMode)) {
-                        auxCount++
+                    is MXStatusPacket -> {
+                        val auxActive = AuxMode.isAuxModeActive(device.auxMode)
+                        val auxDisabled = AuxMode.DISABLED.isActive(device.auxMode)
+                        if (auxActive || !auxDisabled) {
+                            auxCount++
+                        }
+                        val auxName = when {
+                            auxDisabled -> if(auxActive) "ON" else "Off"
+                            else -> device.auxModeName + (if (auxActive) "(ON)" else "")
+                        }
+                        oneWord(getDeviceString(info, device) + auxName)
                     }
-                    oneWord(getDeviceString(it) + it.auxModeName + (if (auxActive) "(ON)" else ""))
-                })
-            }
-            if(info.roverMap.isNotEmpty()){
-                list.add(info.roverMap.values.joinToString(SEPARATOR){
-                    val on = it.streetLightStatus == StreetLight.ON
-                    if(on){
-                        auxCount++
+                    is RoverStatusPacket -> {
+                        val on = device.streetLightStatus == StreetLight.ON
+                        if(on){
+                            auxCount++
+                        }
+                        oneWord(getDeviceString(info, device) + (if(on) "ON" else "Off"))
                     }
-                    oneWord(getDeviceString(it) + (if(on) "ON" else "Off"))
-                })
+                    else -> null
+                }
+                if(string != null) {
+                    list.add(string)
+                }
             }
-            list.joinToString(DOUBLE_SEPARATOR)
+
+            list.joinToString(SEPARATOR)
         }
 
         val fxACModesString = if(info.fxMap.values.map { Modes.getActiveMode(ACMode::class.java, it.acMode) }.toSet().size > 1){
-            info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.acModeName}" }
+            getOrderedValues(info.fxMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.acModeName}" }
         } else {
             info.acMode.modeName
         }
-        val dailyKWHString = info.dailyDataMap.values.joinToString(SEPARATOR) { "${getDeviceString(it as SolarPacket)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
-        val modesString = run {
-            val list = mutableListOf<String>()
-            if(info.fxMap.isNotEmpty()){
-                list.add(info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.operatingModeName}" })
-            }
-            if(info.mxMap.isNotEmpty()){
-                list.add(info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargerModeName}" })
-            }
-            if(info.roverMap.isNotEmpty()){
-                list.add(info.roverMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.chargingState.modeName}"})
-            }
-            list.joinToString(DOUBLE_SEPARATOR)
+        val dailyKWHString = getOrderedValues(info.dailyDataMap).joinToString(SEPARATOR) { "${getDeviceString(info, it as SolarPacket)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
+        val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
+
+        val pvWattagesString = getOrderedValues(info.chargeControllerMap).joinToString(SEPARATOR) {
+            "${getDeviceString(info, it as SolarPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
         }
-        val pvWattagesString = info.chargeControllerMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(it as SolarPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
-        }
-        val chargerWattagesString = info.chargeControllerMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(it as SolarPacket)}${it.chargingPower.toInt()}"
+        val chargerWattagesString = getOrderedValues(info.chargeControllerMap).joinToString(SEPARATOR) {
+            "${getDeviceString(info, it as SolarPacket)}${it.chargingPower.toInt()}"
         }
 
-        val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.warningsString}" }
-        val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
-        val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(it)}${it.errorsString}" }
+        val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.warningsString}" }
+        val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
+        val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
         val roverErrorsString = info.roverMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(it)}${Modes.toString(RoverErrorMode::class.java, it.errorMode)}"
+            "${getDeviceString(info, it)}${Modes.toString(RoverErrorMode::class.java, it.errorMode)}"
         }
 
         val text = "" +
                 "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
                 "Daily kWH: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
-                "System: $devicesString$SEPARATOR$unitVoltage\n" +
+                "System: $devicesString$inverterVoltageString$batteryVoltageString\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
@@ -335,7 +338,8 @@ object NotificationHandler {
                 (if(info.fxMap.isNotEmpty()) { "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
                 "Mode: $modesString\n" +
                 "Aux: $auxModesString\n" +
-                "Battery: " + info.batteryMap.values.joinToString(SEPARATOR) { getDeviceString(it as SolarPacket) + SolarPacketInfo.TENTHS_FORMAT.format(it.batteryVoltage) } + "${DOUBLE_SEPARATOR}est: ${info.estimatedBatteryVoltageString} V"
+                "Batt: " + getOrderedValues(info.batteryMap).joinToString(SEPARATOR) { getDeviceString(info, it as SolarPacket) + SolarPacketInfo.TENTHS_FORMAT.format(it.batteryVoltage) } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V" +
+                (if(info.roverMap.isNotEmpty()) "\nTemp C: ${getOrderedValues(info.roverMap).joinToString { getDeviceString(info, it) + it.controllerTemperature + "/" + it.batteryTemperature}}" else "")
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
@@ -353,9 +357,6 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
             .setShowWhen(true)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("d")
-//        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setColor(Color.YELLOW)
@@ -364,22 +365,25 @@ object NotificationHandler {
 
         return builder.build()
     }
-    fun createMXEndOfDay(context: Context, mx: MXStatusPacket, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
+    fun createEndOfDay(context: Context, currentInfo: SolarPacketInfo, dailyData: DailyData, dateMillis: Long): Pair<Notification, Notification> {
+        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
-            .setContentTitle("MX on port ${mx.address} end of day")
-            .setContentText("Got ${SolarPacketInfo.FORMAT.format(mx.dailyKWH)} kWH")
-        val summary = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
+            .setContentTitle(when(dailyData){
+                is MXStatusPacket -> "MX on port ${dailyData.address} end of day"
+                is RoverStatusPacket -> "Rover ${currentInfo.getRoverID(dailyData)} ${dailyData.productSerialNumber.toString(16)} end of day"
+                else -> error("dailyData: $dailyData is not supported!")
+            })
+            .setContentText("Got ${SolarPacketInfo.FORMAT.format(dailyData.dailyKWH)} kWH")
+        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("b")
-            builder.setGroup(MX_END_OF_DAY_GROUP)
-            summary.setGroup(MX_END_OF_DAY_GROUP).setGroupSummary(true)
+            builder.setGroup(END_OF_DAY_GROUP)
+            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setColor(MX_COLOR)
@@ -397,13 +401,18 @@ object NotificationHandler {
      * @param device The most recent status packet representing a device that has been connected or disconnected
      * @param justConnected true if [device] has just been connected, false if [device] has just been disconnected
      */
-    fun createDeviceConnectionStatus(context: Context, device: OutbackPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
+    fun createDeviceConnectionStatus(context: Context, device: SolarPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
         val name = when(device.packetType){
             SolarPacketType.FX_STATUS -> "FX"
             SolarPacketType.MXFM_STATUS -> "MX"
+            SolarPacketType.RENOGY_ROVER_STATUS -> "Rover"
             else -> device.packetType.toString()
         }
-        val deviceName = "$name on port ${device.address}"
+        val deviceName = when(device){
+            is OutbackPacket -> "$name on port ${device.address}"
+            is RoverStatusPacket -> "Rover with serial ${device.productSerialNumber.toString(16)}"
+            else -> name
+        }
         val builder = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)

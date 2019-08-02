@@ -43,7 +43,7 @@ enum class NotificationChannels(
         R.string.generator_done_notification,
         R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-    MX_END_OF_DAY("mx_end_of_day",
+    END_OF_DAY("mx_end_of_day",
         R.string.mx_end_of_day,
         R.string.mx_end_of_day_description, NotificationManager.IMPORTANCE_LOW,
         showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),

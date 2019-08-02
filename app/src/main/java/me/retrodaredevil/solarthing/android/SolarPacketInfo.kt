@@ -7,7 +7,6 @@ import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
 import me.retrodaredevil.solarthing.solar.common.ChargeController
 import me.retrodaredevil.solarthing.solar.common.DailyData
-import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -170,5 +169,19 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
 
     override fun hashCode(): Int {
         return dateMillis.hashCode() - fxMap.keys.hashCode() + mxMap.keys.hashCode() - batteryVoltage.hashCode()
+    }
+
+    fun getRoverID(rover: RoverStatusPacket): String{
+        var counter = 0 // 0->A, 1->B, etc
+        for(entry in deviceMap){
+            val device = entry.value
+            if(device == rover){
+                break
+            }
+            if(device is RoverStatusPacket){
+                counter++
+            }
+        }
+        return (counter + 65).toChar().toString()
     }
 }
