@@ -84,6 +84,12 @@
                     android:inputType="number"
                     android:ems="10"
                     android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/max_fragment_time" android:hint="Max Fragment Time Minutes"/>
             <Space
                     android:layout_width="match_parent"
                     android:layout_height="100px"/>

@@ -78,6 +78,10 @@ class Prefs(private val context: Context) {
         get() = settings.getInt(SaveKeys.subsequentRequestTimeSeconds, DefaultOptions.subsequentRequestTimeSeconds)
         set(value) = settings.edit().putInt(SaveKeys.subsequentRequestTimeSeconds, value).apply()
 
+    var maxFragmentTimeMinutes: Float
+        get() = settings.getFloat(SaveKeys.maxFragmentTimeMinutes, DefaultOptions.maxFragmentTimeMinutes)
+        set(value) = settings.edit().putFloat(SaveKeys.maxFragmentTimeMinutes, value).apply()
+
     var virtualFloatModeMinimumBatteryVoltage: Float?
         get() {
             val r = settings.getFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage ?: -1F)

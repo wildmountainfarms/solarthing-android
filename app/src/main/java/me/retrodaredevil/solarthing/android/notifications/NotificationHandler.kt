@@ -250,15 +250,15 @@ object NotificationHandler {
             }
         }
 
-        val inverterVoltageString = SEPARATOR + when {
+        val inverterVoltageString = when {
             info.fxMap.isEmpty() -> ""
-            info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "${SEPARATOR}230V"
-            info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "${SEPARATOR}120V"
-            else -> "$SEPARATOR???V"
+            info.fxMap.values.all { MiscMode.FX_230V_UNIT.isActive(it.misc)} -> "230V"
+            info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
+            else -> "???V"
         }
-        val batteryVoltageString = when {
+        val batteryTypeString = when {
             info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + " " + info.roverMap.values.first().batteryType.modeName
+            else -> SEPARATOR + info.roverMap.values.first().batteryType.modeName
         }
         var auxCount = 0
         val auxModesString = run {
@@ -330,12 +330,12 @@ object NotificationHandler {
                 "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
                 "Daily kWH: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
-                "System: $devicesString$inverterVoltageString$batteryVoltageString\n" +
+                "System: $devicesString$batteryTypeString\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
-                (if(info.fxMap.isNotEmpty()) { "AC: $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
+                (if(info.fxMap.isNotEmpty()) { "$inverterVoltageString $SEPARATOR $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
                 "Mode: $modesString\n" +
                 "Aux: $auxModesString\n" +
                 "Batt: " + getOrderedValues(info.batteryMap).joinToString(SEPARATOR) { getDeviceString(info, it as SolarPacket) + SolarPacketInfo.TENTHS_FORMAT.format(it.batteryVoltage) } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V" +

@@ -77,7 +77,6 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
         dailyDataMap = HashMap()
         batteryMap = HashMap()
         for(packet in packetGroup.packets){
-            println(packet)
             if(packet is SolarPacket){
                 deviceMap[packet.identifier] = packet
                 when(packet.packetType){

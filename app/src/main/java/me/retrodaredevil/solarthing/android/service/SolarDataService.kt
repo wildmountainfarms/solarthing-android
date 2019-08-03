@@ -73,6 +73,7 @@ class SolarDataService(
 
         if(dataRequest.successful) {
             println("[123]Got successful data request")
+            println(GSON.toJson(dataRequest.packetGroupList))
             val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
             packetGroups.limitSize(100_000, 90_000)
             packetGroups.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
@@ -80,7 +81,7 @@ class SolarDataService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            packetInfoCollection = sortPackets(packetGroups).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
+            packetInfoCollection = sortPackets(packetGroups, (prefs.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
                     SolarPacketInfo(it)
                 } catch (ex: IllegalArgumentException) {
@@ -221,7 +222,6 @@ class SolarDataService(
                 }
             }
             for(device in lastPacketInfo.deviceMap.values){
-                if(device !is OutbackPacket) continue
                 val presentNow = device.identifier in currentInfo.deviceMap
                 if(!presentNow){ // device just disconnected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)

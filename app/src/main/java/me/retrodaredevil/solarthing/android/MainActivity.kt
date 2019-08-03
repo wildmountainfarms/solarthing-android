@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var generatorFloatHours: EditText
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
+    private lateinit var maxFragmentTime: EditText
     private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
         generatorFloatHours = findViewById(R.id.generator_float_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
+        maxFragmentTime = findViewById(R.id.max_fragment_time)
         lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
@@ -133,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
         prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
         prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+        prefs.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
         prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
         prefs.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
         prefs.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
@@ -153,6 +156,7 @@ class MainActivity : AppCompatActivity() {
         generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
         initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
         subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
+        maxFragmentTime.setText(prefs.maxFragmentTimeMinutes.toString())
         virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
         lowBatteryVoltage.setText(prefs.lowBatteryVoltage?.toString() ?: "")
         criticalBatteryVoltage.setText(prefs.criticalBatteryVoltage?.toString() ?: "")
