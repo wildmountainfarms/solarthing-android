@@ -13,7 +13,6 @@ This works best with Android 8, but will still function on older versions.
 * Daily summaries (MX end of day notifications are a start, but a more useful summary would be helpful too)
 * Drop down menu for the command to send to the MATE
 * A packet that the MATE pi uploads that communicates available commands to display
-* Allow different packet types in a single packet collection
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
 
@@ -35,6 +34,7 @@ outhouse status
 * Tolerate unknown packet types
 * Integrate with Renogy Rover Packets
 * Fragmented packets
+* Allow different packet types in a single packet collection
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:

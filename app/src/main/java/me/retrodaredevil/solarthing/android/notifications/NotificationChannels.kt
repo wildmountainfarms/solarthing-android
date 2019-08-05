@@ -31,6 +31,9 @@ enum class NotificationChannels(
     GENERATOR_PERSISTENT("generator_persistent_v2",
         R.string.generator_persistent,
         R.string.generator_persistent_description, NotificationManager.IMPORTANCE_DEFAULT, notificationChannelGroups = NotificationChannelGroups.SOLAR, sound = R.raw.generator),
+    COMMAND_FEEDBACK("command_feedback",
+        R.string.command_feedback,
+        R.string.command_feedback_description, NotificationManager.IMPORTANCE_DEFAULT, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     OUTHOUSE_STATUS_WHILE_VACANT("outhouse_status_vacant",
         R.string.outhouse_status_vacant,

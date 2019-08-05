@@ -3,6 +3,7 @@ package me.retrodaredevil.solarthing.android.notifications
 import android.app.Notification
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.text.Html
 import android.text.Spanned
@@ -362,6 +363,20 @@ object NotificationHandler {
             builder.setColor(Color.YELLOW)
             builder.setCategory(Notification.CATEGORY_STATUS)
         }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+//            val pendingIntent = PendingIntent.getBroadcast(
+//                service, 0,
+//                Intent("action TODO"),
+//                PendingIntent.FLAG_CANCEL_CURRENT
+//            )
+//            builder.addAction(
+//                Notification.Action.Builder(
+//                    Icon.createWithResource(service, R.drawable.solar_panel),
+//                    "More information",
+//                    pendingIntent
+//                )
+//            )
+//        }
 
         return builder.build()
     }

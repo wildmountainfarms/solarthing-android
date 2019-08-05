@@ -333,8 +333,7 @@ class SolarDataService(
     }
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
-        val builder =
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        val builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             Notification.Builder(service.applicationContext, NotificationChannels.SOLAR_STATUS.id)
         } else {
             Notification.Builder(service.applicationContext)

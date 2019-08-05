@@ -10,6 +10,7 @@ import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.text.DecimalFormat
 import kotlin.math.round
@@ -130,7 +131,7 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
         hasWarnings = fxMap.isNotEmpty()
         errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorMode) } }
             + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorMode) } }
-            + roverMap.values.sumBy { it.activeErrors.size }
+            + RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorMode)}}
     }
 
     val pvWattageString by lazy { pvWattage.toString() }

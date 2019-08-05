@@ -32,6 +32,7 @@ import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplex
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPackets
+import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 
 
@@ -90,8 +91,8 @@ class PersistentService : Service(), Runnable{
         ServiceObject(
             SolarDataService(this, prefs), "solarthing",
             JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it)})::createFromJson
-        )
-//        ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
+        ),
+        ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
     )
 
     override fun onBind(intent: Intent?): IBinder? {
