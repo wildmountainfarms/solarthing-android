@@ -26,6 +26,8 @@
     <string name="generator_persistent_description">Shows info about the generator while it is running</string>
     <string name="command_feedback">Command Feedback</string>
     <string name="command_feedback_description">Command feedback for executed commands</string>
+    <string name="more_solar_info">More Solar Info</string>
+    <string name="more_solar_info_description">Notifications for more solar info are under this category</string>
 
     <string name="outhouse_status_vacant">Outhouse status while vacant</string>
     <string name="outhouse_status_vacant_description">Shows the status and weather in the outhouse while vacant</string>

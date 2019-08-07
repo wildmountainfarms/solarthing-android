@@ -32,7 +32,7 @@ import javax.crypto.Cipher
 
 class CommandActivity : AppCompatActivity() {
 
-    private val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+    private val cipher = Cipher.getInstance(KeyUtil.CIPHER_TRANSFORMATION)
 
     private lateinit var sender: String
     private lateinit var publicKeyText: TextView
@@ -130,7 +130,7 @@ class CommandActivity : AppCompatActivity() {
         }
         if(checkCurrentTask()) return
 
-        val text = System.currentTimeMillis().toString(16) + "," + commandText.text.toString()
+        val text = System.currentTimeMillis().toString() + "," + commandText.text.toString()
         println("Going to send text: $text")
         val encrypted = Encrypt.encrypt(cipher, keyPair.private, text)
 
@@ -186,9 +186,7 @@ class CommandActivity : AppCompatActivity() {
                 KeyUtil.decodePublicKey(it.readBytes())
             }
             val privateKey: PrivateKey = openFileInput(".privatekey").use {
-                // TODO add KeyUtil.decodePrivateKey() in solarthing codebase
-                val spec = PKCS8EncodedKeySpec(it.readBytes())
-                KeyFactory.getInstance("RSA").generatePrivate(spec)
+                KeyUtil.decodePrivateKey(it.readBytes())
             }
             KeyPair(publicKey, privateKey)
         } catch(ex: FileNotFoundException){

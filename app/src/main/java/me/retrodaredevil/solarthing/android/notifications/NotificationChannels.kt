@@ -34,6 +34,9 @@ enum class NotificationChannels(
     COMMAND_FEEDBACK("command_feedback",
         R.string.command_feedback,
         R.string.command_feedback_description, NotificationManager.IMPORTANCE_DEFAULT, notificationChannelGroups = NotificationChannelGroups.SOLAR),
+    MORE_SOLAR_INFO("channel_more_solar_info", // TODO maybe change this to just a silent category in the "Other" notification channel group
+        R.string.more_solar_info,
+        R.string.more_solar_info_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     OUTHOUSE_STATUS_WHILE_VACANT("outhouse_status_vacant",
         R.string.outhouse_status_vacant,

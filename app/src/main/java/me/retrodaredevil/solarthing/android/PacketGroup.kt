@@ -12,7 +12,8 @@ import kotlin.math.absoluteValue
 
 data class PacketGroup(
     val packets: Collection<Packet>,
-    val dateMillis: Long
+    val dateMillis: Long,
+    val extraDateMillisPacketMap: Map<Packet, Long>? = null
 )
 
 private class ParsedPacketGroup (
@@ -65,8 +66,12 @@ fun sortPackets(groups: Collection<PacketGroup>, maxTimeDistance: Long = (60 * 1
         val masterList = fragmentMap[masterFragmentId]!!
         val packetGroups = mutableListOf<PacketGroup>()
         for(masterGroup in masterList){
+            val extraDateMillisPacketMap = HashMap<Packet, Long>()
             val packetList = mutableListOf<Packet>()
             packetList.addAll(masterGroup.packets)
+            for(masterPacket in masterGroup.packets){
+                extraDateMillisPacketMap[masterPacket] = masterGroup.dateMillis
+            }
             for(fragmentId in fragmentIds){
                 if(fragmentId == masterFragmentId) continue
                 val packetGroupList: List<ParsedPacketGroup> = fragmentMap[fragmentId]!!
@@ -85,9 +90,12 @@ fun sortPackets(groups: Collection<PacketGroup>, maxTimeDistance: Long = (60 * 1
                 smallestTime!!
                 if(smallestTime < maxTimeDistance){
                     packetList.addAll(closest.packets)
+                    for(packet in closest.packets){
+                        extraDateMillisPacketMap[packet] = closest.dateMillis
+                    }
                 }
             }
-            packetGroups.add(PacketGroup(packetList, masterGroup.dateMillis)) // TODO it may be useful to provide more dateMillis info on other fragments
+            packetGroups.add(PacketGroup(packetList, masterGroup.dateMillis, extraDateMillisPacketMap))
         }
         r[sourceId] = packetGroups
     }

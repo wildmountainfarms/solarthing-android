@@ -123,7 +123,6 @@ class PersistentService : Service(), Runnable{
             .setWhen(1) // make it the lowest priority
             .setShowWhen(false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("0")
             builder.setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -135,7 +134,8 @@ class PersistentService : Service(), Runnable{
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
             builder.setWhen(countDownWhen)
-
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // buttons
             builder.addAction(
                 Notification.Action.Builder(

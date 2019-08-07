@@ -1,16 +1,28 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.app.Notification
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
+import android.support.annotation.RequiresApi
 import com.google.gson.GsonBuilder
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.SolarPacket
+import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
+import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 
 object SolarPacketCollectionBroadcast {
@@ -26,10 +38,11 @@ class SolarDataService(
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
         private val GSON = GsonBuilder().create()
+        private const val MORE_INFO_ACTION = "me.retrodaredevil.solarthing.android.MORE_SOLAR_INFO"
     }
 
     private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
-    private var packetInfoCollection: Collection<SolarPacketInfo> = emptySet() //= TreeSet<SolarPacketInfo>(createComparator { it.dateMillis })
+    private var packetInfoCollection: Collection<SolarPacketInfo> = emptySet()
     private var lastPacketInfo: SolarPacketInfo? = null
     private var lastFloatGeneratorNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
@@ -43,6 +56,7 @@ class SolarDataService(
                 .setSmallIcon(R.drawable.solar_panel)
                 .build()
         )
+        service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION))
     }
     override fun onCancel() {
         service.getManager().apply {
@@ -53,6 +67,7 @@ class SolarDataService(
     }
 
     override fun onEnd() {
+        service.unregisterReceiver(receiver)
     }
     override fun onNewDataRequestLoadStart() {
     }
@@ -169,7 +184,13 @@ class SolarDataService(
             NotificationHandler.createStatusNotification(
                 service.applicationContext,
                 currentInfo,
-                summary
+                summary,
+                PendingIntent.getBroadcast(
+                    service,
+                    0,
+                    Intent(MORE_INFO_ACTION),
+                    PendingIntent.FLAG_CANCEL_CURRENT
+                )
             )
         )
         if(beginningACDropInfo != null || acUseInfo != null){
@@ -187,6 +208,7 @@ class SolarDataService(
         }
         val lastPacketInfo = this.lastPacketInfo
         if(lastPacketInfo != null){
+            // end of day for loop
             for(dailyData in currentInfo.dailyDataMap.values){
                 if(dailyData !is SolarPacket) error("dailyDataMap must have SolarPackets!")
                 if(dailyData.dailyKWH == 0f){
@@ -205,6 +227,7 @@ class SolarDataService(
                     }
                 }
             }
+            // region Device Connection/Disconnection section
             for(device in currentInfo.deviceMap.values){
                 val presentInLast = device.identifier in lastPacketInfo.deviceMap
                 if(!presentInLast){ // device just connected
@@ -237,10 +260,12 @@ class SolarDataService(
                     }
                 }
             }
+            // endregion
         }
         this.lastPacketInfo = currentInfo
 
 
+        // region Generator float timer notification
         if(floatModeActivatedInfo != null){
             // check to see if we should send a notification
             val generatorFloatTimeMillis = (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
@@ -264,6 +289,9 @@ class SolarDataService(
             // reset the generator notification because the generator is either off or not in float mode
             cancelFloatGeneratorNotification()
         }
+        // endregion
+
+        // region Generator Done Charging Notification
         if(doneChargingActivatedInfo != null){
             val now = System.currentTimeMillis()
             val last = lastDoneGeneratorNotification
@@ -277,6 +305,9 @@ class SolarDataService(
         } else {
             cancelDoneGeneratorNotification()
         }
+        // endregion
+
+        // region Battery Alert Notifications
         val criticalBatteryVoltage = prefs.criticalBatteryVoltage
         val lowBatteryVoltage = prefs.lowBatteryVoltage
         if(criticalBatteryVoltage != null && currentInfo.batteryVoltage <= criticalBatteryVoltage + ROUND_OFF_ERROR_DEADZONE){ // critical alert
@@ -301,6 +332,10 @@ class SolarDataService(
                 lastLowBatteryNotification = now
             }
         }
+        // endregion
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notifyMoreInfoUpdatePresent(currentInfo)
+        }
         return true
     }
     private fun cancelFloatGeneratorNotification(){
@@ -310,6 +345,42 @@ class SolarDataService(
     private fun cancelDoneGeneratorNotification(){
         service.getManager().cancel(GENERATOR_DONE_NOTIFICATION_ID)
         lastDoneGeneratorNotification = null
+    }
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            context!!; intent!!
+            when(intent.action){
+                MORE_INFO_ACTION -> {
+                    val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
+                    notifyMoreInfo(packetInfo)
+                }
+            }
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun notifyMoreInfoUpdatePresent(packetInfo: SolarPacketInfo){
+        notifyMoreInfo(packetInfo, service.getManager().activeNotifications)
+    }
+    private fun notifyMoreInfo(packetInfo: SolarPacketInfo, statusBarNotifications: Array<StatusBarNotification>? = null){
+        val manager = service.getManager()
+        var summary: Notification? = null
+
+        for(device in getOrderedValues(packetInfo.deviceMap)){
+            val id = getMoreSolarInfoID(device)
+            if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
+                val dateMillis = packetInfo.packetGroup.extraDateMillisPacketMap?.get(device) ?: packetInfo.dateMillis
+                val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis)
+                val notification = pair.first
+                summary = pair.second
+                manager.notify(id, notification)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            if(summary != null){
+                manager.notify(MORE_SOLAR_INFO_SUMMARY_ID, summary)
+            }
+        }
     }
 
     override val updatePeriodType: UpdatePeriodType
@@ -334,9 +405,9 @@ class SolarDataService(
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
         val builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            Notification.Builder(service.applicationContext, NotificationChannels.SOLAR_STATUS.id)
+            Notification.Builder(service, NotificationChannels.SOLAR_STATUS.id)
         } else {
-            Notification.Builder(service.applicationContext)
+            Notification.Builder(service)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(getGroup(SOLAR_NOTIFICATION_ID))
