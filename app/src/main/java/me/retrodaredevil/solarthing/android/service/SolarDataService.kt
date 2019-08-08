@@ -1,7 +1,6 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -9,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.support.annotation.RequiresApi
 import com.google.gson.GsonBuilder
@@ -17,11 +15,8 @@ import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.SolarPacket
-import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
-import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 
@@ -39,6 +34,7 @@ class SolarDataService(
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
         private val GSON = GsonBuilder().create()
         private const val MORE_INFO_ACTION = "me.retrodaredevil.solarthing.android.MORE_SOLAR_INFO"
+        private const val MORE_INFO_ROVER_ACTION = "me.retrodaredevil.solarthing.android.MORE_ROVER_INFO"
     }
 
     private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
@@ -49,6 +45,15 @@ class SolarDataService(
     private var lastLowBatteryNotification: Long? = null
     private var lastCriticalBatteryNotification: Long? = null
 
+    private val moreInfoIntent: PendingIntent by lazy {
+        PendingIntent.getBroadcast(
+            service,
+            0,
+            Intent(MORE_INFO_ACTION),
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
+    }
+
     override fun onInit() {
         notify(
             getBuilder()
@@ -56,7 +61,7 @@ class SolarDataService(
                 .setSmallIcon(R.drawable.solar_panel)
                 .build()
         )
-        service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION))
+        service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) })
     }
     override fun onCancel() {
         service.getManager().apply {
@@ -185,12 +190,7 @@ class SolarDataService(
                 service.applicationContext,
                 currentInfo,
                 summary,
-                PendingIntent.getBroadcast(
-                    service,
-                    0,
-                    Intent(MORE_INFO_ACTION),
-                    PendingIntent.FLAG_CANCEL_CURRENT
-                )
+                moreInfoIntent
             )
         )
         if(beginningACDropInfo != null || acUseInfo != null){
@@ -355,6 +355,16 @@ class SolarDataService(
                     val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
                     notifyMoreInfo(packetInfo)
                 }
+                MORE_INFO_ROVER_ACTION -> {
+                    val serial = intent.getIntExtra("rover_serial", -1)
+                    if(serial == -1){
+                        System.err.println("serial is -1!")
+                        return
+                    }
+                    val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
+                    val rover = packetInfo.roverMap.values.firstOrNull { it.productSerialNumber == serial } ?: run { System.err.println("no rover with serial $serial"); return}
+                    notifyMoreRoverInfo(packetInfo, rover)
+                }
             }
         }
     }
@@ -370,15 +380,34 @@ class SolarDataService(
             val id = getMoreSolarInfoID(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.extraDateMillisPacketMap?.get(device) ?: packetInfo.dateMillis
-                val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis)
+                val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis, MORE_INFO_ROVER_ACTION)
                 val notification = pair.first
                 summary = pair.second
                 manager.notify(id, notification)
+            }
+            if(device is RoverStatusPacket) {
+                if (statusBarNotifications != null && statusBarNotifications.any { it.id == id + 1 }) {
+                    notifyMoreRoverInfo(packetInfo, device)
+                }
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             if(summary != null){
                 manager.notify(MORE_SOLAR_INFO_SUMMARY_ID, summary)
+            }
+        }
+    }
+    private fun notifyMoreRoverInfo(packetInfo: SolarPacketInfo, rover: RoverStatusPacket){
+        val dateMillis = packetInfo.packetGroup.extraDateMillisPacketMap?.get(rover) ?: packetInfo.dateMillis
+        val pair = NotificationHandler.createMoreRoverInfoNotification(service, rover, dateMillis)
+
+        val id = getMoreSolarInfoID(rover) + 1
+        service.getManager().apply {
+            notify(id, pair.first)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                if (pair.second != null) {
+                    notify(MORE_SOLAR_INFO_SUMMARY_ID, pair.second)
+                }
             }
         }
     }

@@ -3,6 +3,7 @@ package me.retrodaredevil.solarthing.android.notifications
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -450,25 +451,18 @@ object NotificationHandler {
 
         return Pair(builder.build(), summary.build())
     }
-    fun createMoreInfoNotification(context: Context, device: SolarPacket, dateMillis: Long): Pair<Notification, Notification>{
+    fun createMoreInfoNotification(context: Context, device: SolarPacket, dateMillis: Long, moreRoverInfoAction: String? = null): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
             .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
             .setShowWhen(true)
-            .setWhen(dateMillis)
             .setOnlyAlertOnce(true)
-        val summary = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setShowWhen(false)
-            .setWhen(dateMillis)
-            .setOnlyAlertOnce(true)
-
+        val summary = createMoreInfoSummary(context, dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(MORE_SOLAR_INFO_GROUP)
-            summary.setGroup(MORE_SOLAR_INFO_GROUP).setGroupSummary(true)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_STATUS)
-            summary.setCategory(Notification.CATEGORY_STATUS)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder.setCategory(Notification.CATEGORY_STATUS)
+            }
         }
         when(device){
             is OutbackPacket -> {
@@ -476,16 +470,16 @@ object NotificationHandler {
                     SolarPacketType.FX_STATUS -> {
                         device as FXStatusPacket
                         builder.setContentTitle("FX on port ${device.address}")
+                        val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
+                        builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | ${device.acModeName} | Inv: ${device.inverterCurrent}A | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
-                            "Battery Voltage: ${SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)}\n" +
+                            "Battery Voltage: $batteryVoltage\n" +
                                     "Operating Mode: ${device.operatingModeName} | " +
                                     "AC Mode: ${device.acModeName}\n" +
-                                    "Inverter Current: ${device.inverterCurrent} | " +
                                     "AC Output Voltage: ${device.outputVoltage}\n" +
-                                    "Buy Current: ${device.buyCurrent} | " +
+                                    "Inverter Current: ${device.inverterCurrent} | Sell Current: ${device.sellCurrent}\n" +
                                     "AC Input Voltage: ${device.inputVoltage}\n" +
-                                    "Sell Current: ${device.sellCurrent}\n" +
-                                    "Charger Current: ${device.chargerCurrent}\n" +
+                                    "Buy Current: ${device.buyCurrent} | Charger Current: ${device.chargerCurrent}\n" +
                                     "Is 230V: " + (if(MiscMode.FX_230V_UNIT.isActive(device.misc)) "yes" else "no") + " | " +
                                     "Aux On: " + (if(MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) "yes" else "no") + "\n" +
                                     "Errors: ${device.errorsString} Warnings: ${device.warningsString}\n" +
@@ -495,8 +489,10 @@ object NotificationHandler {
                     SolarPacketType.MXFM_STATUS -> {
                         device as MXStatusPacket
                         builder.setContentTitle("MX on port ${device.address}")
+                        val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
+                        builder.setSubText("$batteryVoltage | ${device.chargerModeName} | ${device.chargingCurrent}A | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
-                            "Battery Voltage: ${SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)}\n" +
+                            "Battery Voltage: $batteryVoltage\n" +
                                     createChargeControllerMoreInfo(device) +
                                     "Charger Mode: ${device.chargerModeName}\n" +
                                     "Aux Mode: ${device.auxModeName} | FM Aux On: " + (if(AuxMode.isAuxModeActive(device.auxMode)) "yes" else "no") + "\n" +
@@ -511,22 +507,38 @@ object NotificationHandler {
             }
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
+                val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
+                builder.setSubText("$batteryVoltage | ${device.chargingState.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
-                    "Battery Voltage: ${SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)} | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage.modeName}/${device.systemVoltageSetting.modeName} | ${device.maxVoltage.modeName}\n" +
+                    "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage.modeName}/${device.systemVoltageSetting.modeName}\n" +
                             createChargeControllerMoreInfo(device) +
-                            "Battery: Type: ${device.batteryType.modeName} | Temperature: ${device.batteryTemperature} C\n" +
                             "Charging State: ${device.chargingState.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
-                            "Controller: Address: ${device.controllerDeviceAddress} | Temperature: ${device.controllerTemperature} C\n" +
+                            "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorMode)}\n" +
+                            "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
                             "Day: ${device.operatingDaysCount} | kWH: ${device.dailyKWH} | AH: ${device.dailyAH} | " +
                             "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
-                            "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W || No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
-                            "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
-                            "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A"
-                ) // nominal battery capacity,
+                            "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W"
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    builder.addAction(
+                        Notification.Action.Builder(
+                            Icon.createWithResource(context, R.drawable.solar_panel),
+                            "More",
+                            PendingIntent.getBroadcast(
+                                context,
+                                0,
+                                Intent(moreRoverInfoAction).apply {
+                                    putExtra("rover_serial", device.productSerialNumber)
+                                },
+                                PendingIntent.FLAG_CANCEL_CURRENT
+                            )
+                        ).build()
+                    )
+                }
             }
             else -> throw IllegalArgumentException("$device not supported!")
         }
-        return Pair(builder.build(), summary.build())
+        return Pair(builder.build(), summary)
     }
     private fun createChargeControllerMoreInfo(device: ChargeController): String{
         return "Charging: Current: ${SolarPacketInfo.TENTHS_FORMAT.format(device.chargingCurrent)}A | " +
@@ -535,6 +547,51 @@ object NotificationHandler {
                 "Voltage: ${SolarPacketInfo.TENTHS_FORMAT.format(device.inputVoltage)}V = " +
                 "Power: ${SolarPacketInfo.TENTHS_FORMAT.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
     }
+    fun createMoreRoverInfoNotification(context: Context, device: RoverStatusPacket, dateMillis: Long): Pair<Notification, Notification?>{
+        val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+            .setOnlyAlertOnce(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(MORE_SOLAR_INFO_GROUP)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder.setCategory(Notification.CATEGORY_STATUS)
+            }
+        }
+        val summary = createMoreInfoSummary(context, dateMillis)
+
+        builder.setContentTitle("Rover with serial: ${device.productSerialNumber} | More Info")
+        builder.style = Notification.BigTextStyle().bigText(
+            "Max Voltage: ${device.maxVoltage.modeName} | Battery: Type: ${device.batteryType.modeName}\n" +
+                    "Controller: Address: ${device.controllerDeviceAddress}\n" +
+                    "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
+                    "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
+                    "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A\n" +
+                    "Cumulative: kWH: ${device.cumulativeKWH} AH: ${device.chargingAmpHoursOfBatteryCount}\n" +
+                    "Street light: ${device.streetLightStatus.modeName} Brightness: ${device.streetLightBrightnessPercent}"
+        )
+
+        return Pair(builder.build(), summary)
+    }
+    private fun createMoreInfoSummary(context: Context, dateMillis: Long): Notification? {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            val summary = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setShowWhen(false)
+                .setWhen(dateMillis)
+                .setOnlyAlertOnce(true)
+            summary.setGroup(MORE_SOLAR_INFO_GROUP).setGroupSummary(true)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                summary.setCategory(Notification.CATEGORY_STATUS)
+            }
+            return summary.build()
+        }
+        return null
+    }
+    private fun getTimeString(dateMillis: Long) = DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time)
+
     private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int?): Notification.Builder {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(context, channelId)

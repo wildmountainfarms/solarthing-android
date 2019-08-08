@@ -15,6 +15,8 @@ This works best with Android 8, but will still function on older versions.
 * A packet that the MATE pi uploads that communicates available commands to display
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
+* Clearable notifications for errors
+* Profiles
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
