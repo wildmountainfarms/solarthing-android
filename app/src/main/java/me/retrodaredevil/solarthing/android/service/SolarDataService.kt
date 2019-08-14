@@ -362,7 +362,8 @@ class SolarDataService(
                         return
                     }
                     val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
-                    val rover = packetInfo.roverMap.values.firstOrNull { it.productSerialNumber == serial } ?: run { System.err.println("no rover with serial $serial"); return}
+//                    val rover = packetInfo.roverMap.values.firstOrNull { it.productSerialNumber == serial } ?: run { System.err.println("no rover with serial $serial"); return}
+                    val rover = packetInfo.roverMap[RoverIdentifier(serial)] ?: run { System.err.println("no rover with serial $serial"); return}
                     notifyMoreRoverInfo(packetInfo, rover)
                 }
             }

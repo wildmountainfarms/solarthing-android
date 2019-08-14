@@ -127,7 +127,7 @@ class OuthouseDataService(
                 }
             }
         }
-        val occupancy: Occupancy? = if(occupancyPacket != null) Modes.getActiveMode(Occupancy::class.java, occupancyPacket.occupancy) else null
+        val occupancy: Occupancy? = occupancyPacket?.occupancyMode
         if(occupancy == Occupancy.OCCUPIED && !vacantNotify){
             service.getManager().cancel(VACANT_NOTIFICATION_ID)
         }
@@ -153,7 +153,6 @@ class OuthouseDataService(
             .setShowWhen(true)
             .setWhen(packetCollection.dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("d")
             builder.setGroup(getGroup(OUTHOUSE_NOTIFICATION_ID))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

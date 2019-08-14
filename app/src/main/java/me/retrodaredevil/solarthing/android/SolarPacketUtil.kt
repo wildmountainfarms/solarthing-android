@@ -1,6 +1,5 @@
 package me.retrodaredevil.solarthing.android
 
-import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
@@ -12,7 +11,7 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 
 fun getOperatingModeName(fx: FXStatusPacket): String =
-    when(val mode = Modes.getActiveMode(OperationalMode::class.java, fx.operatingMode)) {
+    when(val mode = fx.operationalMode) {
         OperationalMode.INV_ON -> "ON"
         OperationalMode.SEARCH -> "Search"
         OperationalMode.INV_OFF -> "Off"
@@ -23,7 +22,7 @@ fun getOperatingModeName(fx: FXStatusPacket): String =
         else -> mode.modeName
     }
 fun getChargerModeName(mx: MXStatusPacket): String =
-    when(Modes.getActiveMode(ChargerMode::class.java, mx.chargerMode)!!){
+    when(mx.chargingMode!!){
         ChargerMode.SILENT -> "Off"
         ChargerMode.FLOAT -> "Float"
         ChargerMode.BULK -> "Bulk"
@@ -31,14 +30,14 @@ fun getChargerModeName(mx: MXStatusPacket): String =
         ChargerMode.EQ -> "EQ"
     }
 fun getChargingStateName(rover: RoverStatusPacket): String =
-    when(rover.chargingState!!){
+    when(rover.chargingMode!!){
         ChargingState.DEACTIVATED -> "Off"
         ChargingState.ACTIVATED -> "On"
         ChargingState.MPPT -> "MPPT"
         ChargingState.EQ -> "EQ"
         ChargingState.BOOST -> "Boost"
         ChargingState.FLOAT -> "Float"
-        ChargingState.CURRENT_LIMITING -> "Curr limiting"
+        ChargingState.CURRENT_LIMITING -> "Curr lim"
     }
 fun getModeName(packet: SolarPacket): String =
     when(packet){

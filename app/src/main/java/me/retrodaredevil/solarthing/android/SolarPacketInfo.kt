@@ -11,6 +11,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.text.DecimalFormat
 import kotlin.math.round
@@ -31,7 +32,7 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
     val fxMap: Map<Identifier, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
     val mxMap: Map<Identifier, MXStatusPacket>
-    val roverMap: Map<Identifier, RoverStatusPacket>
+    val roverMap: Map<RoverIdentifier, RoverStatusPacket>
 
     val deviceMap: Map<Identifier, SolarPacket>
     val chargeControllerMap: Map<Identifier, ChargeController>
@@ -96,7 +97,7 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
                     SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarPacketType.RENOGY_ROVER_STATUS -> {
                         val rover = packet as RoverStatusPacket
-                        roverMap[rover.identifier] = rover
+                        roverMap[rover.identifier as RoverIdentifier] = rover // TODO in a future update of solarthing, we won't have to cast the Identifier to a RoverIdentifier
                         batteryMap[rover.identifier] = rover
                         chargeControllerMap[rover.identifier] = rover
                         dailyDataMap[rover.identifier] = rover
@@ -113,11 +114,11 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
-        acMode = if(fxMap.isNotEmpty()) Modes.getActiveMode(ACMode::class.java, fxMap.values.first().acMode) else ACMode.NO_AC
+        acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acModeMode else ACMode.NO_AC
         generatorChargingBatteries = if(fxMap.isEmpty()) false else fxMap.values.any {
-            OperationalMode.CHARGE.isActive(it.operatingMode)
-                    || OperationalMode.FLOAT.isActive(it.operatingMode)
-                    || OperationalMode.EQ.isActive(it.operatingMode)
+            OperationalMode.CHARGE.isActive(it.operatingModeValue)
+                    || OperationalMode.FLOAT.isActive(it.operatingModeValue)
+                    || OperationalMode.EQ.isActive(it.operatingModeValue)
         }
         load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
         generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }

@@ -18,7 +18,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetIds: IntArray?) {
     }
 
-    fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, latestInfo: SolarPacketInfo?) {
+    private fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, latestInfo: SolarPacketInfo?) {
         // There may be multiple widgets active, so update all of them
         println("updating widgets. latestInfo: $latestInfo updating: ${appWidgetIds.size}")
         for (appWidgetId in appWidgetIds) {

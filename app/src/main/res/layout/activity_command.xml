@@ -62,7 +62,7 @@
                     android:layout_height="wrap_content" android:id="@+id/button6" android:onClick="sendCommand"/>
             <Space
                     android:layout_width="match_parent"
-                    android:layout_height="100px"/>
+                    android:layout_height="100dp"/>
             <LinearLayout
                     android:orientation="horizontal"
                     android:layout_width="match_parent"

@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.android.MainActivity
@@ -30,10 +29,8 @@ import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetter
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplexer
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
-import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
-import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 
 
 fun restartService(context: Context){

@@ -10,7 +10,6 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacketType
-import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
 import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCommandPacket
 import java.text.DateFormat
 import java.util.*

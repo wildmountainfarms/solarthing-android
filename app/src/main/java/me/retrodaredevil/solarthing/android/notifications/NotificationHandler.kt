@@ -187,9 +187,9 @@ object NotificationHandler {
         } else {
             val onText = if(acMode == ACMode.AC_DROP) "DROP" else "ON"
             "Generator $onText | " + when {
-                info.fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) } -> "float charge"
-                info.fxMap.values.any { OperationalMode.EQ.isActive(it.operatingMode) } -> "EQ charge"
-                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingMode) } -> "charging"
+                info.fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingModeValue) } -> "float charge"
+                info.fxMap.values.any { OperationalMode.EQ.isActive(it.operatingModeValue) } -> "EQ charge"
+                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operatingModeValue) } -> "charging"
                 else -> "not charging"
             }
         }
@@ -311,7 +311,7 @@ object NotificationHandler {
             list.joinToString(SEPARATOR)
         }
 
-        val fxACModesString = if(info.fxMap.values.map { Modes.getActiveMode(ACMode::class.java, it.acMode) }.toSet().size > 1){
+        val fxACModesString = if(info.fxMap.values.map { it.acModeMode }.toSet().size > 1){
             getOrderedValues(info.fxMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.acModeName}" }
         } else {
             info.acMode.modeName
