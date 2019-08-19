@@ -15,7 +15,7 @@ import android.widget.Toast
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.android.MainActivity
-import me.retrodaredevil.solarthing.android.Prefs
+import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID

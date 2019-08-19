@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.prefs
 
 object DefaultOptions {
     object CouchDb {

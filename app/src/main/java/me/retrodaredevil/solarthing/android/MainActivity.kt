@@ -15,6 +15,8 @@ import android.widget.EditText
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
+import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
+import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService

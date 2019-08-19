@@ -13,6 +13,8 @@ import android.support.annotation.RequiresApi
 import com.google.gson.GsonBuilder
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
+import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
+import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode

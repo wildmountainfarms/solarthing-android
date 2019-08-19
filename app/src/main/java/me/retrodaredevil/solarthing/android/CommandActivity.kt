@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.packets.collection.PacketCollectionIdGenerator
 import me.retrodaredevil.solarthing.packets.collection.PacketCollections
