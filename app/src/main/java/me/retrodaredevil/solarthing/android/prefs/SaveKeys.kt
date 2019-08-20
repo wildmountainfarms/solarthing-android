@@ -13,10 +13,11 @@ object SaveKeys{
     const val generatorFloatTimeHours = "generator_float_hours"
 
     const val initialRequestTimeSeconds = "initial_request_timeout"
+    const val subsequentRequestTimeSeconds = "subsequent_request_timeout"
+    const val databaseConnectionProfile = "database_connection_profile"
 
     const val maxFragmentTimeMinutes = "max_fragment_time"
 
-    const val subsequentRequestTimeSeconds = "subsequent_request_timeout"
     const val virtualFloatModeMinimumBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
 
     const val lowBatteryVoltage = "low_battery_voltage"

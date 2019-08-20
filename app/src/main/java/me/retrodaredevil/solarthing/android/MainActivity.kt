@@ -15,8 +15,7 @@ import android.widget.EditText
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
-import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
-import me.retrodaredevil.solarthing.android.prefs.Prefs
+import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
@@ -24,6 +23,7 @@ import me.retrodaredevil.solarthing.android.service.stopService
 class MainActivity : AppCompatActivity() {
 
     private val prefs = Prefs(this)
+    private val connectionProfileManager: ProfileManager<ConnectionProfile> by lazy { createConnectionProfileManager(this) }
 
     private lateinit var protocol: EditText
     private lateinit var host: EditText
@@ -127,16 +127,21 @@ class MainActivity : AppCompatActivity() {
         stopService(this)
     }
     private fun saveSettings(){
-        prefs.couchDb.protocol = protocol.text.toString()
-        prefs.couchDb.host = host.text.toString()
-        prefs.couchDb.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
-        prefs.couchDb.username = username.text.toString()
-        prefs.couchDb.password = password.text.toString()
-        prefs.couchDb.useAuth = useAuth.isChecked
+        val active = connectionProfileManager.activeProfile
+        active.apply {
+            (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
+                it.protocol = protocol.text.toString()
+                it.host = host.text.toString()
+                it.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
+                it.username = username.text.toString()
+                it.password = password.text.toString()
+                it.useAuth = useAuth.isChecked
+            }
+            initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
+            subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+        }
 
         prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-        prefs.initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
-        prefs.subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         prefs.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
         prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
         prefs.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
@@ -147,17 +152,22 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
     private fun loadSettings(){
-        protocol.setText(prefs.couchDb.protocol)
-        host.setText(prefs.couchDb.host)
-        port.setText(prefs.couchDb.port.toString())
-        username.setText(prefs.couchDb.username)
-        password.setText(prefs.couchDb.password)
-        useAuth.isChecked = prefs.couchDb.useAuth
+        val activeConnectionProfile = connectionProfileManager.activeProfile
+        (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
+            protocol.setText(it.protocol)
+            host.setText(it.host)
+            port.setText(it.port.toString())
+            username.setText(it.username)
+            password.setText(it.password)
+            useAuth.isChecked = it.useAuth
+        }
         onUseAuthUpdate()
+        activeConnectionProfile.let {
+            initialRequestTimeout.setText(it.initialRequestTimeSeconds.toString())
+            subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
+        }
 
         generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
-        initialRequestTimeout.setText(prefs.initialRequestTimeSeconds.toString())
-        subsequentRequestTimeout.setText(prefs.subsequentRequestTimeSeconds.toString())
         maxFragmentTime.setText(prefs.maxFragmentTimeMinutes.toString())
         virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
         lowBatteryVoltage.setText(prefs.lowBatteryVoltage?.toString() ?: "")

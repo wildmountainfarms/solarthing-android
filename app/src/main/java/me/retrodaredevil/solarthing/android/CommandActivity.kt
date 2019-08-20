@@ -13,7 +13,9 @@ import android.widget.TextView
 import android.widget.Toast
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
-import me.retrodaredevil.solarthing.android.prefs.Prefs
+import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.packets.collection.PacketCollectionIdGenerator
 import me.retrodaredevil.solarthing.packets.collection.PacketCollections
@@ -33,6 +35,8 @@ class CommandActivity : AppCompatActivity() {
 
     private val cipher = Cipher.getInstance(KeyUtil.CIPHER_TRANSFORMATION)
 
+    private lateinit var profileManager: ProfileManager<ConnectionProfile>
+
     private lateinit var sender: String
     private lateinit var publicKeyText: TextView
     private lateinit var commandText: EditText
@@ -46,6 +50,7 @@ class CommandActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_command)
+        profileManager = createConnectionProfileManager(this)
         sender = "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
 
         findViewById<TextView>(R.id.sender_name).text = sender
@@ -106,6 +111,11 @@ class CommandActivity : AppCompatActivity() {
                 .create().show()
         }
     }
+    private fun getCouchProperties(): CouchProperties {
+        // TODO figure out a better option than just choosing the first value
+        // TODO also make better way instead of casting
+        return (profileManager.activeProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).createCouchProperties()[0]
+    }
     @SuppressLint("SetTextI18n")
     private fun sendAuthRequest(publicKey: PublicKey){
         if(checkCurrentTask()) return
@@ -113,8 +123,8 @@ class CommandActivity : AppCompatActivity() {
         val packet = ImmutableAuthNewSenderPacket(sender, KeyUtil.encodePublicKey(publicKey))
 
         currentTaskText.text = "Sending Auth Request"
-        currentTask = UploadToDatabase(
-            Prefs(this).createCouchProperties()[0], // TODO figure out a better option than just choosing the first value
+        currentTask = CouchDbUploadToDatabase(
+            getCouchProperties(),
             PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
             ::onPostExecute
         ).execute()
@@ -135,8 +145,8 @@ class CommandActivity : AppCompatActivity() {
 
         val packet = ImmutableIntegrityPacket(sender, encrypted)
         currentTaskText.text = "Sending command"
-        currentTask = UploadToDatabase(
-            Prefs(this).createCouchProperties()[0], // TODO figure out a better option than just choosing the first value
+        currentTask = CouchDbUploadToDatabase(
+            getCouchProperties(),
             PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
             ::onPostExecute
         ).execute()
@@ -217,7 +227,7 @@ class CommandActivity : AppCompatActivity() {
         updateKeyPair()
     }
 }
-private class UploadToDatabase(
+private class CouchDbUploadToDatabase(
     private val couchProperties: CouchProperties,
     private val packetCollection: PacketCollection,
     private val onFinish: (Boolean?) -> Unit

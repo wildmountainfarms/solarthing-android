@@ -10,13 +10,16 @@ class JsonProfileManager<T>(
     private val newProfileJsonCreator: () -> JsonObject,
     private val profileCreator: (JsonSaver) -> T
 ) : ProfileManager<T> {
+
+    private val profileMapCache: MutableMap<UUID, T> = HashMap()
+
     override fun getProfileName(uuid: UUID): String {
         return (getJsonProfile(uuid) ?: throw NoSuchElementException("No such profile with uuid: $uuid"))["name"].asString
     }
 
     override val profileUUIDs: List<UUID>
         get() {
-            val array = jsonSaver.jsonObject["profiles"].asJsonArray
+            val array = jsonSaver.reloadedJsonObject["profiles"].asJsonArray
             val r = mutableListOf<UUID>()
             for(element in array){
                 val jsonObject = element.asJsonObject
@@ -25,7 +28,7 @@ class JsonProfileManager<T>(
             return r
         }
     override var activeUUID: UUID
-        get() = UUID.fromString(jsonSaver.jsonObject["active"].asString)
+        get() = UUID.fromString(jsonSaver.reloadedJsonObject["active"].asString)
         set(value) {
             jsonSaver.jsonObject.addProperty("active", value.toString())
             jsonSaver.save()
@@ -42,6 +45,10 @@ class JsonProfileManager<T>(
             if(uuidString == uuid.toString()){
                 array.remove(element)
                 jsonSaver.save()
+                val success = profileMapCache.remove(uuid) != null
+                if(!success) {
+                    throw IllegalStateException("A profile was not cached in the map with uuid: $uuid")
+                }
                 return true
             }
         }
@@ -61,7 +68,7 @@ class JsonProfileManager<T>(
 
     override fun addAndCreateProfile(name: String): Pair<UUID, T> {
         val uuid = UUID.randomUUID()
-        val array = jsonSaver.jsonObject["profiles"].asJsonArray
+        val array = jsonSaver.reloadedJsonObject["profiles"].asJsonArray
         val jsonObject = JsonObject()
         jsonObject.addProperty("name", name)
         jsonObject.addProperty("uuid", uuid.toString())
@@ -70,18 +77,33 @@ class JsonProfileManager<T>(
         array.add(jsonObject)
         jsonSaver.save()
 
-        val profile = profileCreator(NestedJsonSaver({ getJsonProfile(uuid) ?: error("No profile with uuid: $uuid") }, jsonSaver::save))
+        val profile = profileCreator(NestedJsonSaver({ getJsonProfile(uuid)?.getAsJsonObject("profile") ?: error("No profile with uuid: $uuid") }, jsonSaver::reload, jsonSaver::save))
+        profileMapCache[uuid] = profile
         return Pair(uuid, profile)
+    }
+    private fun reloadProfiles(){
+        val array = jsonSaver.jsonObject["profiles"].asJsonArray
+        println(array)
+        for(element in array){
+            val jsonObject = element.asJsonObject
+            val uuid = UUID.fromString(jsonObject["uuid"].asString)
+            if(uuid !in profileMapCache){
+                val profile = profileCreator(NestedJsonSaver({ getJsonProfile(uuid)?.getAsJsonObject("profile") ?: error("No profile with uuid: $uuid") }, jsonSaver::reload, jsonSaver::save))
+                profileMapCache[uuid] = profile
+            }
+        }
     }
 
     override fun setProfileName(uuid: UUID, name: String) {
-        getJsonProfile(uuid)?.addProperty("name", name) ?: throw NoSuchElementException("No such uuid: $uuid")
+        getJsonProfile(uuid)?.addProperty("name", name) ?: throw NoSuchElementException("No such uuid: $uuid map: $profileMapCache")
         jsonSaver.save()
     }
 
     override fun getProfile(uuid: UUID): T {
-        // TODO we might be able to cache created profiles
-        return profileCreator(NestedJsonSaver({getJsonProfile(uuid) ?: throw NoSuchElementException("No such uuid: $uuid")}, jsonSaver::save))
+        return profileMapCache[uuid] ?: run {
+            reloadProfiles()
+            profileMapCache[uuid] ?: throw NoSuchElementException("No such uuid: $uuid map: $profileMapCache")
+        }
     }
 
 }

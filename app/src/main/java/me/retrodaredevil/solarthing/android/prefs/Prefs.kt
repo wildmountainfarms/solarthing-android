@@ -43,8 +43,10 @@ class Prefs(private val context: Context) {
             )
             set(value) = connectionPreferences.edit().putBoolean(SaveKeys.CouchDb.useAuth, value).apply()
     }
+    @Deprecated("Use a ProfileManager instead")
     val couchDb = CouchDb()
 
+    @Deprecated("Use a ProfileManager instead")
     fun createCouchProperties(): List<CouchProperties> {
         val username: String?
         val password: String?

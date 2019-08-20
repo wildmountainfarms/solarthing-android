@@ -17,9 +17,13 @@ import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.android.MainActivity
 import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
+import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
@@ -81,6 +85,7 @@ private class ServiceObject(
 
 class PersistentService : Service(), Runnable{
     private val prefs = Prefs(this)
+    private val connectionProfileManager: ProfileManager<ConnectionProfile> by lazy { createConnectionProfileManager(this) }
     private val handler by lazy { Handler() }
 
     private val services = listOf(
@@ -203,11 +208,12 @@ class PersistentService : Service(), Runnable{
                 continue
             }
 
-            service.dataRequesters = prefs.createCouchProperties().map{
+            val couchDbDatabaseConnectionProfile = (connectionProfileManager.activeProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
+            service.dataRequesters = couchDbDatabaseConnectionProfile.createCouchProperties().map{
                 CouchDbDataRequester(
                     { CouchPropertiesBuilder(it).setDatabase(service.databaseName).build()},
                     service.jsonPacketGetter,
-                    { service.dataService.startKey }
+                    service.dataService::startKey
                 )
             }
             if(service.dataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
