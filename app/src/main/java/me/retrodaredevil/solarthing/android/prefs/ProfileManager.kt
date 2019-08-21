@@ -2,8 +2,8 @@ package me.retrodaredevil.solarthing.android.prefs
 
 import java.util.*
 
-interface ProfileManager<T> {
-    val activeProfile: T
+interface ProfileManager<T> : ProfileProvider<T>{
+    override val activeProfile: T
     val activeProfileName: String
 
     var activeUUID: UUID

@@ -1,15 +1,11 @@
 package me.retrodaredevil.solarthing.android.prefs
 
-import android.content.Context
-import me.retrodaredevil.couchdb.CouchProperties
-import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import android.content.SharedPreferences
 
-@Deprecated("Use profile interfaces instead")
-class Prefs(private val context: Context) {
-//    private val connectionPreferences by lazy { context.getSharedPreferences("connection_properties", 0) }
-    private val settings by lazy { context.getSharedPreferences("settings", 0) }
-
-    var maxFragmentTimeMinutes: Float
+class PreferencesMiscProfile(
+    private val settings: SharedPreferences
+) : MiscProfile {
+    override var maxFragmentTimeMinutes: Float
         get() = settings.getFloat(
             SaveKeys.maxFragmentTimeMinutes,
             DefaultOptions.maxFragmentTimeMinutes
@@ -17,7 +13,7 @@ class Prefs(private val context: Context) {
         set(value) = settings.edit().putFloat(SaveKeys.maxFragmentTimeMinutes, value).apply()
 
 
-    var startOnBoot: Boolean
+    override var startOnBoot: Boolean
         get() = settings.getBoolean(
             SaveKeys.startOnBoot,
             DefaultOptions.startOnBoot

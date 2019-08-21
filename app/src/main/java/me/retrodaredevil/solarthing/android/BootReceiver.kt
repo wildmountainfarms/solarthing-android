@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import me.retrodaredevil.solarthing.android.prefs.Prefs
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 
 class BootReceiver : BroadcastReceiver() {
@@ -17,8 +16,8 @@ class BootReceiver : BroadcastReceiver() {
                 }
             }
             println("Received on boot!")
-            val prefs = Prefs(context)
-            if(prefs.startOnBoot) {
+            val miscProfile = createMiscProfileProvider(context).activeProfile
+            if(miscProfile.startOnBoot) {
                 println("Starting on boot")
                 startServiceIfNotRunning(context)
             } else {

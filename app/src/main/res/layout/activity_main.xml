@@ -71,7 +71,7 @@
 
             <Space
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"/>
+                    android:layout_height="20dp"/>
             <EditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -92,7 +92,7 @@
                     android:id="@+id/max_fragment_time" android:hint="Max Fragment Time Minutes"/>
             <Space
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"/>
+                    android:layout_height="20dp"/>
             <EditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -120,7 +120,7 @@
                     android:id="@+id/critical_battery_voltage" android:hint="Critical Battery Voltage"/>
             <Space
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"/>
+                    android:layout_height="20dp"/>
             <CheckBox
                     android:text="Start on boot"
                     android:layout_width="match_parent"

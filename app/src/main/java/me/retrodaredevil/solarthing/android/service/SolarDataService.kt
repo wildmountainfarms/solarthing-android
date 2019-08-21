@@ -13,8 +13,7 @@ import android.support.annotation.RequiresApi
 import com.google.gson.GsonBuilder
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
-import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
-import me.retrodaredevil.solarthing.android.prefs.Prefs
+import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
@@ -29,7 +28,8 @@ object SolarPacketCollectionBroadcast {
 
 class SolarDataService(
     private val service: Service,
-    private val prefs: Prefs
+    private val solarProfileProvider: ProfileProvider<SolarProfile>,
+    private val miscProfileProvider: ProfileProvider<MiscProfile>
 ) : DataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
@@ -103,12 +103,12 @@ class SolarDataService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            packetInfoCollection = sortPackets(packetGroups, (prefs.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
+            packetInfoCollection = sortPackets(packetGroups, (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
                     SolarPacketInfo(it)
                 } catch (ex: IllegalArgumentException) {
-//                    ex.printStackTrace()
-//                    println("${it.dateMillis} is a packet collection without packets")
+                    ex.printStackTrace()
+                    println("${it.dateMillis} is a packet collection without packets")
                     null
                 }
             }
@@ -172,7 +172,8 @@ class SolarDataService(
             beginningACDropInfo = null // beginningACDropInfo didn't actually happen before AC Use started so set it to null
         }
         var floatModeActivatedInfo: SolarPacketInfo? = null
-        val virtualFloatModeMinimumBatteryVoltage = prefs.virtualFloatModeMinimumBatteryVoltage
+        val activeSolarProfile = solarProfileProvider.activeProfile
+        val virtualFloatModeMinimumBatteryVoltage = activeSolarProfile.virtualFloatMinimumBatteryVoltage
         for (info in packetInfoCollection.reversed()) { // latest packets to oldest
             if (!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)) {
                 break
@@ -202,7 +203,7 @@ class SolarDataService(
                     service, currentInfo,
                     beginningACDropInfo, lastACDropInfo, acUseInfo,
                     floatModeActivatedInfo,
-                    (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo
+                    (activeSolarProfile.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo
                 )
             )
         } else {
@@ -270,7 +271,7 @@ class SolarDataService(
         // region Generator float timer notification
         if(floatModeActivatedInfo != null){
             // check to see if we should send a notification
-            val generatorFloatTimeMillis = (prefs.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
+            val generatorFloatTimeMillis = (activeSolarProfile.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
             val now = System.currentTimeMillis()
             if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
                 val last = lastFloatGeneratorNotification
@@ -310,8 +311,8 @@ class SolarDataService(
         // endregion
 
         // region Battery Alert Notifications
-        val criticalBatteryVoltage = prefs.criticalBatteryVoltage
-        val lowBatteryVoltage = prefs.lowBatteryVoltage
+        val criticalBatteryVoltage = activeSolarProfile.criticalBatteryVoltage
+        val lowBatteryVoltage = activeSolarProfile.lowBatteryVoltage
         if(criticalBatteryVoltage != null && currentInfo.batteryVoltage <= criticalBatteryVoltage + ROUND_OFF_ERROR_DEADZONE){ // critical alert
             val now = System.currentTimeMillis()
             val last = lastCriticalBatteryNotification

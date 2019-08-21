@@ -22,8 +22,9 @@ import me.retrodaredevil.solarthing.android.service.stopService
 
 class MainActivity : AppCompatActivity() {
 
-    private val prefs = Prefs(this)
-    private val connectionProfileManager: ProfileManager<ConnectionProfile> by lazy { createConnectionProfileManager(this) }
+    private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
+    private lateinit var solarProfileManager: ProfileManager<SolarProfile>
+    private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
     private lateinit var protocol: EditText
     private lateinit var host: EditText
@@ -44,6 +45,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        connectionProfileManager = createConnectionProfileManager(this)
+        solarProfileManager = createSolarProfileManager(this)
+        miscProfileProvider = createMiscProfileProvider(this)
+
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -127,8 +133,7 @@ class MainActivity : AppCompatActivity() {
         stopService(this)
     }
     private fun saveSettings(){
-        val active = connectionProfileManager.activeProfile
-        active.apply {
+        connectionProfileManager.activeProfile.apply {
             (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
                 it.protocol = protocol.text.toString()
                 it.host = host.text.toString()
@@ -141,12 +146,16 @@ class MainActivity : AppCompatActivity() {
             subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         }
 
-        prefs.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-        prefs.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
-        prefs.virtualFloatModeMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
-        prefs.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
-        prefs.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
-        prefs.startOnBoot = startOnBoot.isChecked
+        solarProfileManager.activeProfile.let {
+            it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
+            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
+            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
+            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
+        }
+        miscProfileProvider.activeProfile.let {
+            it.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
+            it.startOnBoot = startOnBoot.isChecked
+        }
 
         loadSettings()
         Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
@@ -167,13 +176,17 @@ class MainActivity : AppCompatActivity() {
             subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
         }
 
-        generatorFloatHours.setText(prefs.generatorFloatTimeHours.toString())
-        maxFragmentTime.setText(prefs.maxFragmentTimeMinutes.toString())
-        virtualFloatModeMinimumBatteryVoltage.setText(prefs.virtualFloatModeMinimumBatteryVoltage?.toString() ?: "")
-        lowBatteryVoltage.setText(prefs.lowBatteryVoltage?.toString() ?: "")
-        criticalBatteryVoltage.setText(prefs.criticalBatteryVoltage?.toString() ?: "")
-        startOnBoot.isChecked = prefs.startOnBoot
+        solarProfileManager.activeProfile.let {
+            generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
+            virtualFloatModeMinimumBatteryVoltage.setText(it.virtualFloatMinimumBatteryVoltage?.toString() ?: "")
+            lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
+            criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
+        }
 
+        miscProfileProvider.activeProfile.let {
+            maxFragmentTime.setText(it.maxFragmentTimeMinutes.toString())
+            startOnBoot.isChecked = it.startOnBoot
+        }
     }
     private fun onUseAuthUpdate(){
         if(useAuth.isChecked){

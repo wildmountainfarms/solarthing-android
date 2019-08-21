@@ -14,16 +14,11 @@ import android.os.IBinder
 import android.widget.Toast
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
-import me.retrodaredevil.solarthing.android.MainActivity
-import me.retrodaredevil.solarthing.android.prefs.Prefs
-import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
-import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.ProfileManager
+import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
@@ -84,18 +79,11 @@ private class ServiceObject(
 }
 
 class PersistentService : Service(), Runnable{
-    private val prefs = Prefs(this)
-    private val connectionProfileManager: ProfileManager<ConnectionProfile> by lazy { createConnectionProfileManager(this) }
-    private val handler by lazy { Handler() }
+    private lateinit var handler: Handler
+    private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
+    private lateinit var solarProfileManager: ProfileManager<SolarProfile>
 
-    private val services = listOf(
-        ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
-        ServiceObject(
-            SolarDataService(this, prefs), "solarthing",
-            JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it)})::createFromJson
-        ),
-        ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
-    )
+    private lateinit var services: List<ServiceObject>
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -103,6 +91,17 @@ class PersistentService : Service(), Runnable{
 
     @SuppressLint("ShowToast")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        handler = Handler()
+        connectionProfileManager = createConnectionProfileManager(this)
+        solarProfileManager = createSolarProfileManager(this)
+        services = listOf(
+            ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
+            ServiceObject(
+                SolarDataService(this, solarProfileManager, createMiscProfileProvider(this)), "solarthing",
+                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) })::createFromJson
+            ),
+            ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
+        )
         for(service in services){
             service.dataService.onInit()
         }
@@ -194,6 +193,8 @@ class PersistentService : Service(), Runnable{
     private fun getManager() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     override fun run() {
+        val activeConnectionProfile = connectionProfileManager.activeProfile
+
         var needsLargeData = false
         for(service in services){
             val task = service.task
@@ -208,7 +209,7 @@ class PersistentService : Service(), Runnable{
                 continue
             }
 
-            val couchDbDatabaseConnectionProfile = (connectionProfileManager.activeProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
+            val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
             service.dataRequesters = couchDbDatabaseConnectionProfile.createCouchProperties().map{
                 CouchDbDataRequester(
                     { CouchPropertiesBuilder(it).setDatabase(service.databaseName).build()},
@@ -222,7 +223,7 @@ class PersistentService : Service(), Runnable{
             service.task = DataUpdaterTask(service.dataRequester, service.dataService::onDataRequest).execute()
         }
 
-        val delay = if(needsLargeData){ prefs.initialRequestTimeSeconds * 1000L } else { prefs.subsequentRequestTimeSeconds * 1000L }
+        val delay = if(needsLargeData){ activeConnectionProfile.initialRequestTimeSeconds * 1000L } else { activeConnectionProfile.subsequentRequestTimeSeconds * 1000L }
         handler.postDelayed(this, delay)
         updateNotification(System.currentTimeMillis() + delay)
     }
