@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
+import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
@@ -9,39 +10,46 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.InputType
 import android.view.View
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.Toast
+import android.widget.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
+    private val connectionProfileUUIDMap = mutableMapOf<UUID, Pair<Long, String>>()
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
+    private lateinit var connectionProfileSpinner: Spinner
+    private lateinit var connectionProfileName: EditText
     private lateinit var protocol: EditText
     private lateinit var host: EditText
     private lateinit var port: EditText
     private lateinit var username: EditText
     private lateinit var password: EditText
     private lateinit var useAuth: CheckBox
-    private lateinit var generatorFloatHours: EditText
+
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
-    private lateinit var maxFragmentTime: EditText
+
+
+    private lateinit var generatorFloatHours: EditText
     private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
 
+    private lateinit var maxFragmentTime: EditText
     private lateinit var startOnBoot: CheckBox
 
+    // region Initialization
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -50,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
 
+        connectionProfileSpinner = findViewById(R.id.connection_profile_spinner)
+        connectionProfileName = findViewById(R.id.connection_profile_name)
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -67,6 +77,11 @@ class MainActivity : AppCompatActivity() {
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
+        }
+
+        connectionProfileSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) = throw error("Cannot have nothing selected!")
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onConnectionProfileChange(id)
         }
 
         loadSettings()
@@ -120,6 +135,9 @@ class MainActivity : AppCompatActivity() {
         }
         startServiceIfNotRunning(this)
     }
+    // endregion
+
+    // region Buttons
     @Suppress("UNUSED_PARAMETER")
     fun saveSettings(view: View){
         saveSettings()
@@ -132,7 +150,85 @@ class MainActivity : AppCompatActivity() {
     fun stopService(view: View){
         stopService(this)
     }
-    private fun saveSettings(){
+    @Suppress("UNUSED_PARAMETER")
+    fun openCommands(view: View){
+        startActivity(Intent(this, CommandActivity::class.java))
+    }
+    @Suppress("UNUSED_PARAMETER")
+    fun newConnectionProfile(view: View){
+        createPromptAlert("New Profile Name") {
+            val (uuid, profile) = connectionProfileManager.addAndCreateProfile(it)
+            connectionProfileManager.activeUUID = uuid
+            loadSettings()
+//            loadSpinner(connectionProfileSpinner, connectionProfileManager, connectionProfileUUIDMap, uuid)
+//            loadConnectionSettings(connectionProfileManager.activeProfileName, profile)
+        }.show()
+    }
+    @Suppress("UNUSED_PARAMETER")
+    fun deleteCurrentConnectionProfile(view: View){
+        val size = connectionProfileManager.profileUUIDs.size
+        if(size <= 1){
+            Toast.makeText(this, "You cannot remove the last profile!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val success = connectionProfileManager.removeProfile(connectionProfileManager.activeUUID)
+        if (success) {
+            loadSettings()
+            Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()
+        }
+    }
+    // endregion
+    private fun createPromptAlert(title: String, onSubmit: (String) -> Unit): AlertDialog {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+        val input = EditText(this)
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        builder.setView(input)
+        builder.setPositiveButton("OK"){ _, _ ->
+            onSubmit(input.text.toString())
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
+
+        return builder.create()
+    }
+
+    private fun onUseAuthUpdate(){
+        if(useAuth.isChecked){
+            username.alpha = 1f
+            password.alpha = 1f
+        } else {
+            username.alpha = .5f
+            password.alpha = .5f
+        }
+    }
+    private fun onConnectionProfileChange(rowId: Long){
+        println("Connection Profile Changed to ID: $rowId")
+        var activeUUID: UUID? = null
+        var activeName: String? = null
+        for(entry in connectionProfileUUIDMap.entries){
+            val uuid = entry.key
+            val (id, name) = entry.value
+            if(id == rowId){
+                activeUUID = uuid
+                activeName = name
+                break
+            }
+        }
+        activeUUID ?: error("activeUUID is null from rowId: $rowId")
+        activeName!!
+        val currentUUID = connectionProfileManager.activeUUID
+        if(currentUUID == activeUUID){ // they're the same
+            return
+        }
+        saveSettings(reloadSettings = false, showToast = false)
+        connectionProfileManager.activeUUID = activeUUID
+        loadConnectionSettings(activeName, connectionProfileManager.getProfile(activeUUID))
+    }
+    // region Saving and Loading
+    private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
+        connectionProfileManager.setProfileName(connectionProfileManager.activeUUID, connectionProfileName.text.toString())
         connectionProfileManager.activeProfile.apply {
             (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
                 it.protocol = protocol.text.toString()
@@ -157,24 +253,30 @@ class MainActivity : AppCompatActivity() {
             it.startOnBoot = startOnBoot.isChecked
         }
 
-        loadSettings()
-        Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
+        if(reloadSettings) loadSettings()
+        if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
+    }
+    private fun loadSpinner(spinner: Spinner, profileManager: ProfileManager<*>, map: MutableMap<UUID, Pair<Long, String>>, activeUUID: UUID){
+        val uuids = profileManager.profileUUIDs
+        val profileNameList = uuids.map { profileManager.getProfileName(it) }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, profileNameList)
+        var selectedPosition: Int? = null
+        for((position, uuid) in uuids.withIndex()){
+            val id = adapter.getItemId(position)
+            map[uuid] = Pair(id, profileNameList[position])
+            if(uuid == activeUUID){
+                selectedPosition = position
+            }
+        }
+        selectedPosition ?: error("No active uuid: $activeUUID in uuids: $uuids")
+        spinner.adapter = adapter
+        spinner.setSelection(selectedPosition)
     }
     private fun loadSettings(){
-        val activeConnectionProfile = connectionProfileManager.activeProfile
-        (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
-            protocol.setText(it.protocol)
-            host.setText(it.host)
-            port.setText(it.port.toString())
-            username.setText(it.username)
-            password.setText(it.password)
-            useAuth.isChecked = it.useAuth
-        }
-        onUseAuthUpdate()
-        activeConnectionProfile.let {
-            initialRequestTimeout.setText(it.initialRequestTimeSeconds.toString())
-            subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
-        }
+        val activeConnectionUUID = connectionProfileManager.activeUUID
+        val activeConnectionProfile = connectionProfileManager.getProfile(activeConnectionUUID)
+        loadConnectionSettings(connectionProfileManager.activeProfileName, activeConnectionProfile)
+        loadSpinner(connectionProfileSpinner, connectionProfileManager, connectionProfileUUIDMap, activeConnectionUUID)
 
         solarProfileManager.activeProfile.let {
             generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
@@ -188,17 +290,22 @@ class MainActivity : AppCompatActivity() {
             startOnBoot.isChecked = it.startOnBoot
         }
     }
-    private fun onUseAuthUpdate(){
-        if(useAuth.isChecked){
-            username.alpha = 1f
-            password.alpha = 1f
-        } else {
-            username.alpha = .5f
-            password.alpha = .5f
+    private fun loadConnectionSettings(name: String, connectionProfile: ConnectionProfile){
+        connectionProfileName.setText(name)
+        (connectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
+            protocol.setText(it.protocol)
+            host.setText(it.host)
+            port.setText(it.port.toString())
+            username.setText(it.username)
+            password.setText(it.password)
+            useAuth.isChecked = it.useAuth
+            onUseAuthUpdate()
         }
+        connectionProfile.let {
+            initialRequestTimeout.setText(it.initialRequestTimeSeconds.toString())
+            subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
+        }
+
     }
-    @Suppress("UNUSED_PARAMETER")
-    fun openCommands(view: View){
-        startActivity(Intent(this, CommandActivity::class.java))
-    }
+    // endregion
 }

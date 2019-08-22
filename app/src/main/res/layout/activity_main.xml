@@ -15,6 +15,39 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                <TextView
+                        android:text="Connection Profile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:id="@+id/textView3" android:layout_weight="1"/>
+                <Spinner
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:id="@+id/connection_profile_spinner" android:layout_weight="1"/>
+                <Button
+                        android:text="New Profile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content" android:id="@+id/new_connection_profile_button"
+                        android:layout_weight="1" android:onClick="newConnectionProfile"/>
+            </LinearLayout>
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                <EditText
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:ems="10"
+                        android:id="@+id/connection_profile_name" android:hint="Connection Profile Name"/>
+                <Button
+                        android:text="Delete"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/delete_profile_button"
+                        android:layout_weight="1" android:onClick="deleteCurrentConnectionProfile"/>
+            </LinearLayout>
             <EditText
                     android:id="@+id/protocol"
                     android:layout_width="match_parent"
@@ -84,12 +117,6 @@
                     android:inputType="number"
                     android:ems="10"
                     android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
-            <EditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:ems="10"
-                    android:id="@+id/max_fragment_time" android:hint="Max Fragment Time Minutes"/>
             <Space
                     android:layout_width="match_parent"
                     android:layout_height="20dp"/>
@@ -121,6 +148,12 @@
             <Space
                     android:layout_width="match_parent"
                     android:layout_height="20dp"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:ems="10"
+                    android:id="@+id/max_fragment_time" android:hint="Max Fragment Time Minutes"/>
             <CheckBox
                     android:text="Start on boot"
                     android:layout_width="match_parent"

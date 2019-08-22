@@ -39,7 +39,8 @@ class JsonProfileManager<T>(
         get() = (getJsonProfile(activeUUID) ?: error("No json profile with active UUID!"))["name"].asString
 
     override fun removeProfile(uuid: UUID): Boolean {
-        val array = jsonSaver.jsonObject["profiles"].asJsonArray
+        val jsonObject = jsonSaver.reloadedJsonObject
+        val array = jsonObject["profiles"].asJsonArray
         for(element in array){
             val uuidString = element.asJsonObject["uuid"].asString
             if(uuidString == uuid.toString()){
@@ -48,6 +49,9 @@ class JsonProfileManager<T>(
                 val success = profileMapCache.remove(uuid) != null
                 if(!success) {
                     throw IllegalStateException("A profile was not cached in the map with uuid: $uuid")
+                }
+                if(jsonObject["active"].asString!! == uuidString){ // we are removing the active uuid
+                    activeUUID = profileMapCache.keys.firstOrNull() ?: error("You cannot remove the last profile! There must be at least one profile!")
                 }
                 return true
             }
