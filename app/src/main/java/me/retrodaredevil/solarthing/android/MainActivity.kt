@@ -23,13 +23,11 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var connectionProfileHeader: ProfileHeaderHandler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
-    private val connectionProfileUUIDMap = mutableMapOf<UUID, Pair<Long, String>>()
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
-    private lateinit var connectionProfileSpinner: Spinner
-    private lateinit var connectionProfileName: EditText
     private lateinit var protocol: EditText
     private lateinit var host: EditText
     private lateinit var port: EditText
@@ -55,11 +53,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         connectionProfileManager = createConnectionProfileManager(this)
+        connectionProfileHeader = ProfileHeaderHandler(
+            this,
+            findViewById(R.id.connection_profile_header_layout),
+            connectionProfileManager,
+            { saveConnectionSettings() },
+            { loadConnectionSettings(connectionProfileManager.activeProfileName, connectionProfileManager.activeProfile)}
+        )
+
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
 
-        connectionProfileSpinner = findViewById(R.id.connection_profile_spinner)
-        connectionProfileName = findViewById(R.id.connection_profile_name)
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -77,11 +81,6 @@ class MainActivity : AppCompatActivity() {
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
-        }
-
-        connectionProfileSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onNothingSelected(parent: AdapterView<*>?) = throw error("Cannot have nothing selected!")
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onConnectionProfileChange(id)
         }
 
         loadSettings()
@@ -154,24 +153,25 @@ class MainActivity : AppCompatActivity() {
     fun openCommands(view: View){
         startActivity(Intent(this, CommandActivity::class.java))
     }
-    @Suppress("UNUSED_PARAMETER")
-    fun newConnectionProfile(view: View){
+    // endregion
+    @Deprecated("")
+    private fun newProfilePrompt(profileManager: ProfileManager<*>){
         createPromptAlert("New Profile Name") {
-            val (uuid, profile) = connectionProfileManager.addAndCreateProfile(it)
-            connectionProfileManager.activeUUID = uuid
+            val (uuid, _) = profileManager.addAndCreateProfile(it)
+            saveSettings(reloadSettings = false, showToast = false)
+            profileManager.activeUUID = uuid
             loadSettings()
-//            loadSpinner(connectionProfileSpinner, connectionProfileManager, connectionProfileUUIDMap, uuid)
-//            loadConnectionSettings(connectionProfileManager.activeProfileName, profile)
+            Toast.makeText(this, "New profile created!", Toast.LENGTH_SHORT).show()
         }.show()
     }
-    @Suppress("UNUSED_PARAMETER")
-    fun deleteCurrentConnectionProfile(view: View){
-        val size = connectionProfileManager.profileUUIDs.size
+    @Deprecated("")
+    private fun deleteCurrentProfile(profileManager: ProfileManager<*>) {
+        val size = profileManager.profileUUIDs.size
         if(size <= 1){
             Toast.makeText(this, "You cannot remove the last profile!", Toast.LENGTH_SHORT).show()
             return
         }
-        val success = connectionProfileManager.removeProfile(connectionProfileManager.activeUUID)
+        val success = profileManager.removeProfile(profileManager.activeUUID)
         if (success) {
             loadSettings()
             Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
@@ -179,7 +179,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()
         }
     }
-    // endregion
     private fun createPromptAlert(title: String, onSubmit: (String) -> Unit): AlertDialog {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
@@ -203,44 +202,9 @@ class MainActivity : AppCompatActivity() {
             password.alpha = .5f
         }
     }
-    private fun onConnectionProfileChange(rowId: Long){
-        println("Connection Profile Changed to ID: $rowId")
-        var activeUUID: UUID? = null
-        var activeName: String? = null
-        for(entry in connectionProfileUUIDMap.entries){
-            val uuid = entry.key
-            val (id, name) = entry.value
-            if(id == rowId){
-                activeUUID = uuid
-                activeName = name
-                break
-            }
-        }
-        activeUUID ?: error("activeUUID is null from rowId: $rowId")
-        activeName!!
-        val currentUUID = connectionProfileManager.activeUUID
-        if(currentUUID == activeUUID){ // they're the same
-            return
-        }
-        saveSettings(reloadSettings = false, showToast = false)
-        connectionProfileManager.activeUUID = activeUUID
-        loadConnectionSettings(activeName, connectionProfileManager.getProfile(activeUUID))
-    }
     // region Saving and Loading
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
-        connectionProfileManager.setProfileName(connectionProfileManager.activeUUID, connectionProfileName.text.toString())
-        connectionProfileManager.activeProfile.apply {
-            (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
-                it.protocol = protocol.text.toString()
-                it.host = host.text.toString()
-                it.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
-                it.username = username.text.toString()
-                it.password = password.text.toString()
-                it.useAuth = useAuth.isChecked
-            }
-            initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
-            subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
-        }
+        saveConnectionSettings()
 
         solarProfileManager.activeProfile.let {
             it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
@@ -256,27 +220,23 @@ class MainActivity : AppCompatActivity() {
         if(reloadSettings) loadSettings()
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
-    private fun loadSpinner(spinner: Spinner, profileManager: ProfileManager<*>, map: MutableMap<UUID, Pair<Long, String>>, activeUUID: UUID){
-        val uuids = profileManager.profileUUIDs
-        val profileNameList = uuids.map { profileManager.getProfileName(it) }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, profileNameList)
-        var selectedPosition: Int? = null
-        for((position, uuid) in uuids.withIndex()){
-            val id = adapter.getItemId(position)
-            map[uuid] = Pair(id, profileNameList[position])
-            if(uuid == activeUUID){
-                selectedPosition = position
+    private fun saveConnectionSettings(){
+        connectionProfileManager.setProfileName(connectionProfileManager.activeUUID, connectionProfileHeader.profileName)
+        connectionProfileManager.activeProfile.apply {
+            (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
+                it.protocol = protocol.text.toString()
+                it.host = host.text.toString()
+                it.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
+                it.username = username.text.toString()
+                it.password = password.text.toString()
+                it.useAuth = useAuth.isChecked
             }
+            initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
+            subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         }
-        selectedPosition ?: error("No active uuid: $activeUUID in uuids: $uuids")
-        spinner.adapter = adapter
-        spinner.setSelection(selectedPosition)
     }
     private fun loadSettings(){
-        val activeConnectionUUID = connectionProfileManager.activeUUID
-        val activeConnectionProfile = connectionProfileManager.getProfile(activeConnectionUUID)
-        loadConnectionSettings(connectionProfileManager.activeProfileName, activeConnectionProfile)
-        loadSpinner(connectionProfileSpinner, connectionProfileManager, connectionProfileUUIDMap, activeConnectionUUID)
+        loadAllConnectionSettings()
 
         solarProfileManager.activeProfile.let {
             generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
@@ -290,8 +250,14 @@ class MainActivity : AppCompatActivity() {
             startOnBoot.isChecked = it.startOnBoot
         }
     }
+    private fun loadAllConnectionSettings(){
+        val activeConnectionUUID = connectionProfileManager.activeUUID
+        val activeConnectionProfile = connectionProfileManager.getProfile(activeConnectionUUID)
+        loadConnectionSettings(connectionProfileManager.activeProfileName, activeConnectionProfile)
+        connectionProfileHeader.loadSpinner(activeConnectionUUID)
+    }
     private fun loadConnectionSettings(name: String, connectionProfile: ConnectionProfile){
-        connectionProfileName.setText(name)
+        connectionProfileHeader.profileName = name
         (connectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
             protocol.setText(it.protocol)
             host.setText(it.host)
