@@ -1,6 +1,5 @@
 package me.retrodaredevil.solarthing.android
 
-import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
@@ -10,9 +9,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.text.InputType
 import android.view.View
-import android.widget.*
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.Toast
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
@@ -23,9 +23,10 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var connectionProfileHeader: ProfileHeaderHandler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
+    private lateinit var connectionProfileHeader: ProfileHeaderHandler
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
+    private lateinit var solarProfileHeader: ProfileHeaderHandler
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
     private lateinit var protocol: EditText
@@ -57,11 +58,19 @@ class MainActivity : AppCompatActivity() {
             this,
             findViewById(R.id.connection_profile_header_layout),
             connectionProfileManager,
-            { saveConnectionSettings() },
-            { loadConnectionSettings(connectionProfileManager.activeProfileName, connectionProfileManager.activeProfile)}
+            this::saveConnectionSettings,
+            this::loadConnectionSettings
         )
 
         solarProfileManager = createSolarProfileManager(this)
+        solarProfileHeader = ProfileHeaderHandler(
+            this,
+            findViewById(R.id.solar_profile_header_layout),
+            solarProfileManager,
+            this::saveSolarSettings,
+            this::loadSolarSettings
+        )
+
         miscProfileProvider = createMiscProfileProvider(this)
 
         protocol = findViewById(R.id.protocol)
@@ -154,44 +163,6 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, CommandActivity::class.java))
     }
     // endregion
-    @Deprecated("")
-    private fun newProfilePrompt(profileManager: ProfileManager<*>){
-        createPromptAlert("New Profile Name") {
-            val (uuid, _) = profileManager.addAndCreateProfile(it)
-            saveSettings(reloadSettings = false, showToast = false)
-            profileManager.activeUUID = uuid
-            loadSettings()
-            Toast.makeText(this, "New profile created!", Toast.LENGTH_SHORT).show()
-        }.show()
-    }
-    @Deprecated("")
-    private fun deleteCurrentProfile(profileManager: ProfileManager<*>) {
-        val size = profileManager.profileUUIDs.size
-        if(size <= 1){
-            Toast.makeText(this, "You cannot remove the last profile!", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val success = profileManager.removeProfile(profileManager.activeUUID)
-        if (success) {
-            loadSettings()
-            Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()
-        }
-    }
-    private fun createPromptAlert(title: String, onSubmit: (String) -> Unit): AlertDialog {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(title)
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
-        builder.setPositiveButton("OK"){ _, _ ->
-            onSubmit(input.text.toString())
-        }
-        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
-
-        return builder.create()
-    }
 
     private fun onUseAuthUpdate(){
         if(useAuth.isChecked){
@@ -205,13 +176,7 @@ class MainActivity : AppCompatActivity() {
     // region Saving and Loading
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
         saveConnectionSettings()
-
-        solarProfileManager.activeProfile.let {
-            it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
-            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
-            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
-        }
+        saveSolarSettings()
         miscProfileProvider.activeProfile.let {
             it.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
             it.startOnBoot = startOnBoot.isChecked
@@ -235,14 +200,23 @@ class MainActivity : AppCompatActivity() {
             subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
         }
     }
-    private fun loadSettings(){
-        loadAllConnectionSettings()
-
+    private fun saveSolarSettings(){
+        solarProfileManager.setProfileName(solarProfileManager.activeUUID, solarProfileHeader.profileName)
         solarProfileManager.activeProfile.let {
-            generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
-            virtualFloatModeMinimumBatteryVoltage.setText(it.virtualFloatMinimumBatteryVoltage?.toString() ?: "")
-            lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
-            criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
+            it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
+            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
+            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
+            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
+        }
+    }
+    private fun loadSettings(){
+        connectionProfileManager.activeUUID.let{
+            loadConnectionSettings(it)
+            connectionProfileHeader.loadSpinner(it)
+        }
+        solarProfileManager.activeUUID.let {
+            loadSolarSettings(it)
+            solarProfileHeader.loadSpinner(it)
         }
 
         miscProfileProvider.activeProfile.let {
@@ -250,15 +224,11 @@ class MainActivity : AppCompatActivity() {
             startOnBoot.isChecked = it.startOnBoot
         }
     }
-    private fun loadAllConnectionSettings(){
-        val activeConnectionUUID = connectionProfileManager.activeUUID
-        val activeConnectionProfile = connectionProfileManager.getProfile(activeConnectionUUID)
-        loadConnectionSettings(connectionProfileManager.activeProfileName, activeConnectionProfile)
-        connectionProfileHeader.loadSpinner(activeConnectionUUID)
-    }
-    private fun loadConnectionSettings(name: String, connectionProfile: ConnectionProfile){
+    private fun loadConnectionSettings(uuid: UUID) {
+        val profile = connectionProfileManager.getProfile(uuid)
+        val name = connectionProfileManager.getProfileName(uuid)
         connectionProfileHeader.profileName = name
-        (connectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
+        (profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
             protocol.setText(it.protocol)
             host.setText(it.host)
             port.setText(it.port.toString())
@@ -267,11 +237,21 @@ class MainActivity : AppCompatActivity() {
             useAuth.isChecked = it.useAuth
             onUseAuthUpdate()
         }
-        connectionProfile.let {
+        profile.let {
             initialRequestTimeout.setText(it.initialRequestTimeSeconds.toString())
             subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
         }
-
+    }
+    private fun loadSolarSettings(uuid: UUID) {
+        val profile = solarProfileManager.getProfile(uuid)
+        val name = solarProfileManager.getProfileName(uuid)
+        solarProfileHeader.profileName = name
+        profile.let {
+            generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
+            virtualFloatModeMinimumBatteryVoltage.setText(it.virtualFloatMinimumBatteryVoltage?.toString() ?: "")
+            lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
+            criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
+        }
     }
     // endregion
 }

@@ -13,7 +13,7 @@ class ProfileHeaderHandler(
     view: View,
     private val profileManager: ProfileManager<*>,
     private val doSave: (() -> Unit),
-    private val doLoad: (() -> Unit)
+    private val doLoad: ((UUID) -> Unit)
 )  {
 
 
@@ -68,7 +68,7 @@ class ProfileHeaderHandler(
         doSave()
         profileManager.activeUUID = activeUUID
 //        loadConnectionSettings(activeName, connectionProfileManager.getProfile(activeUUID))
-        doLoad()
+        doLoad(activeUUID)
         Toast.makeText(context, "Switched to connection profile: $activeName", Toast.LENGTH_SHORT).show()
     }
 
@@ -93,12 +93,12 @@ class ProfileHeaderHandler(
         spinner.setSelection(selectedPosition)
     }
     private fun newProfilePrompt(){
-        createPromptAlert("New Profile Name") { name ->
+        createTextPromptAlert("New Profile Name") { name ->
             val (uuid, _) = profileManager.addAndCreateProfile(name)
             doSave()
             profileManager.activeUUID = uuid
             loadSpinner(uuid)
-            doLoad()
+            doLoad(uuid)
             Toast.makeText(context, "New profile created!", Toast.LENGTH_SHORT).show()
             println("Created profile: $name")
         }.show()
@@ -109,16 +109,19 @@ class ProfileHeaderHandler(
             Toast.makeText(context, "You cannot remove the last profile!", Toast.LENGTH_SHORT).show()
             return
         }
-        val success = profileManager.removeProfile(profileManager.activeUUID)
-        if (success) {
-            loadSpinner(profileManager.activeUUID)
-            doLoad()
-            Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()
-        }
+        createConfirmPromptAlert("Really Delete?") {
+            val success = profileManager.removeProfile(profileManager.activeUUID)
+            if (success) {
+                val uuid = profileManager.activeUUID
+                loadSpinner(uuid)
+                doLoad(uuid)
+                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()
+            }
+        }.show()
     }
-    private fun createPromptAlert(title: String, onSubmit: (String) -> Unit): AlertDialog {
+    private fun createTextPromptAlert(title: String, onSubmit: (String) -> Unit): AlertDialog {
         val builder = AlertDialog.Builder(context)
         builder.setTitle(title)
         val input = EditText(context)
@@ -129,6 +132,15 @@ class ProfileHeaderHandler(
         }
         builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
 
+        return builder.create()
+    }
+    private fun createConfirmPromptAlert(title: String, onSubmit: () -> Unit): AlertDialog {
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle(title)
+        builder.setPositiveButton("OK"){ _, _ ->
+            onSubmit()
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
         return builder.create()
     }
 

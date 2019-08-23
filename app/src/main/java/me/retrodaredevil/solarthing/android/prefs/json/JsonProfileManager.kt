@@ -34,7 +34,7 @@ class JsonProfileManager<T>(
             jsonSaver.save()
         }
     override val activeProfile: T
-        get() = getProfile(activeUUID) ?: error("No profile with the active UUID!")
+        get() = getProfile(activeUUID)
     override val activeProfileName: String
         get() = (getJsonProfile(activeUUID) ?: error("No json profile with active UUID!"))["name"].asString
 
