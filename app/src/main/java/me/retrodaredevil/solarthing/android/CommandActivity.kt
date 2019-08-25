@@ -139,7 +139,7 @@ class CommandActivity : AppCompatActivity() {
         }
         if(checkCurrentTask()) return
 
-        val text = System.currentTimeMillis().toString() + "," + commandText.text.toString()
+        val text = System.currentTimeMillis().toString(16) + "," + commandText.text.toString()
         println("Going to send text: $text")
         val encrypted = Encrypt.encrypt(cipher, keyPair.private, text)
 
