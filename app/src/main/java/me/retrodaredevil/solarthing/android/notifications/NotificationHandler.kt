@@ -508,11 +508,11 @@ object NotificationHandler {
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
                 val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
-                builder.setSubText("$batteryVoltage | ${device.chargingState.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
+                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
-                    "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage.modeName}/${device.systemVoltageSetting.modeName}\n" +
+                    "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
                             createChargeControllerMoreInfo(device) +
-                            "Charging State: ${device.chargingState.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
+                            "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
                             "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorMode)}\n" +
                             "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
                             "Day: ${device.operatingDaysCount} | kWH: ${device.dailyKWH} | AH: ${device.dailyAH} | " +
