@@ -55,14 +55,14 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-        <receiver
-                android:name=".NetworkChangeReceiver">
-            <intent-filter>
-                <!--<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />-->
-                <action android:name="android.net.wifi.WIFI_STATE_CHANGED"/>
-                <action android:name="android.net.wifi.STATE_CHANGED"/>
-            </intent-filter>
-        </receiver>
+        <!--<receiver-->
+                <!--android:name=".NetworkChangeReceiver">-->
+            <!--<intent-filter>-->
+                <!--&lt;!&ndash;<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />&ndash;&gt;-->
+                <!--<action android:name="android.net.wifi.WIFI_STATE_CHANGED"/>-->
+                <!--<action android:name="android.net.wifi.STATE_CHANGED"/>-->
+            <!--</intent-filter>-->
+        <!--</receiver>-->
 
         <activity android:name=".MainActivity">
             <intent-filter>
