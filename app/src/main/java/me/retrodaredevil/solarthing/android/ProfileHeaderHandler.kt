@@ -65,10 +65,10 @@ class ProfileHeaderHandler(
             return
         }
 //        saveSettings(reloadSettings = false, showToast = false)
-        doSave()
+        doSave() // we need to tell the UI to save the current settings because we're about to change the active profile
         profileManager.activeUUID = activeUUID
 //        loadConnectionSettings(activeName, connectionProfileManager.getProfile(activeUUID))
-        doLoad(activeUUID)
+        doLoad(activeUUID) // we need to tell the UI to load the new settings
         Toast.makeText(context, "Switched to connection profile: $activeName", Toast.LENGTH_SHORT).show()
     }
 
@@ -81,6 +81,7 @@ class ProfileHeaderHandler(
         val profileNameList = uuids.map { profileManager.getProfileName(it) }
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, profileNameList)
         var selectedPosition: Int? = null
+        profileUUIDMap.clear()
         for((position, uuid) in uuids.withIndex()){
             val id = adapter.getItemId(position)
             profileUUIDMap[uuid] = Pair(id, profileNameList[position])
@@ -95,10 +96,10 @@ class ProfileHeaderHandler(
     private fun newProfilePrompt(){
         createTextPromptAlert("New Profile Name") { name ->
             val (uuid, _) = profileManager.addAndCreateProfile(name)
-            doSave()
+            doSave() // we need to tell the UI to save the profile because we're about to change the active profile
             profileManager.activeUUID = uuid
-            loadSpinner(uuid)
-            doLoad(uuid)
+            loadSpinner(uuid) // reload the spinner and set its active profile
+            doLoad(uuid) // we need to tell the UI to load the new profile
             Toast.makeText(context, "New profile created!", Toast.LENGTH_SHORT).show()
             println("Created profile: $name")
         }.show()
@@ -114,7 +115,7 @@ class ProfileHeaderHandler(
             if (success) {
                 val uuid = profileManager.activeUUID
                 loadSpinner(uuid)
-                doLoad(uuid)
+                doLoad(uuid) // we need to tell the UI to load the settings on the now active profile
                 Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(context, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()

@@ -55,7 +55,7 @@ fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
     )
 }
 fun createMiscProfileProvider(context: Context): ProfileProvider<MiscProfile> {
-    val profile = PreferencesMiscProfile(context.getSharedPreferences("misc_settings", 0))
+    val profile = PreferencesMiscProfile(context.getSharedPreferences("misc_settings", 0), context)
     return object : ProfileProvider<MiscProfile> {
         override val activeProfile: MiscProfile
             get() = profile

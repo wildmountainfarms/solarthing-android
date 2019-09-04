@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <TextView
+                android:text="Network Switching"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"/>
+        <CheckBox
+                android:text="Enabled"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:id="@+id/is_enabled" android:layout_weight="1"/>
+        <CheckBox
+                android:text="Backup"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:id="@+id/is_backup" android:layout_weight="1"/>
+    </LinearLayout>
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/network_switching_bottom">
+        <TextView
+                android:text="Current Network:"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"/>
+        <TextView
+                android:id="@+id/current_network"
+                android:text="\?\?\?"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button
+                android:text="Set to this network"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" android:id="@+id/set_to_this_network"
+                android:layout_weight="1"/>
+    </LinearLayout>
+</LinearLayout>

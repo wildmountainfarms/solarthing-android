@@ -215,13 +215,16 @@ class PersistentService : Service(), Runnable{
 
     override fun run() {
         if(miscProfileProvider.activeProfile.networkSwitchingEnabled) {
-            val manager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val current = manager.connectionInfo
-            val id: String? = current.ssid
-            println("Current ssid: $id")
-            val switchUUID = getProfileToSwitchTo(id, connectionProfileManager, ConnectionProfile::networkSwitchingProfile)
-            if(switchUUID != null) {
-                connectionProfileManager.activeUUID = switchUUID
+            try {
+                val id = getSSID(this)
+                println("Current ssid: $id")
+                val switchUUID = getProfileToSwitchTo(id, connectionProfileManager, ConnectionProfile::networkSwitchingProfile)
+                if (switchUUID != null && connectionProfileManager.activeUUID != switchUUID) {
+                    connectionProfileManager.activeUUID = switchUUID
+                    Toast.makeText(this, "Changed to profile: ${connectionProfileManager.activeProfileName}", Toast.LENGTH_SHORT).show()
+                }
+            } catch(ex: SSIDPermissionException){
+                ex.printStackTrace()
             }
             // TODO when we get the profile to switch to, figure out how to notify the UI layer
         }

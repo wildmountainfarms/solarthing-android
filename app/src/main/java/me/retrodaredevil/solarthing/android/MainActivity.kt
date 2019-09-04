@@ -1,13 +1,16 @@
 package me.retrodaredevil.solarthing.android
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.CheckBox
@@ -22,6 +25,9 @@ import me.retrodaredevil.solarthing.android.service.stopService
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val REQUEST_COARSE_LOCATION_RC = 1801
+    }
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var connectionProfileHeader: ProfileHeaderHandler
@@ -29,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var solarProfileHeader: ProfileHeaderHandler
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
+    private lateinit var networkSwitchingViewHandler: NetworkSwitchingViewHandler<ConnectionProfile>
     private lateinit var protocol: EditText
     private lateinit var host: EditText
     private lateinit var port: EditText
@@ -47,6 +54,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var maxFragmentTime: EditText
     private lateinit var startOnBoot: CheckBox
+    private lateinit var networkSwitchingEnabledCheckBox: CheckBox
 
     // region Initialization
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +81,13 @@ class MainActivity : AppCompatActivity() {
 
         miscProfileProvider = createMiscProfileProvider(this)
 
+        networkSwitchingViewHandler = NetworkSwitchingViewHandler(
+            this, findViewById(R.id.network_switching), connectionProfileManager,
+            { it.networkSwitchingProfile },
+            {
+                requestCoarseLocation()
+            }
+        )
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -87,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
+        networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
@@ -143,7 +159,21 @@ class MainActivity : AppCompatActivity() {
         }
         startServiceIfNotRunning(this)
     }
-    // endregion
+
+    private fun requestCoarseLocation(){
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), REQUEST_COARSE_LOCATION_RC)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if(requestCode == REQUEST_COARSE_LOCATION_RC){
+            val success = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            if(success){
+                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // region Buttons
     @Suppress("UNUSED_PARAMETER")
@@ -180,6 +210,7 @@ class MainActivity : AppCompatActivity() {
         miscProfileProvider.activeProfile.let {
             it.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
             it.startOnBoot = startOnBoot.isChecked
+            it.networkSwitchingEnabled = networkSwitchingEnabledCheckBox.isChecked
         }
 
         if(reloadSettings) loadSettings()
@@ -187,6 +218,7 @@ class MainActivity : AppCompatActivity() {
     }
     private fun saveConnectionSettings(){
         connectionProfileManager.setProfileName(connectionProfileManager.activeUUID, connectionProfileHeader.profileName)
+        networkSwitchingViewHandler.save()
         connectionProfileManager.activeProfile.apply {
             (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
                 it.protocol = protocol.text.toString()
@@ -204,9 +236,9 @@ class MainActivity : AppCompatActivity() {
         solarProfileManager.setProfileName(solarProfileManager.activeUUID, solarProfileHeader.profileName)
         solarProfileManager.activeProfile.let {
             it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.virtualFloatModeMinimumBatteryVoltage
-            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.lowBatteryVoltage
-            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull() ?: DefaultOptions.criticalBatteryVoltage
+            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
+            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
+            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull()
         }
     }
     private fun loadSettings(){
@@ -222,9 +254,11 @@ class MainActivity : AppCompatActivity() {
         miscProfileProvider.activeProfile.let {
             maxFragmentTime.setText(it.maxFragmentTimeMinutes.toString())
             startOnBoot.isChecked = it.startOnBoot
+            networkSwitchingEnabledCheckBox.isChecked = it.networkSwitchingEnabled
         }
     }
     private fun loadConnectionSettings(uuid: UUID) {
+        networkSwitchingViewHandler.load()
         val profile = connectionProfileManager.getProfile(uuid)
         val name = connectionProfileManager.getProfileName(uuid)
         connectionProfileHeader.profileName = name

@@ -10,6 +10,7 @@ import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.SocketException
 import java.util.*
 
 
@@ -68,6 +69,9 @@ class CouchDbDataRequester(
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
                 "Request Failed", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
+        } catch(ex: SocketException){
+            return DataRequest(Collections.emptyList(), false,
+                "Request Cut Off", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
