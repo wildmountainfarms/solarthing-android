@@ -30,8 +30,7 @@ class JsonProfileManager<T>(
     override var activeUUID: UUID
         get() = UUID.fromString(jsonSaver.reloadedJsonObject["active"].asString)
         set(value) {
-            jsonSaver.jsonObject.addProperty("active", value.toString())
-            jsonSaver.save()
+            jsonSaver["active"] = value.toString()
         }
     override val activeProfile: T
         get() = getProfile(activeUUID)
@@ -60,7 +59,7 @@ class JsonProfileManager<T>(
     }
     private fun getJsonProfile(uuid: UUID): JsonObject?{
         val uuidString = uuid.toString()
-        val array = jsonSaver.jsonObject["profiles"].asJsonArray
+        val array = jsonSaver.reloadedJsonObject["profiles"].asJsonArray
         for(element in array){
             val jsonObject = element.asJsonObject
             if(jsonObject["uuid"].asString == uuidString){
@@ -86,7 +85,7 @@ class JsonProfileManager<T>(
         return Pair(uuid, profile)
     }
     private fun reloadProfiles(){
-        val array = jsonSaver.jsonObject["profiles"].asJsonArray
+        val array = jsonSaver.reloadedJsonObject["profiles"].asJsonArray
         println(array)
         for(element in array){
             val jsonObject = element.asJsonObject

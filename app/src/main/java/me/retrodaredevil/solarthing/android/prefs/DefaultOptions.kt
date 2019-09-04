@@ -9,6 +9,11 @@ object DefaultOptions {
         const val protocol = "http"
         const val useAuth = false
     }
+    object NetworkSwitching {
+        const val isEnabled = false
+        const val isBackup = false
+        val ssid: String? = null
+    }
 
     const val generatorFloatTimeHours = 1.5F
 
@@ -25,4 +30,5 @@ object DefaultOptions {
     val criticalBatteryVoltage: Float? = 22.2F
 
     const val startOnBoot = true
+    const val networkSwitchingEnabled = false
 }

@@ -9,12 +9,18 @@ object SaveKeys{
         const val protocol = "protocol"
         const val useAuth = "use_auth"
     }
+    object NetworkSwitching {
+        const val isEnabled = "is_enabled"
+        const val isBackup = "is_backup"
+        const val ssid = "ssid"
+    }
 
     const val generatorFloatTimeHours = "generator_float_hours"
 
     const val initialRequestTimeSeconds = "initial_request_timeout"
     const val subsequentRequestTimeSeconds = "subsequent_request_timeout"
     const val databaseConnectionProfile = "database_connection_profile"
+    const val networkSwitchingProfile = "network_switching_profile"
 
     const val maxFragmentTimeMinutes = "max_fragment_time"
 
@@ -24,4 +30,5 @@ object SaveKeys{
     const val criticalBatteryVoltage = "critical_battery_voltage"
 
     const val startOnBoot = "start_on_boot"
+    const val networkSwitchingEnabled = "network_switching_enabled"
 }

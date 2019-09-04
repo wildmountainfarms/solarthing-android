@@ -8,11 +8,21 @@ class NestedJsonSaver(
     private val doApply: () -> Unit
 ) : JsonSaver {
 
-    constructor(jsonSaver: JsonSaver, propertyName: String) :
+    constructor(jsonSaver: JsonSaver, propertyName: String, setIfNull: Boolean = true) :
         this(
             {
-                val jsonObject = jsonSaver.jsonObject
-                jsonObject.getAsJsonObject(propertyName) ?: error("There's no JsonObject with property name: $propertyName. parent object: $jsonObject")
+                val jsonObject = jsonSaver.reloadedJsonObject
+                var r = jsonObject.getAsJsonObject(propertyName)
+                if(r == null){
+                    if(setIfNull){
+                        r = JsonObject()
+                        jsonObject.add(propertyName, r)
+                        jsonSaver.save()
+                    } else {
+                        error("There's no JsonObject with property name: $propertyName. parent object: $jsonObject")
+                    }
+                }
+                r
             },
             jsonSaver::reload,
             jsonSaver::save

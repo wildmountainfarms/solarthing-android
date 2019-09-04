@@ -24,6 +24,7 @@ private class ParsedPacketGroup (
 )
 
 
+@Deprecated("Use sort method in Java SolarThing library")
 fun sortPackets(groups: Collection<PacketGroup>, maxTimeDistance: Long = (60 * 1000)): Map<String, List<PacketGroup>> {
     val map = HashMap<String, MutableList<ParsedPacketGroup>>()
     for(group in groups){

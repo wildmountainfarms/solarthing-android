@@ -1,6 +1,7 @@
 
 # custom:
 /projectFilesBackup/
+*.attach_pid*
 
 # Built application files
 *.apk

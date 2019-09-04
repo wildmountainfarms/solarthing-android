@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.drawable.Icon
+import android.net.wifi.WifiManager
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Handler
@@ -30,6 +31,7 @@ import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplex
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
 import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
+import java.util.*
 
 
 fun restartService(context: Context){
@@ -82,6 +84,7 @@ class PersistentService : Service(), Runnable{
     private lateinit var handler: Handler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
+    private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
     private lateinit var services: List<ServiceObject>
 
@@ -94,6 +97,7 @@ class PersistentService : Service(), Runnable{
         handler = Handler()
         connectionProfileManager = createConnectionProfileManager(this)
         solarProfileManager = createSolarProfileManager(this)
+        miscProfileProvider = createMiscProfileProvider(this)
         services = listOf(
             ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
             ServiceObject(
@@ -192,7 +196,36 @@ class PersistentService : Service(), Runnable{
     }
     private fun getManager() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    private fun <T> getProfileToSwitchTo(ssid: String?, manager: ProfileManager<T>, networkSwitchingProfileGetter: (T) -> NetworkSwitchingProfile): UUID? {
+        var r: UUID? = null
+        for(uuid in manager.profileUUIDs){
+            val networkSwitchingProfile = networkSwitchingProfileGetter(manager.getProfile(uuid))
+            if(networkSwitchingProfile.isEnabled){
+                if(networkSwitchingProfile.isBackup){
+                    if(r == null){
+                        r = uuid
+                    }
+                } else if(networkSwitchingProfile.ssid == ssid){
+                    r = uuid
+                }
+            }
+        }
+        return r
+    }
+
     override fun run() {
+        if(miscProfileProvider.activeProfile.networkSwitchingEnabled) {
+            val manager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val current = manager.connectionInfo
+            val id: String? = current.ssid
+            println("Current ssid: $id")
+            val switchUUID = getProfileToSwitchTo(id, connectionProfileManager, ConnectionProfile::networkSwitchingProfile)
+            if(switchUUID != null) {
+                connectionProfileManager.activeUUID = switchUUID
+            }
+            // TODO when we get the profile to switch to, figure out how to notify the UI layer
+        }
+
         val activeConnectionProfile = connectionProfileManager.activeProfile
 
         var needsLargeData = false

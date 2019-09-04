@@ -8,6 +8,11 @@ For use with https://github.com/wildmountainfarms/solarthing
 
 This works best with Android 8, but will still function on older versions.
 
+Known Bugs:
+* The SolarThing notification service seems to crash randomly after the app has been run for many hours.
+    * This is very inconvenient to debug as it doesn't happen right away
+    * Possible culprits could be related to deleting old packets
+
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
 * Daily summaries (MX end of day notifications are a start, but a more useful summary would be helpful too)

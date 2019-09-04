@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs.json
 
+import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.SaveKeys
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 
@@ -8,37 +9,24 @@ class JsonSolarProfile(
 ) : SolarProfile {
 
     override var generatorFloatTimeHours: Float
-        get() = jsonSaver.reloadedJsonObject[SaveKeys.generatorFloatTimeHours].asFloat
+        get() = jsonSaver.getAsFloat(SaveKeys.generatorFloatTimeHours) ?: DefaultOptions.generatorFloatTimeHours
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.generatorFloatTimeHours, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.generatorFloatTimeHours] = value
         }
     override var virtualFloatMinimumBatteryVoltage: Float?
-        get() {
-            val value = jsonSaver.reloadedJsonObject[SaveKeys.virtualFloatModeMinimumBatteryVoltage]
-            return if(value.isJsonNull) null else value.asFloat
-        }
+        get() = jsonSaver.getAsFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage)
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.virtualFloatModeMinimumBatteryVoltage, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.virtualFloatModeMinimumBatteryVoltage] = value
         }
     override var lowBatteryVoltage: Float?
-        get() {
-            val value = jsonSaver.reloadedJsonObject[SaveKeys.lowBatteryVoltage]
-            return if(value.isJsonNull) null else value.asFloat
-        }
+        get() = jsonSaver.getAsFloat(SaveKeys.lowBatteryVoltage, DefaultOptions.lowBatteryVoltage)
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.lowBatteryVoltage, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.lowBatteryVoltage] = value
         }
     override var criticalBatteryVoltage: Float?
-        get() {
-            val value = jsonSaver.reloadedJsonObject[SaveKeys.criticalBatteryVoltage]
-            return if(value.isJsonNull) null else value.asFloat
-        }
+        get() = jsonSaver.getAsFloat(SaveKeys.criticalBatteryVoltage, DefaultOptions.criticalBatteryVoltage)
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.criticalBatteryVoltage, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.criticalBatteryVoltage] = value
         }
 
 }

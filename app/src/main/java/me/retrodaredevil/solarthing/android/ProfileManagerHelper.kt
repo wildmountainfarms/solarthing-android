@@ -30,20 +30,7 @@ private fun createJsonProfileManagerJsonCreator(newProfileJsonCreator: () -> Jso
 
 fun createConnectionProfileManager(context: Context): ProfileManager<ConnectionProfile> {
 
-    val newProfileJsonCreator = { JsonObject().apply {
-        addProperty(SaveKeys.initialRequestTimeSeconds, DefaultOptions.initialRequestTimeSeconds)
-        addProperty(SaveKeys.subsequentRequestTimeSeconds, DefaultOptions.subsequentRequestTimeSeconds)
-        val databaseConnection = JsonObject()
-        databaseConnection.apply {
-            addProperty(SaveKeys.CouchDb.protocol, DefaultOptions.CouchDb.protocol)
-            addProperty(SaveKeys.CouchDb.port, DefaultOptions.CouchDb.port)
-            addProperty(SaveKeys.CouchDb.host, DefaultOptions.CouchDb.host)
-            addProperty(SaveKeys.CouchDb.username, DefaultOptions.CouchDb.username)
-            addProperty(SaveKeys.CouchDb.password, DefaultOptions.CouchDb.password)
-            addProperty(SaveKeys.CouchDb.useAuth, DefaultOptions.CouchDb.useAuth)
-        }
-        add(SaveKeys.databaseConnectionProfile, databaseConnection)
-    } }
+    val newProfileJsonCreator = ::JsonObject
     return JsonProfileManager(
         PreferencesJsonSaver(
             context.getSharedPreferences(SHARED_PREFERENCES, 0),
@@ -56,12 +43,7 @@ fun createConnectionProfileManager(context: Context): ProfileManager<ConnectionP
 }
 fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
 
-    val newProfileJsonCreator = { JsonObject().apply {
-        addProperty(SaveKeys.criticalBatteryVoltage, DefaultOptions.criticalBatteryVoltage)
-        addProperty(SaveKeys.lowBatteryVoltage, DefaultOptions.lowBatteryVoltage)
-        addProperty(SaveKeys.generatorFloatTimeHours, DefaultOptions.generatorFloatTimeHours)
-        addProperty(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage)
-    } }
+    val newProfileJsonCreator = ::JsonObject
     return JsonProfileManager(
         PreferencesJsonSaver(
             context.getSharedPreferences(SHARED_PREFERENCES, 0),

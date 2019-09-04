@@ -1,9 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs.json
 
-import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.DatabaseConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.SaveKeys
+import me.retrodaredevil.solarthing.android.prefs.*
 
 class JsonConnectionProfile(
     private val jsonSaver: JsonSaver
@@ -11,63 +8,78 @@ class JsonConnectionProfile(
     override val databaseConnectionProfile: DatabaseConnectionProfile = JsonDatabaseConnectionProfile(NestedJsonSaver(
         jsonSaver, SaveKeys.databaseConnectionProfile
     ))
+    override val networkSwitchingProfile: NetworkSwitchingProfile = JsonNetworkSwitchingProfile(NestedJsonSaver(
+        jsonSaver, SaveKeys.networkSwitchingProfile
+    ))
 
 
     override var initialRequestTimeSeconds: Int
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.initialRequestTimeSeconds).asInt
+        get() = jsonSaver.getAsInt(SaveKeys.initialRequestTimeSeconds, DefaultOptions.initialRequestTimeSeconds)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.initialRequestTimeSeconds, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.initialRequestTimeSeconds] = value
         }
     override var subsequentRequestTimeSeconds: Int
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.subsequentRequestTimeSeconds).asInt
+        get() = jsonSaver.getAsInt(SaveKeys.subsequentRequestTimeSeconds, DefaultOptions.subsequentRequestTimeSeconds)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.subsequentRequestTimeSeconds, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.subsequentRequestTimeSeconds] = value
         }
     override var requestWaitTimeSeconds: Int
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-        set(value) {}
+        get() = TODO("not implemented")
+        set(value) = TODO("not implemented")
 
 }
 internal class JsonDatabaseConnectionProfile(
     private val jsonSaver: JsonSaver
 ) : CouchDbDatabaseConnectionProfile {
     override var protocol: String
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.protocol).asString
+        get() = jsonSaver.getAsString(SaveKeys.CouchDb.protocol, DefaultOptions.CouchDb.protocol)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.protocol, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.protocol] = value
         }
     override var host: String
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.host).asString
+        get() = jsonSaver.getAsString(SaveKeys.CouchDb.host, DefaultOptions.CouchDb.host)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.host, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.host] = value
         }
     override var port: Int
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.port).asInt
+        get() = jsonSaver.getAsInt(SaveKeys.CouchDb.port, DefaultOptions.CouchDb.port)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.port, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.port] = value
         }
 
     override var username: String
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.username).asString
+        get() = jsonSaver.getAsString(SaveKeys.CouchDb.username, DefaultOptions.CouchDb.username)!!
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.username, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.username] = value
         }
     override var password: String
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.password).asString
+        get() = jsonSaver.getAsString(SaveKeys.CouchDb.password) ?: DefaultOptions.CouchDb.password
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.password, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.password] = value
         }
     override var useAuth: Boolean
-        get() = jsonSaver.reloadedJsonObject.get(SaveKeys.CouchDb.useAuth).asBoolean
+        get() = jsonSaver.getAsBoolean(SaveKeys.CouchDb.useAuth) ?: DefaultOptions.CouchDb.useAuth
         set(value) {
-            jsonSaver.jsonObject.addProperty(SaveKeys.CouchDb.useAuth, value)
-            jsonSaver.save()
+            jsonSaver[SaveKeys.CouchDb.useAuth] = value
         }
+}
+internal class JsonNetworkSwitchingProfile(
+    private val jsonSaver: JsonSaver
+) : NetworkSwitchingProfile {
+    override var isEnabled: Boolean
+        get() = jsonSaver.getAsBoolean(SaveKeys.NetworkSwitching.isEnabled) ?: DefaultOptions.NetworkSwitching.isEnabled
+        set(value) {
+            jsonSaver[SaveKeys.NetworkSwitching.isEnabled] = value
+        }
+    override var isBackup: Boolean
+        get() = jsonSaver.getAsBoolean(SaveKeys.NetworkSwitching.isBackup) ?: DefaultOptions.NetworkSwitching.isBackup
+        set(value) {
+            jsonSaver[SaveKeys.NetworkSwitching.isBackup] = value
+        }
+    override var ssid: String?
+        get() = jsonSaver.getAsString(SaveKeys.NetworkSwitching.ssid) ?: DefaultOptions.NetworkSwitching.ssid
+        set(value) {
+            jsonSaver[SaveKeys.NetworkSwitching.ssid] = value
+        }
+
 }

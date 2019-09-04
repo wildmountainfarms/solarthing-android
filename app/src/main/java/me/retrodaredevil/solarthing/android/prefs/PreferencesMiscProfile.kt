@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 class PreferencesMiscProfile(
     private val settings: SharedPreferences
 ) : MiscProfile {
+    override var networkSwitchingEnabled: Boolean
+        get() = settings.getBoolean(SaveKeys.networkSwitchingEnabled, DefaultOptions.networkSwitchingEnabled)
+        set(value) = settings.edit().putBoolean(SaveKeys.networkSwitchingEnabled, value).apply()
     override var maxFragmentTimeMinutes: Float
         get() = settings.getFloat(
             SaveKeys.maxFragmentTimeMinutes,
