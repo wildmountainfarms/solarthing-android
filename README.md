@@ -12,6 +12,8 @@ Known Bugs:
 * The SolarThing notification service seems to crash randomly after the app has been run for many hours.
     * This is very inconvenient to debug as it doesn't happen right away
     * Possible culprits could be related to deleting old packets
+* When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)
+* When pressing save at the same time the PersistentService changes the activeUUID, one may overwrite the other
 
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
