@@ -1,6 +1,6 @@
 package me.retrodaredevil.solarthing.android.request
 
-import me.retrodaredevil.solarthing.android.PacketGroup
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 
 
 /**

@@ -15,6 +15,8 @@ import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
+import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
@@ -103,7 +105,7 @@ class SolarDataService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            packetInfoCollection = sortPackets(packetGroups, (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
+            packetInfoCollection = PacketGroups.sortPackets(packetGroups, (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
                     SolarPacketInfo(it)
                 } catch (ex: IllegalArgumentException) {
@@ -383,7 +385,7 @@ class SolarDataService(
         for(device in getOrderedValues(packetInfo.deviceMap)){
             val id = getMoreSolarInfoID(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
-                val dateMillis = packetInfo.packetGroup.extraDateMillisPacketMap?.get(device) ?: packetInfo.dateMillis
+                val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis
                 val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis, MORE_INFO_ROVER_ACTION)
                 val notification = pair.first
                 summary = pair.second
@@ -402,7 +404,7 @@ class SolarDataService(
         }
     }
     private fun notifyMoreRoverInfo(packetInfo: SolarPacketInfo, rover: RoverStatusPacket){
-        val dateMillis = packetInfo.packetGroup.extraDateMillisPacketMap?.get(rover) ?: packetInfo.dateMillis
+        val dateMillis = packetInfo.packetGroup.getDateMillis(rover) ?: packetInfo.dateMillis
         val pair = NotificationHandler.createMoreRoverInfoNotification(service, rover, dateMillis)
 
         val id = getMoreSolarInfoID(rover) + 1

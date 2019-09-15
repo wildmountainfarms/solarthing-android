@@ -23,7 +23,6 @@ Known Bugs:
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
 * Clearable notifications for errors
-* Profiles
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
@@ -44,6 +43,7 @@ outhouse status
 * Integrate with Renogy Rover Packets
 * Fragmented packets
 * Allow different packet types in a single packet collection
+* Profiles and Network Switching
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:

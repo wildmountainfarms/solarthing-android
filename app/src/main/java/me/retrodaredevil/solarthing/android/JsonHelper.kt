@@ -2,6 +2,8 @@ package me.retrodaredevil.solarthing.android
 
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
+import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 
 sealed class PacketParse {
     class Success(val packetGroup: PacketGroup) : PacketParse()
@@ -16,7 +18,6 @@ fun parsePacketGroup(packetGroup: JsonObject, jsonPacketGetter: (JsonObject) -> 
     for(jsonPacket in jsonPackets) {
         val packet: Packet
         try {
-            //PacketCollections.createFromJson(jsonObject.getAsJsonObject("value"), jsonPacketGetter)
             packet = jsonPacketGetter(jsonPacket.asJsonObject)
         } catch (ex: Exception) {
             exception = ex
@@ -28,5 +29,5 @@ fun parsePacketGroup(packetGroup: JsonObject, jsonPacketGetter: (JsonObject) -> 
     if(packets.isEmpty() && exception != null){
         return PacketParse.Failure(exception)
     }
-    return PacketParse.Success(PacketGroup(packets, dateMillis))
+    return PacketParse.Success(PacketGroups.createPacketGroup(packets, dateMillis))
 }

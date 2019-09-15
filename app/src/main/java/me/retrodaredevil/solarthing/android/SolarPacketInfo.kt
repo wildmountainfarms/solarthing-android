@@ -1,6 +1,6 @@
 package me.retrodaredevil.solarthing.android
 
-import me.retrodaredevil.solarthing.packets.Modes
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType

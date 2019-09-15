@@ -4,10 +4,10 @@ import android.app.Notification
 import android.app.Service
 import android.os.Build
 import me.retrodaredevil.solarthing.DataSource
-import me.retrodaredevil.solarthing.android.PacketGroup
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCommandPacket

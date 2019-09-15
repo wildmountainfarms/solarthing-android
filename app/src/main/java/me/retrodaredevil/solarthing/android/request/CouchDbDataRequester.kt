@@ -2,10 +2,10 @@ package me.retrodaredevil.solarthing.android.request
 
 import com.google.gson.JsonObject
 import me.retrodaredevil.couchdb.CouchProperties
-import me.retrodaredevil.solarthing.android.PacketGroup
 import me.retrodaredevil.solarthing.android.PacketParse
 import me.retrodaredevil.solarthing.android.parsePacketGroup
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import org.lightcouch.CouchDbClientAndroid
 import org.lightcouch.CouchDbException
 import java.io.PrintWriter

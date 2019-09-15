@@ -10,7 +10,6 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
-import me.retrodaredevil.solarthing.android.PacketGroup
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.OUTHOUSE_NOTIFICATION_ID
@@ -18,7 +17,7 @@ import me.retrodaredevil.solarthing.android.notifications.VACANT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.outhouse.*
-import me.retrodaredevil.solarthing.packets.Modes
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import java.util.*
 import kotlin.math.round
 

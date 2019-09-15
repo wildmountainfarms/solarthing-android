@@ -29,6 +29,7 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
 import java.text.DateFormat
+import java.text.DecimalFormat
 import java.util.*
 
 
@@ -224,14 +225,18 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(info: SolarPacketInfo, packet: SolarPacket): String{
-        return when(packet.packetType){
-            SolarPacketType.FX_STATUS -> "(<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>)"
-            SolarPacketType.MXFM_STATUS -> "(<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>)"
-            SolarPacketType.RENOGY_ROVER_STATUS -> "(<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>)"
+    private fun getDeviceString(info: SolarPacketInfo, packet: SolarPacket, includeParenthesis: Boolean = true): String{
+        val r = when(packet.packetType){
+            SolarPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>"
+            SolarPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>"
+            SolarPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
         }
+        return if(includeParenthesis)
+            "($r)"
+        else
+            r
     }
     private fun fromHtml(text: String): Spanned {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -263,9 +268,13 @@ object NotificationHandler {
             info.fxMap.values.none { MiscMode.FX_230V_UNIT.isActive(it.misc) } -> "120V"
             else -> "???V"
         }
-        val batteryTypeString = when {
+//        val batteryTypeString = when {
+//            info.roverMap.isEmpty() -> ""
+//            else -> SEPARATOR + info.roverMap.values.first().batteryType.modeName
+//        }
+        val batteryTemperatureString = when {
             info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + info.roverMap.values.first().batteryType.modeName
+            else -> SEPARATOR + info.roverMap.values.first().batteryTemperature + "C"
         }
         var auxCount = 0
         val auxModesString = run {
@@ -332,19 +341,29 @@ object NotificationHandler {
         val roverErrorsString = info.roverMap.values.joinToString(SEPARATOR) {
             "${getDeviceString(info, it)}${Modes.toString(RoverErrorMode::class.java, it.errorMode)}"
         }
+        val batteryVoltagesString = run {
+            val map = LinkedHashMap<String, MutableList<String>>() // maintain insertion order
+            for(device in getOrderedValues(info.batteryMap)){
+                val batteryVoltageString = DecimalFormat("0.0").format(device.batteryVoltage)
+                map.getOrPut(batteryVoltageString, ::mutableListOf).add(getDeviceString(info, device as SolarPacket, includeParenthesis = false))
+            }
+            map.entries.joinToString(SEPARATOR) { (batteryVoltageString, deviceList) ->
+                "(" + deviceList.joinToString(",") + ")" + batteryVoltageString
+            } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V"
+        }
 
         val text = "" +
                 "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
                 "Daily kWH: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
-                "System: $devicesString$batteryTypeString\n" +
+                "System: $devicesString$batteryTemperatureString\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 (if(info.fxMap.isNotEmpty()) { "$inverterVoltageString $SEPARATOR $fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
                 "Mode: $modesString\n" +
-                "Batt: " + getOrderedValues(info.batteryMap).joinToString(SEPARATOR) { getDeviceString(info, it as SolarPacket) + SolarPacketInfo.TENTHS_FORMAT.format(it.batteryVoltage) } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V\n" +
+                "Batt: " + batteryVoltagesString + "\n" +
                 "Aux: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
@@ -358,6 +377,7 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W")
+//            .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W Charge: ${DecimalFormat("0.0").format(info.pvChargerWattage / 1000)} kW")
             .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
