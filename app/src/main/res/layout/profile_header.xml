@@ -36,4 +36,8 @@
                 android:layout_height="wrap_content" android:id="@+id/delete_profile_button"
                 android:layout_weight="1" android:onClick="deleteCurrentConnectionProfile"/>
     </LinearLayout>
+    <Button
+            android:text="Activate Profile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:id="@+id/active_profile_button"/>
 </LinearLayout>

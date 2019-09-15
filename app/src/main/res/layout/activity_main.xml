@@ -98,6 +98,10 @@
                     android:layout_height="20dp"/>
 
             <include
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    layout="@layout/horizontal_rule"/>
+            <include
                     android:id="@+id/solar_profile_header_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -130,6 +134,10 @@
             <Space
                     android:layout_width="match_parent"
                     android:layout_height="20dp"/>
+            <include
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    layout="@layout/horizontal_rule"/>
             <EditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -144,6 +152,10 @@
                     android:text="Auto Network Switching Enable"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:id="@+id/network_switching_enabled"/>
+            <include
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    layout="@layout/horizontal_rule"/>
             <Button
                     android:id="@+id/save_button"
                     android:layout_width="wrap_content"
@@ -152,6 +164,13 @@
                     android:text="Save"
                     tools:layout_editor_absoluteX="57dp"
                     tools:layout_editor_absoluteY="276dp"/>
+            <include
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    layout="@layout/horizontal_rule"/>
+            <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"/>
             <Button
                     android:text="Restart Service"
                     android:layout_width="wrap_content"

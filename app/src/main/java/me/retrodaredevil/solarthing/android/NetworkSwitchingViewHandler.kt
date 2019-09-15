@@ -6,13 +6,11 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.TextView
 import me.retrodaredevil.solarthing.android.prefs.NetworkSwitchingProfile
-import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 
-class NetworkSwitchingViewHandler<T>(
+class NetworkSwitchingViewHandler(
     private val context: Context,
     view: View,
-    private val profileManager: ProfileManager<T>,
-    private val networkSwitchingProfileGetter: (T) -> NetworkSwitchingProfile,
+    private val networkSwitchingProfileGetter: () -> NetworkSwitchingProfile,
     requestCoarseLocation: () -> Unit
 ) {
     private val isEnabledCheckBox: CheckBox = view.findViewById(R.id.is_enabled)
@@ -39,13 +37,13 @@ class NetworkSwitchingViewHandler<T>(
         }
     }
     fun save(){
-        val profile = networkSwitchingProfileGetter(profileManager.activeProfile)
+        val profile = networkSwitchingProfileGetter()
         profile.isEnabled = isEnabledCheckBox.isChecked
         profile.isBackup = isBackupCheckBox.isChecked
         profile.ssid = networkSSID
     }
     fun load(){
-        val profile = networkSwitchingProfileGetter(profileManager.activeProfile)
+        val profile = networkSwitchingProfileGetter()
         val isEnabled = profile.isEnabled
         val isBackup = profile.isBackup
         isEnabledCheckBox.isChecked = isEnabled

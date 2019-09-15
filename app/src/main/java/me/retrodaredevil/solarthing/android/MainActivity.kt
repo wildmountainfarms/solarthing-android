@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var solarProfileHeader: ProfileHeaderHandler
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
-    private lateinit var networkSwitchingViewHandler: NetworkSwitchingViewHandler<ConnectionProfile>
+    private lateinit var connectionProfileNetworkSwitchingViewHandler: NetworkSwitchingViewHandler
     private lateinit var protocol: EditText
     private lateinit var host: EditText
     private lateinit var port: EditText
@@ -81,9 +81,8 @@ class MainActivity : AppCompatActivity() {
 
         miscProfileProvider = createMiscProfileProvider(this)
 
-        networkSwitchingViewHandler = NetworkSwitchingViewHandler(
-            this, findViewById(R.id.network_switching), connectionProfileManager,
-            { it.networkSwitchingProfile },
+        connectionProfileNetworkSwitchingViewHandler = NetworkSwitchingViewHandler(
+            this, findViewById(R.id.network_switching), { connectionProfileManager.getProfile(connectionProfileHeader.editUUID).networkSwitchingProfile },
             {
                 requestCoarseLocation()
             }
@@ -217,9 +216,10 @@ class MainActivity : AppCompatActivity() {
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
     private fun saveConnectionSettings(){
-        connectionProfileManager.setProfileName(connectionProfileManager.activeUUID, connectionProfileHeader.profileName)
-        networkSwitchingViewHandler.save()
-        connectionProfileManager.activeProfile.apply {
+        val uuid = connectionProfileHeader.editUUID
+        connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
+        connectionProfileNetworkSwitchingViewHandler.save() // as of right now only connection profiles have a network switching handler
+        connectionProfileManager.getProfile(uuid).apply {
             (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
                 it.protocol = protocol.text.toString()
                 it.host = host.text.toString()
@@ -233,8 +233,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun saveSolarSettings(){
-        solarProfileManager.setProfileName(solarProfileManager.activeUUID, solarProfileHeader.profileName)
-        solarProfileManager.activeProfile.let {
+        val uuid = solarProfileHeader.editUUID
+        solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
+        solarProfileManager.getProfile(uuid).let {
             it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
             it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
             it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
@@ -242,11 +243,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun loadSettings(){
-        connectionProfileManager.activeUUID.let{
+        connectionProfileHeader.editUUID.let{
             loadConnectionSettings(it)
             connectionProfileHeader.loadSpinner(it)
         }
-        solarProfileManager.activeUUID.let {
+        solarProfileHeader.editUUID.let {
             loadSolarSettings(it)
             solarProfileHeader.loadSpinner(it)
         }
@@ -258,7 +259,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private fun loadConnectionSettings(uuid: UUID) {
-        networkSwitchingViewHandler.load()
+        connectionProfileNetworkSwitchingViewHandler.load()
         val profile = connectionProfileManager.getProfile(uuid)
         val name = connectionProfileManager.getProfileName(uuid)
         connectionProfileHeader.profileName = name
