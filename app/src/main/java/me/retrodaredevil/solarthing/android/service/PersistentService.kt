@@ -225,6 +225,8 @@ class PersistentService : Service(), Runnable{
                 }
             } catch(ex: SSIDPermissionException){
                 ex.printStackTrace()
+            } catch(ex: SSIDNotAvailable){
+                ex.printStackTrace()
             }
             // TODO when we get the profile to switch to, figure out how to notify the UI layer
         }

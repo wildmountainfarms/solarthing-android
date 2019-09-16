@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.TextView
+import android.widget.Toast
 import me.retrodaredevil.solarthing.android.prefs.NetworkSwitchingProfile
 
 class NetworkSwitchingViewHandler(
@@ -33,6 +34,8 @@ class NetworkSwitchingViewHandler(
                 updateCurrentNetwork()
             } catch (ex: SSIDPermissionException){
                 requestCoarseLocation()
+            } catch(ex: SSIDNotAvailable){
+                Toast.makeText(context, "SSID currently not available. Is location enabled?", Toast.LENGTH_LONG).show()
             }
         }
     }

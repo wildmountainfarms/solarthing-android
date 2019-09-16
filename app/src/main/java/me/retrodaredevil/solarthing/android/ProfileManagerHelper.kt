@@ -33,7 +33,7 @@ fun createConnectionProfileManager(context: Context): ProfileManager<ConnectionP
     val newProfileJsonCreator = ::JsonObject
     return JsonProfileManager(
         PreferencesJsonSaver(
-            context.getSharedPreferences(SHARED_PREFERENCES, 0),
+            context.getDeviceProtectedStorageSharedPreferences(SHARED_PREFERENCES, 0),
             "connection_properties",
             createJsonProfileManagerJsonCreator(newProfileJsonCreator)
         ),
@@ -46,7 +46,7 @@ fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
     val newProfileJsonCreator = ::JsonObject
     return JsonProfileManager(
         PreferencesJsonSaver(
-            context.getSharedPreferences(SHARED_PREFERENCES, 0),
+            context.getDeviceProtectedStorageSharedPreferences(SHARED_PREFERENCES, 0),
             "solar_properties",
             createJsonProfileManagerJsonCreator(newProfileJsonCreator)
         ),
@@ -55,7 +55,7 @@ fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
     )
 }
 fun createMiscProfileProvider(context: Context): ProfileProvider<MiscProfile> {
-    val profile = PreferencesMiscProfile(context.getSharedPreferences("misc_settings", 0), context)
+    val profile = PreferencesMiscProfile(context.getDeviceProtectedStorageSharedPreferences("misc_settings", 0), context)
     return object : ProfileProvider<MiscProfile> {
         override val activeProfile: MiscProfile
             get() = profile

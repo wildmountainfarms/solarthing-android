@@ -8,8 +8,9 @@ import android.net.wifi.WifiManager
 import android.support.v4.content.ContextCompat
 
 class SSIDPermissionException : Exception()
+class SSIDNotAvailable : Exception()
 
-@Throws(SSIDPermissionException::class)
+@Throws(SSIDPermissionException::class, SSIDNotAvailable::class)
 fun getSSID(context: Context): String?{
     if(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
         throw SSIDPermissionException()
@@ -20,7 +21,8 @@ fun getSSID(context: Context): String?{
     if(current.supplicantState == SupplicantState.COMPLETED){
         val r = current.ssid
         if(r == "<unknown ssid>"){
-            throw AssertionError()
+            throw SSIDNotAvailable()
+//            return null
         }
         return r
     }
