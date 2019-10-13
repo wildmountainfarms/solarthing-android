@@ -164,7 +164,7 @@ class SolarPacketInfo(
         if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && acMode == ACMode.AC_USE){
             return true
         }
-        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingMode) }
+        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingModeValue) }
     }
 
     override fun equals(other: Any?): Boolean {
