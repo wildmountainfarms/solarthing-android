@@ -107,7 +107,7 @@ class SolarDataService(
 
             packetInfoCollection = PacketGroups.sortPackets(packetGroups, (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
-                    SolarPacketInfo(it)
+                    SolarPacketInfo(it, solarProfileProvider.activeProfile.batteryVoltageType)
                 } catch (ex: IllegalArgumentException) {
                     ex.printStackTrace()
                     println("${it.dateMillis} is a packet collection without packets")

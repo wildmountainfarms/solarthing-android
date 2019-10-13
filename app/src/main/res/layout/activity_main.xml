@@ -131,6 +131,9 @@
                     android:inputType="numberDecimal"
                     android:ems="10"
                     android:id="@+id/critical_battery_voltage" android:hint="Critical Battery Voltage"/>
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/battery_type_spinner"/>
             <Space
                     android:layout_width="match_parent"
                     android:layout_height="20dp"/>

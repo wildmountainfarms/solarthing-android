@@ -7,6 +7,7 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
 import me.retrodaredevil.solarthing.solar.SolarPackets
 
@@ -39,7 +40,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                     val jsonObject = GSON.fromJson(json, JsonObject::class.java)
                     when(val packetParse = parsePacketGroup(jsonObject, SolarPackets::createFromJson)){
                         is PacketParse.Success -> {
-                            val info = SolarPacketInfo(packetParse.packetGroup)
+                            val info = SolarPacketInfo(packetParse.packetGroup, BatteryVoltageType.FIRST_PACKET) // TODO don't hard code BatteryVoltageType
                             onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
                         }
                         is PacketParse.Failure -> {

@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs.json
 
+import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.SaveKeys
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
@@ -27,6 +28,17 @@ class JsonSolarProfile(
         get() = jsonSaver.getAsFloat(SaveKeys.criticalBatteryVoltage, DefaultOptions.criticalBatteryVoltage)
         set(value) {
             jsonSaver[SaveKeys.criticalBatteryVoltage] = value
+        }
+
+    override var batteryVoltageType: BatteryVoltageType
+        get() {
+            val saveValue = jsonSaver.getAsInt(SaveKeys.batteryVoltageType, null)
+                ?: return DefaultOptions.batteryVoltageType
+
+            return BatteryVoltageType.getType(saveValue)
+        }
+        set(value) {
+            jsonSaver[SaveKeys.batteryVoltageType] = value.saveValue
         }
 
 }

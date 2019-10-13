@@ -28,6 +28,7 @@ object DefaultOptions {
 
     val lowBatteryVoltage: Float? = 22.6F
     val criticalBatteryVoltage: Float? = 22.2F
+    val batteryVoltageType = BatteryVoltageType.FIRST_OUTBACK
 
     const val startOnBoot = true
     const val networkSwitchingEnabled = false

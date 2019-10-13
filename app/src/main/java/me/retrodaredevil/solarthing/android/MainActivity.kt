@@ -13,9 +13,7 @@ import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.View
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.Toast
+import android.widget.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
@@ -51,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
+    private lateinit var batteryVoltageTypeSpinner: Spinner
 
     private lateinit var maxFragmentTime: EditText
     private lateinit var startOnBoot: CheckBox
@@ -99,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         maxFragmentTime = findViewById(R.id.max_fragment_time)
         lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
+        batteryVoltageTypeSpinner = findViewById(R.id.battery_type_spinner)
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
@@ -240,6 +240,10 @@ class MainActivity : AppCompatActivity() {
             it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
             it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
             it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull()
+            val position = batteryVoltageTypeSpinner.selectedItemPosition
+            if(position != AdapterView.INVALID_POSITION){
+                it.batteryVoltageType = BatteryVoltageType.values()[position]
+            }
         }
     }
     private fun loadSettings(){
@@ -286,7 +290,32 @@ class MainActivity : AppCompatActivity() {
             virtualFloatModeMinimumBatteryVoltage.setText(it.virtualFloatMinimumBatteryVoltage?.toString() ?: "")
             lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
             criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
+
+            batteryVoltageTypeSpinner.let { spinner ->
+                val array = BatteryVoltageType.values()
+                spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, getNiceBatteryVoltageStringList(array))
+                val batteryVoltageType = it.batteryVoltageType
+                var selection: Int? = null
+                for((i, type) in array.withIndex()){
+                    if(type == batteryVoltageType){
+                        selection = i
+                    }
+                }
+                selection!!
+                spinner.setSelection(selection)
+            }
         }
     }
     // endregion
+    private fun getNiceBatteryVoltageStringList(values: Array<BatteryVoltageType>): List<String> {
+        return values.map {
+            when(it){
+                BatteryVoltageType.AVERAGE -> "Average"
+                BatteryVoltageType.FIRST_PACKET -> "First packet"
+                BatteryVoltageType.MOST_RECENT -> "Most recent"
+                BatteryVoltageType.FIRST_OUTBACK -> "First Outback"
+                BatteryVoltageType.FIRST_OUTBACK_FX -> "First Outback FX"
+            }
+        }
+    }
 }

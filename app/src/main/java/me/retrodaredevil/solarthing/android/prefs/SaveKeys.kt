@@ -28,6 +28,7 @@ object SaveKeys{
 
     const val lowBatteryVoltage = "low_battery_voltage"
     const val criticalBatteryVoltage = "critical_battery_voltage"
+    const val batteryVoltageType = "battery_voltage_type"
 
     const val startOnBoot = "start_on_boot"
     const val networkSwitchingEnabled = "network_switching_enabled"

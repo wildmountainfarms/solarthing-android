@@ -1,5 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
+import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
+import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.solar.SolarPacket
@@ -7,6 +9,7 @@ import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
 import me.retrodaredevil.solarthing.solar.common.ChargeController
 import me.retrodaredevil.solarthing.solar.common.DailyData
+import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -20,7 +23,10 @@ import kotlin.math.round
 /**
  * A class that deals with making a [PacketGroup] with solar data easier to retrieve values from
  */
-class SolarPacketInfo(val packetGroup: PacketGroup) {
+class SolarPacketInfo(
+    val packetGroup: PacketGroup,
+    val batteryVoltageType: BatteryVoltageType
+) {
     companion object {
         val TENTHS_FORMAT = DecimalFormat("0.0")
         val FORMAT = DecimalFormat("0.0##")
@@ -71,13 +77,13 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
     val errorsCount: Int
 
     init {
-        fxMap = HashMap()
-        mxMap = HashMap()
-        roverMap = HashMap()
-        deviceMap = HashMap()
-        chargeControllerMap = HashMap()
-        dailyDataMap = HashMap()
-        batteryMap = HashMap()
+        fxMap = LinkedHashMap()
+        mxMap = LinkedHashMap()
+        roverMap = LinkedHashMap()
+        deviceMap = LinkedHashMap()
+        chargeControllerMap = LinkedHashMap()
+        dailyDataMap = LinkedHashMap()
+        batteryMap = LinkedHashMap()
         for(packet in packetGroup.packets){
             if(packet is SolarPacket){
                 deviceMap[packet.identifier] = packet
@@ -97,7 +103,7 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
                     SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarPacketType.RENOGY_ROVER_STATUS -> {
                         val rover = packet as RoverStatusPacket
-                        roverMap[rover.identifier as RoverIdentifier] = rover // TODO in a future update of solarthing, we won't have to cast the Identifier to a RoverIdentifier
+                        roverMap[rover.identifier] = rover
                         batteryMap[rover.identifier] = rover
                         chargeControllerMap[rover.identifier] = rover
                         dailyDataMap[rover.identifier] = rover
@@ -107,8 +113,13 @@ class SolarPacketInfo(val packetGroup: PacketGroup) {
                 }
             }
         }
-        val firstBattery: BatteryVoltage = (fxMap.values.firstOrNull() ?: mxMap.values.firstOrNull() ?: roverMap.values.firstOrNull() ?: throw IllegalArgumentException("No FX, MX or rover packets!")) as BatteryVoltage
-        batteryVoltage = firstBattery.batteryVoltage
+        batteryVoltage = when(batteryVoltageType){
+            BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
+            BatteryVoltageType.FIRST_PACKET -> batteryMap.values.first().batteryVoltage
+            BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxBy { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
+            BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.first { it is OutbackPacket }.batteryVoltage
+            BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.first().batteryVoltage
+        }
         batteryVoltageString = TENTHS_FORMAT.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
