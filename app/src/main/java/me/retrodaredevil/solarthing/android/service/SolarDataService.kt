@@ -22,6 +22,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
+import kotlin.math.max
 
 object SolarPacketCollectionBroadcast {
     const val ACTION = "me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"
@@ -105,7 +106,8 @@ class SolarDataService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            packetInfoCollection = PacketGroups.sortPackets(packetGroups, (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
+            val maxTimeDistance = (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()
+            packetInfoCollection = PacketGroups.sortPackets(packetGroups, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000)).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
                 try {
                     SolarPacketInfo(it, solarProfileProvider.activeProfile.batteryVoltageType)
                 } catch (ex: IllegalArgumentException) {

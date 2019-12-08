@@ -168,13 +168,12 @@ class SolarPacketInfo(
     }
 
     override fun equals(other: Any?): Boolean {
-        if(super.equals(other)){
+        if(this === other){
             return true
         }
         if(other is SolarPacketInfo){
             return other.dateMillis == dateMillis
-                && other.fxMap.keys == fxMap.keys
-                && other.mxMap.keys == mxMap.keys
+                && other.deviceMap.keys == deviceMap.keys
         }
         return false
     }

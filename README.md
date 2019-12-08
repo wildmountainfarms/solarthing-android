@@ -14,6 +14,7 @@ Known Bugs:
     * Possible culprits could be related to deleting old packets
 * When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)
 * When pressing save at the same time the PersistentService changes the activeUUID, one may overwrite the other
+  * This is highly unlikely
 
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
@@ -22,6 +23,7 @@ Known Bugs:
 * A packet that the MATE pi uploads that communicates available commands to display
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
+  * Also remove load information when there are only charge controller packets
 * Clearable notifications for errors
 
 ### Features to Add that I am unable to test:
@@ -44,6 +46,7 @@ outhouse status
 * Fragmented packets
 * Allow different packet types in a single packet collection
 * Profiles and Network Switching
+* Allow non-master fragments to become the primary for certain periods of time when the master fragment doesn't exist
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:

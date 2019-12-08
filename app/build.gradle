@@ -57,7 +57,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    implementation 'com.github.wildmountainfarms.solarthing:core:v2.5.3'
+//    implementation 'com.github.wildmountainfarms.solarthing:core:v2.5.3'
+    implementation 'com.github.wildmountainfarms.solarthing:core:ace5c84d40'
 
     // https://mvnrepository.com/artifact/org.lightcouch/lightcouch
     implementation 'org.lightcouch:lightcouch:0.2.0'
