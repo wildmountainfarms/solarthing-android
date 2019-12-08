@@ -107,13 +107,16 @@ class SolarDataService(
 
 
             val maxTimeDistance = (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()
-            packetInfoCollection = PacketGroups.sortPackets(packetGroups, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000)).values.first().mapNotNull { // TODO allow multiple instance sources instead of just one
-                try {
-                    SolarPacketInfo(it, solarProfileProvider.activeProfile.batteryVoltageType)
-                } catch (ex: IllegalArgumentException) {
-                    ex.printStackTrace()
-                    println("${it.dateMillis} is a packet collection without packets")
-                    null
+            val sortedPackets = PacketGroups.sortPackets(packetGroups, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
+            if(sortedPackets.isNotEmpty()) {
+                packetInfoCollection = sortedPackets.values.first().mapNotNull {// TODO allow multiple instance sources instead of just one
+                    try {
+                        SolarPacketInfo(it, solarProfileProvider.activeProfile.batteryVoltageType)
+                    } catch (ex: IllegalArgumentException) {
+                        ex.printStackTrace()
+                        println("${it.dateMillis} is a packet collection without packets")
+                        null
+                    }
                 }
             }
 
