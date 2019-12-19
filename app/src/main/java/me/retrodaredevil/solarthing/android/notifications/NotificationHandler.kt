@@ -9,10 +9,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.text.Html
 import android.text.Spanned
-import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.SolarPacketInfo
-import me.retrodaredevil.solarthing.android.getModeName
-import me.retrodaredevil.solarthing.android.getOrderedValues
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
@@ -41,6 +38,7 @@ object NotificationHandler {
     private const val FX_COLOR_HEX_STRING = "#770000"
     private const val MX_COLOR_HEX_STRING = "#000077"
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
+
 
     private fun oneWord(string: String): String {
         return "<span style=\"white-space: nowrap\">$string</span>"
@@ -310,12 +308,14 @@ object NotificationHandler {
             list.joinToString(SEPARATOR)
         }
 
-        val fxACModesString = if(info.fxMap.values.map { it.acModeMode }.toSet().size > 1){
+        val fxACModesString = if(info.fxMap.values.map { it.acMode }.toSet().size > 1){
             getOrderedValues(info.fxMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.acModeName}" }
         } else {
             info.acMode.modeName
         }
-        val dailyKWHString = getOrderedValues(info.dailyChargeControllerMap).joinToString(SEPARATOR) { "${getDeviceString(info, it as SolarPacket)}${SolarPacketInfo.FORMAT.format(it.dailyKWH)}" }
+        val dailyKWHString = getOrderedValues(info.dailyChargeControllerMap).joinToString(SEPARATOR) {
+            getDeviceString(info, it as SolarPacket) + Formatting.FORMAT.format(it.dailyKWH)
+        }
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
         val pvWattagesString = getOrderedValues(info.chargeControllerMap).joinToString(SEPARATOR) {
@@ -334,26 +334,32 @@ object NotificationHandler {
         val batteryVoltagesString = run {
             val map = LinkedHashMap<String, MutableList<String>>() // maintain insertion order
             for(device in getOrderedValues(info.batteryMap)){
-                val batteryVoltageString = DecimalFormat("0.0").format(device.batteryVoltage)
+                val batteryVoltageString = Formatting.TENTHS.format(device.batteryVoltage)
                 map.getOrPut(batteryVoltageString, ::mutableListOf).add(getDeviceString(info, device as SolarPacket, includeParenthesis = false))
             }
             map.entries.joinToString(SEPARATOR) { (batteryVoltageString, deviceList) ->
                 "(" + deviceList.joinToString(",") + ")" + batteryVoltageString
             } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V"
         }
+        val acModeString = if(info.fxMap.isNotEmpty()) { "$SEPARATOR$fxACModesString" } else ""
+
+        val dailyFXInfo = info.dailyFXInfo
+        val dailyFXLine = if(dailyFXInfo == null) "" else {
+            "FX: Discharge: ${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)} kWh | Charge: ${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)} kWh\n"
+        }
 
         val text = "" +
                 "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
                 "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
-                "Daily kWH: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
-                "System: $devicesString$batteryTemperatureString\n" +
+                "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
+                dailyFXLine +
+                "$devicesString$batteryTemperatureString$acModeString\n" +
                 (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
                 (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
                 (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
-                (if(info.fxMap.isNotEmpty()) { "$fxACModesString $SEPARATOR Generator " + (if(info.acMode != ACMode.NO_AC) "<strong>ON</strong>" else "Off") + "\n" } else "") +
                 "Mode: $modesString\n" +
-                "Batt: " + batteryVoltagesString + "\n" +
+                "Batt: $batteryVoltagesString\n" +
                 "Aux: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
@@ -402,7 +408,7 @@ object NotificationHandler {
                 is RoverStatusPacket -> "Rover ${currentInfo.getRoverID(dailyChargeController)} ${dailyChargeController.productSerialNumber} end of day"
                 else -> error("dailyChargeController: $dailyChargeController is not supported!")
             })
-            .setContentText("Got ${SolarPacketInfo.FORMAT.format(dailyChargeController.dailyKWH)} kWH")
+            .setContentText("Got ${Formatting.FORMAT.format(dailyChargeController.dailyKWH)} kWh")
         val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
@@ -479,38 +485,38 @@ object NotificationHandler {
                 when(device.packetType){
                     SolarPacketType.FX_STATUS -> {
                         device as FXStatusPacket
-                        val dailyFX = packetInfo.fxDailyMap[device.identifier]
+                        val dailyFX = packetInfo.dailyFXMap[device.identifier]
                         builder.setContentTitle("FX on port ${device.address}")
-                        val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
-                        builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | ${device.acModeName} | Inv: ${device.inverterCurrent}A | ${getTimeString(dateMillis)}")
+                        val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
+                        builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | Inv: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)}A | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
-                            "Battery Voltage: $batteryVoltage | Mode: ${device.operatingModeName} | AC Mode: ${device.acModeName}\n" +
-                                    "AC Output Voltage: ${device.outputVoltage}\n" +
-                                    "Inverter Current: ${device.inverterCurrent} | Sell Current: ${device.sellCurrent}\n" +
-                                    "AC Input Voltage: ${device.inputVoltage}\n" +
-                                    "Buy Current: ${device.buyCurrent} | Charger Current: ${device.chargerCurrent}\n" +
-                                    "Is 230V: " + (if(MiscMode.FX_230V_UNIT.isActive(device.misc)) "yes" else "no") + " | " +
-                                    "Aux On: " + (if(MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) "yes" else "no") + " " +
-                                    "Errors: ${device.errorsString} Warnings: ${device.warningsString} " +
+                            "Battery: $batteryVoltage V | ${device.operatingModeName} | ${device.acModeName}\n" +
+                                    "AC Output: ${device.outputVoltage} V | AC Input: ${device.inputVoltage} V\n" +
+                                    "Inverter Current: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)} | Sell Current: ${Formatting.OPTIONAL_TENTHS.format(device.sellCurrent)}\n" +
+                                    "Buy Current: ${Formatting.OPTIONAL_TENTHS.format(device.buyCurrent)} | Charger Current: ${Formatting.OPTIONAL_TENTHS.format(device.chargerCurrent)}\n" +
+                                    "230V: " + (if(MiscMode.FX_230V_UNIT.isActive(device.misc)) "yes" else "no") + " | " +
+                                    "Aux: " + (if(MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) "on" else "off") + " | " +
+                                    "Errors: ${device.errorsString} | Warnings: ${device.warningsString} " +
                                     if(dailyFX == null) "" else ("\n" +
-                                            "Inverter: ${dailyFX.inverterKWH} kWH\n" +
-                                            "Buy: ${dailyFX.buyKWH} kWH\n" +
-                                            "Charge: ${dailyFX.chargerKWH} kWH")
+                                            "Battery Min: ${Formatting.TENTHS.format(dailyFX.dailyMinBatteryVoltage)} V Max: ${Formatting.TENTHS.format(dailyFX.dailyMaxBatteryVoltage)} V\n" +
+                                            "Inverter: ${Formatting.HUNDREDTHS.format(dailyFX.inverterKWH)} kWh\n" +
+                                            "Buy: ${Formatting.HUNDREDTHS.format(dailyFX.buyKWH)} kWh | Sell: ${Formatting.HUNDREDTHS.format(dailyFX.sellKWH)} kWh\n" +
+                                            "Charge: ${Formatting.HUNDREDTHS.format(dailyFX.chargerKWH)} kWh\n")
                         )
                     }
                     SolarPacketType.MXFM_STATUS -> {
                         device as MXStatusPacket
                         builder.setContentTitle("MX on port ${device.address}")
-                        val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
-                        builder.setSubText("$batteryVoltage | ${device.chargerModeName} | ${device.chargingCurrent}A | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
+                        val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
+                        builder.setSubText("$batteryVoltage | ${device.chargerModeName} | ${device.chargingCurrent}A | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
-                            "Battery Voltage: $batteryVoltage\n" +
+                                "Battery Voltage: $batteryVoltage V\n" +
                                     createChargeControllerMoreInfo(device) +
                                     "Charger Mode: ${device.chargerModeName}\n" +
                                     "Aux Mode: ${device.auxModeName} | FM Aux On: " + (if(AuxMode.isAuxModeActive(device.rawAuxModeValue)) "yes" else "no") + "\n" +
                                     "Errors: ${device.errorsString}\n" +
-                                    "Daily kWH: ${device.dailyKWH} | " +
-                                    "Daily AH: ${device.dailyAH}\n" +
+                                    "Daily kWh: ${device.dailyKWH} | " +
+                                    "Daily Ah: ${device.dailyAH}\n" +
                                     "Check sum: ${device.chksum}"
                         )
                     }
@@ -519,32 +525,32 @@ object NotificationHandler {
             }
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
-                val batteryVoltage = SolarPacketInfo.TENTHS_FORMAT.format(device.batteryVoltage)
-                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWH | ${getTimeString(dateMillis)}")
+                val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
+                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
-                    "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
-                            createChargeControllerMoreInfo(device) +
-                            "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
-                            "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorMode)}\n" +
-                            "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
-                            "Day: ${device.operatingDaysCount} | kWH: ${device.dailyKWH} | AH: ${device.dailyAH} | " +
-                            "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
-                            "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W"
+                        "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
+                        createChargeControllerMoreInfo(device) +
+                        "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
+                        "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorMode)}\n" +
+                        "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
+                        "Day: ${device.operatingDaysCount} | kWh: ${device.dailyKWH} | Ah: ${device.dailyAH} | " +
+                        "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
+                        "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W"
                 )
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     builder.addAction(
-                        Notification.Action.Builder(
-                            Icon.createWithResource(context, R.drawable.solar_panel),
-                            "More",
-                            PendingIntent.getBroadcast(
-                                context,
-                                0,
-                                Intent(moreRoverInfoAction).apply {
-                                    putExtra("rover_serial", device.productSerialNumber)
-                                },
-                                PendingIntent.FLAG_CANCEL_CURRENT
-                            )
-                        ).build()
+                            Notification.Action.Builder(
+                                    Icon.createWithResource(context, R.drawable.solar_panel),
+                                     "More",
+                                    PendingIntent.getBroadcast(
+                                            context,
+                                             0,
+                                            Intent(moreRoverInfoAction).apply {
+                                                putExtra("rover_serial", device.productSerialNumber)
+                                            },
+                                            PendingIntent.FLAG_CANCEL_CURRENT
+                                    )
+                            ).build()
                     )
                 }
             }
@@ -553,11 +559,10 @@ object NotificationHandler {
         return Pair(builder.build(), summary)
     }
     private fun createChargeControllerMoreInfo(device: ChargeController): String{
-        return "Charging: Current: ${SolarPacketInfo.TENTHS_FORMAT.format(device.chargingCurrent)}A | " +
-                "Power: ${SolarPacketInfo.TENTHS_FORMAT.format(device.chargingPower)}W\n" +
-                "PV: Current: ${SolarPacketInfo.TENTHS_FORMAT.format(device.pvCurrent)}A * " +
-                "Voltage: ${SolarPacketInfo.TENTHS_FORMAT.format(device.inputVoltage)}V = " +
-                "Power: ${SolarPacketInfo.TENTHS_FORMAT.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
+        return "Charging: Current: ${Formatting.TENTHS.format(device.chargingCurrent)}A | " +
+                "Power: ${Formatting.TENTHS.format(device.chargingPower)}W\n" +
+                "PV: ${Formatting.TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.TENTHS.format(device.inputVoltage)}V = " +
+                "${Formatting.TENTHS.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
     }
     fun createMoreRoverInfoNotification(context: Context, device: RoverStatusPacket, dateMillis: Long): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
@@ -580,7 +585,7 @@ object NotificationHandler {
                     "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
                     "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
                     "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A\n" +
-                    "Cumulative: kWH: ${device.cumulativeKWH} AH: ${device.chargingAmpHoursOfBatteryCount}\n" +
+                    "Cumulative: kWh: ${device.cumulativeKWH} Ah: ${device.chargingAmpHoursOfBatteryCount}\n" +
                     "Street light: ${device.streetLightStatus.modeName} Brightness: ${device.streetLightBrightnessPercent}"
         )
 

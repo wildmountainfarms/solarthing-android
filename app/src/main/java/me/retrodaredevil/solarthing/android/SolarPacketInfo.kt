@@ -19,9 +19,14 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacket
 import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacketType
-import java.text.DecimalFormat
 import kotlin.math.round
 
+class DailyFXInfo(
+    val inverterKWH: Float,
+    val buyKWH: Float,
+    val chargerKWH: Float,
+    val sellKWH: Float
+)
 
 /**
  * A class that deals with making a [PacketGroup] with solar data easier to retrieve values from
@@ -30,10 +35,6 @@ class SolarPacketInfo(
     val packetGroup: PacketGroup,
     batteryVoltageType: BatteryVoltageType
 ) {
-    companion object {
-        val TENTHS_FORMAT = DecimalFormat("0.0")
-        val FORMAT = DecimalFormat("0.0##")
-    }
     val dateMillis = packetGroup.dateMillis
 
 
@@ -48,7 +49,7 @@ class SolarPacketInfo(
     val dailyChargeControllerMap: Map<Identifier, DailyChargeController>
     val batteryMap: Map<Identifier, BatteryVoltage>
 
-    val fxDailyMap: Map<Identifier, DailyFXPacket>
+    val dailyFXMap: Map<Identifier, DailyFXPacket>
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -68,6 +69,8 @@ class SolarPacketInfo(
     val generatorToBatteryWattage: Int
     /** The total power from the generator */
     val generatorTotalWattage: Int
+
+    val dailyFXInfo: DailyFXInfo?
 
     /**
      * The AC Mode which can be used to determine the state of the generator
@@ -89,7 +92,7 @@ class SolarPacketInfo(
         chargeControllerMap = LinkedHashMap()
         dailyChargeControllerMap = LinkedHashMap()
         batteryMap = LinkedHashMap()
-        fxDailyMap = LinkedHashMap()
+        dailyFXMap = LinkedHashMap()
         for(packet in packetGroup.packets){
             if(packet is SolarPacket){
                 deviceMap[packet.identifier] = packet
@@ -121,7 +124,7 @@ class SolarPacketInfo(
                 when(packet.packetType){
                     SupplementarySolarPacketType.FX_DAILY -> {
                         val dailyFX = packet as DailyFXPacket
-                        fxDailyMap[dailyFX.identifier.supplementaryTo] = dailyFX
+                        dailyFXMap[dailyFX.identifier.supplementaryTo] = dailyFX
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
@@ -135,10 +138,10 @@ class SolarPacketInfo(
             BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.first { it is OutbackPacket }.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.first().batteryVoltage
         }
-        batteryVoltageString = TENTHS_FORMAT.format(batteryVoltage)
+        batteryVoltageString = Formatting.TENTHS.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
-        estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
+        estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acMode else ACMode.NO_AC
         generatorChargingBatteries = if(fxMap.isEmpty()) false else fxMap.values.any {
@@ -154,16 +157,27 @@ class SolarPacketInfo(
         pvChargerWattage = chargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
         dailyKWHours = dailyChargeControllerMap.values.map { it.dailyKWH }.sum()
 
+        dailyFXInfo = if(dailyFXMap.isEmpty()){
+            null
+        } else {
+            DailyFXInfo(
+                    dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat(),
+                    dailyFXMap.values.sumByDouble { it.buyKWH.toDouble() }.toFloat(),
+                    dailyFXMap.values.sumByDouble { it.chargerKWH.toDouble() }.toFloat(),
+                    dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat()
+            )
+        }
+
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
         hasWarnings = fxMap.isNotEmpty()
         errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorMode) } }
-            + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorMode) } }
-            + RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorMode)}}
+                + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorMode) } }
+                + RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorMode)}}
     }
 
     val pvWattageString by lazy { pvWattage.toString() }
-    val pvChargerWattageString: String by lazy { FORMAT.format(pvChargerWattage) }
-    val dailyKWHoursString: String by lazy { FORMAT.format(dailyKWHours) }
+    val pvChargerWattageString: String by lazy { Formatting.FORMAT.format(pvChargerWattage) }
+    val dailyKWHoursString: String by lazy { Formatting.FORMAT.format(dailyKWHours) }
     val loadString by lazy { load.toString() }
     val generatorToBatteryWattageString by lazy { generatorToBatteryWattage.toString() }
     val generatorTotalWattageString by lazy { generatorTotalWattage.toString() }

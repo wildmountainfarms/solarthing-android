@@ -1,0 +1,21 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+
+[.editorconfig]
+max_line_length = 100
+
+[{*.xml, *.java, *.kt}]
+indent_style = space
+indent_size = 4
+
+[{*.java, *.kt}]
+ij_continuation_indent_size = 8
+max_line_length = 180
+
