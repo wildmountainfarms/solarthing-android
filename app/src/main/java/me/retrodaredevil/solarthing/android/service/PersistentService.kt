@@ -29,10 +29,9 @@ import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetter
 import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplexer
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
-import me.retrodaredevil.solarthing.solar.SolarPackets
+import me.retrodaredevil.solarthing.solar.SolarStatusPackets
+import me.retrodaredevil.solarthing.solar.extra.SolarExtraPackets
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
-import me.retrodaredevil.solarthing.solar.outback.fx.supplementary.DailyFXPackets
-import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPackets
 import java.util.*
 
 
@@ -105,7 +104,7 @@ class PersistentService : Service(), Runnable{
             ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
             ServiceObject(
                 SolarDataService(this, solarProfileManager, createMiscProfileProvider(this)), "solarthing",
-                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) }, JsonPacketGetter { SupplementarySolarPackets.createFromJson(it) })::createFromJson
+                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarStatusPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) }, JsonPacketGetter { SolarExtraPackets.createFromJson(it) })::createFromJson
             ),
             ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
         )

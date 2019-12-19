@@ -1,7 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import me.retrodaredevil.solarthing.packets.identification.Identifier
-import me.retrodaredevil.solarthing.solar.SolarPacket
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
@@ -39,7 +39,7 @@ fun getChargingStateName(rover: RoverStatusPacket): String =
         ChargingState.FLOAT -> "Float"
         ChargingState.CURRENT_LIMITING -> "Curr lim"
     }
-fun getModeName(packet: SolarPacket): String =
+fun getModeName(packet: SolarStatusPacket): String =
     when(packet){
         is FXStatusPacket -> getOperatingModeName(packet)
         is MXStatusPacket -> getChargerModeName(packet)

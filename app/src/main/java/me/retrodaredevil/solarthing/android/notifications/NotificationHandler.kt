@@ -11,9 +11,9 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.packets.Modes
-import me.retrodaredevil.solarthing.solar.SolarPacket
-import me.retrodaredevil.solarthing.solar.SolarPacketType
-import me.retrodaredevil.solarthing.solar.common.ChargeController
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
+import me.retrodaredevil.solarthing.solar.common.BasicChargeController
 import me.retrodaredevil.solarthing.solar.common.DailyChargeController
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
@@ -26,7 +26,6 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
 import java.text.DateFormat
-import java.text.DecimalFormat
 import java.util.*
 
 
@@ -52,17 +51,17 @@ object NotificationHandler {
                     "Not to alert them when in the future they should turn it off.")
         }
         val turnedOnAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
-            .format(GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time)
+                .format(GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time)
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
-            .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
+                .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
         val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
-            .setSmallIcon(R.drawable.power_button)
-            .setContentTitle("Generator")
-            .setContentText("Should have turned off at $turnOffAtString!")
-            .setSubText("Float started at $turnedOnAtString")
-            .setWhen(shouldHaveTurnedOffAt)
-            .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
+                .setSmallIcon(R.drawable.power_button)
+                .setContentTitle("Generator")
+                .setContentText("Should have turned off at $turnOffAtString!")
+                .setSubText("Float started at $turnedOnAtString")
+                .setWhen(shouldHaveTurnedOffAt)
+                .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setCategory(Notification.CATEGORY_ALARM)
         }
@@ -72,21 +71,16 @@ object NotificationHandler {
     fun createDoneGeneratorAlert(context: Context, doneChargingInfo: SolarPacketInfo): Notification {
         val stoppedChargingAt = doneChargingInfo.dateMillis
         val stoppedChargingAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
-            .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
+                .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
 
         return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
-            .setSmallIcon(R.drawable.power_button)
-            .setContentTitle("Generator")
-            .setContentText("The generator stopped charging the batteries")
-            .setSubText("Stopped charging at $stoppedChargingAtString")
-            .setWhen(stoppedChargingAt)
-            .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
-//            .apply {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//                    setSortKey("b")
-//                }
-//            }
-            .build()
+                .setSmallIcon(R.drawable.power_button)
+                .setContentTitle("Generator")
+                .setContentText("The generator stopped charging the batteries")
+                .setSubText("Stopped charging at $stoppedChargingAtString")
+                .setWhen(stoppedChargingAt)
+                .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
+                .build()
     }
     fun createBatteryNotification(context: Context, currentInfo: SolarPacketInfo, critical: Boolean): Notification {
         val voltageString = currentInfo.batteryVoltageString
@@ -103,9 +97,6 @@ object NotificationHandler {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setCategory(Notification.CATEGORY_ERROR)
         }
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("a")
-//        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setColor(Color.RED)
@@ -133,12 +124,14 @@ object NotificationHandler {
      * @param generatorFloatTimeMillis The amount of time in milliseconds that the generator stays in float mode
      * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
      */
-    fun createPersistentGenerator(context: Context, info: SolarPacketInfo,
-                                  beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
-                                  acUseInfo: SolarPacketInfo?,
-                                  floatModeActivatedInfo: SolarPacketInfo?,
-                                  generatorFloatTimeMillis: Long,
-                                  uncertainGeneratorStartInfo: Boolean): Notification{
+    fun createPersistentGenerator(
+            context: Context, info: SolarPacketInfo,
+            beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
+            acUseInfo: SolarPacketInfo?,
+            floatModeActivatedInfo: SolarPacketInfo?,
+            generatorFloatTimeMillis: Long,
+            uncertainGeneratorStartInfo: Boolean
+    ): Notification{
         val acMode = info.acMode
         if(acMode == ACMode.NO_AC) throw IllegalStateException("Only call this method if the generator is on!")
 
@@ -223,11 +216,11 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(info: SolarPacketInfo, packet: SolarPacket, includeParenthesis: Boolean = true): String{
+    private fun getDeviceString(info: SolarPacketInfo, packet: SolarStatusPacket, includeParenthesis: Boolean = true): String{
         val r = when(packet.packetType){
-            SolarPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>"
-            SolarPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>"
-            SolarPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>"
+            SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>"
+            SolarStatusPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>"
+            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
         }
@@ -314,15 +307,15 @@ object NotificationHandler {
             info.acMode.modeName
         }
         val dailyKWHString = getOrderedValues(info.dailyChargeControllerMap).joinToString(SEPARATOR) {
-            getDeviceString(info, it as SolarPacket) + Formatting.FORMAT.format(it.dailyKWH)
+            getDeviceString(info, it as SolarStatusPacket) + Formatting.FORMAT.format(it.dailyKWH)
         }
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
-        val pvWattagesString = getOrderedValues(info.chargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
+        val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
+            "${getDeviceString(info, it as SolarStatusPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
         }
-        val chargerWattagesString = getOrderedValues(info.chargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarPacket)}${it.chargingPower.toInt()}"
+        val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
+            "${getDeviceString(info, it as SolarStatusPacket)}${it.chargingPower.toInt()}"
         }
 
         val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.warningsString}" }
@@ -335,7 +328,7 @@ object NotificationHandler {
             val map = LinkedHashMap<String, MutableList<String>>() // maintain insertion order
             for(device in getOrderedValues(info.batteryMap)){
                 val batteryVoltageString = Formatting.TENTHS.format(device.batteryVoltage)
-                map.getOrPut(batteryVoltageString, ::mutableListOf).add(getDeviceString(info, device as SolarPacket, includeParenthesis = false))
+                map.getOrPut(batteryVoltageString, ::mutableListOf).add(getDeviceString(info, device as SolarStatusPacket, includeParenthesis = false))
             }
             map.entries.joinToString(SEPARATOR) { (batteryVoltageString, deviceList) ->
                 "(" + deviceList.joinToString(",") + ")" + batteryVoltageString
@@ -434,11 +427,11 @@ object NotificationHandler {
      * @param device The most recent status packet representing a device that has been connected or disconnected
      * @param justConnected true if [device] has just been connected, false if [device] has just been disconnected
      */
-    fun createDeviceConnectionStatus(context: Context, device: SolarPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
+    fun createDeviceConnectionStatus(context: Context, device: SolarStatusPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
         val name = when(device.packetType){
-            SolarPacketType.FX_STATUS -> "FX"
-            SolarPacketType.MXFM_STATUS -> "MX"
-            SolarPacketType.RENOGY_ROVER_STATUS -> "Rover"
+            SolarStatusPacketType.FX_STATUS -> "FX"
+            SolarStatusPacketType.MXFM_STATUS -> "MX"
+            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "Rover"
             else -> device.packetType.toString()
         }
         val deviceName = when(device){
@@ -467,12 +460,12 @@ object NotificationHandler {
 
         return Pair(builder.build(), summary.build())
     }
-    fun createMoreInfoNotification(context: Context, device: SolarPacket, dateMillis: Long, packetInfo: SolarPacketInfo, moreRoverInfoAction: String? = null): Pair<Notification, Notification?>{
+    fun createMoreInfoNotification(context: Context, device: SolarStatusPacket, dateMillis: Long, packetInfo: SolarPacketInfo, moreRoverInfoAction: String? = null): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(dateMillis)
+                .setShowWhen(true)
+                .setOnlyAlertOnce(true)
         val summary = createMoreInfoSummary(context, dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(MORE_SOLAR_INFO_GROUP)
@@ -483,7 +476,7 @@ object NotificationHandler {
         when(device){
             is OutbackPacket -> {
                 when(device.packetType){
-                    SolarPacketType.FX_STATUS -> {
+                    SolarStatusPacketType.FX_STATUS -> {
                         device as FXStatusPacket
                         val dailyFX = packetInfo.dailyFXMap[device.identifier]
                         builder.setContentTitle("FX on port ${device.address}")
@@ -504,7 +497,7 @@ object NotificationHandler {
                                             "Charge: ${Formatting.HUNDREDTHS.format(dailyFX.chargerKWH)} kWh\n")
                         )
                     }
-                    SolarPacketType.MXFM_STATUS -> {
+                    SolarStatusPacketType.MXFM_STATUS -> {
                         device as MXStatusPacket
                         builder.setContentTitle("MX on port ${device.address}")
                         val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
@@ -558,7 +551,7 @@ object NotificationHandler {
         }
         return Pair(builder.build(), summary)
     }
-    private fun createChargeControllerMoreInfo(device: ChargeController): String{
+    private fun createChargeControllerMoreInfo(device: BasicChargeController): String{
         return "Charging: Current: ${Formatting.TENTHS.format(device.chargingCurrent)}A | " +
                 "Power: ${Formatting.TENTHS.format(device.chargingPower)}W\n" +
                 "PV: ${Formatting.TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.TENTHS.format(device.inputVoltage)}V = " +
@@ -566,10 +559,10 @@ object NotificationHandler {
     }
     fun createMoreRoverInfoNotification(context: Context, device: RoverStatusPacket, dateMillis: Long): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(dateMillis)
+                .setShowWhen(true)
+                .setOnlyAlertOnce(true)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(MORE_SOLAR_INFO_GROUP)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -580,13 +573,13 @@ object NotificationHandler {
 
         builder.setContentTitle("Rover with serial: ${device.productSerialNumber} | More Info")
         builder.style = Notification.BigTextStyle().bigText(
-            "Max Voltage: ${device.maxVoltage.modeName} | Battery: Type: ${device.batteryType.modeName}\n" +
-                    "Controller: Address: ${device.controllerDeviceAddress}\n" +
-                    "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
-                    "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
-                    "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A\n" +
-                    "Cumulative: kWh: ${device.cumulativeKWH} Ah: ${device.chargingAmpHoursOfBatteryCount}\n" +
-                    "Street light: ${device.streetLightStatus.modeName} Brightness: ${device.streetLightBrightnessPercent}"
+                "Max Voltage: ${device.maxVoltage.modeName} | Battery: Type: ${device.batteryType.modeName}\n" +
+                "Controller: Address: ${device.controllerDeviceAddress}\n" +
+                "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
+                "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
+                "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A\n" +
+                "Cumulative: kWh: ${device.cumulativeKWH} Ah: ${device.chargingAmpHoursOfBatteryCount}\n" +
+                "Street light: ${device.streetLightStatus.modeName} Brightness: ${device.streetLightBrightnessPercent}"
         )
 
         return Pair(builder.build(), summary)
@@ -595,10 +588,10 @@ object NotificationHandler {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             val summary = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
-                .setSmallIcon(R.drawable.solar_panel)
-                .setShowWhen(false)
-                .setWhen(dateMillis)
-                .setOnlyAlertOnce(true)
+                    .setSmallIcon(R.drawable.solar_panel)
+                    .setShowWhen(false)
+                    .setWhen(dateMillis)
+                    .setOnlyAlertOnce(true)
             summary.setGroup(MORE_SOLAR_INFO_GROUP).setGroupSummary(true)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 summary.setCategory(Notification.CATEGORY_STATUS)

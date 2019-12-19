@@ -4,21 +4,21 @@ import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.Identifier
-import me.retrodaredevil.solarthing.solar.SolarPacket
-import me.retrodaredevil.solarthing.solar.SolarPacketType
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
+import me.retrodaredevil.solarthing.solar.common.BasicChargeController
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
-import me.retrodaredevil.solarthing.solar.common.ChargeController
 import me.retrodaredevil.solarthing.solar.common.DailyChargeController
+import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
+import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
-import me.retrodaredevil.solarthing.solar.outback.fx.supplementary.DailyFXPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
-import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacket
-import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacketType
 import kotlin.math.round
 
 class DailyFXInfo(
@@ -44,8 +44,8 @@ class SolarPacketInfo(
     val mxMap: Map<Identifier, MXStatusPacket>
     val roverMap: Map<RoverIdentifier, RoverStatusPacket>
 
-    val deviceMap: Map<Identifier, SolarPacket>
-    val chargeControllerMap: Map<Identifier, ChargeController>
+    val deviceMap: Map<Identifier, SolarStatusPacket>
+    val basicChargeControllerMap: Map<Identifier, BasicChargeController>
     val dailyChargeControllerMap: Map<Identifier, DailyChargeController>
     val batteryMap: Map<Identifier, BatteryVoltage>
 
@@ -89,40 +89,40 @@ class SolarPacketInfo(
         mxMap = LinkedHashMap()
         roverMap = LinkedHashMap()
         deviceMap = LinkedHashMap()
-        chargeControllerMap = LinkedHashMap()
+        basicChargeControllerMap = LinkedHashMap()
         dailyChargeControllerMap = LinkedHashMap()
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
         for(packet in packetGroup.packets){
-            if(packet is SolarPacket){
+            if(packet is SolarStatusPacket){
                 deviceMap[packet.identifier] = packet
                 when(packet.packetType){
-                    SolarPacketType.FX_STATUS -> {
+                    SolarStatusPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
                         fxMap[fx.identifier] = fx
                         batteryMap[fx.identifier] = fx
                     }
-                    SolarPacketType.MXFM_STATUS -> {
+                    SolarStatusPacketType.MXFM_STATUS -> {
                         val mx = packet as MXStatusPacket
                         mxMap[mx.identifier] = mx
                         batteryMap[mx.identifier] = mx
-                        chargeControllerMap[mx.identifier] = mx
+                        basicChargeControllerMap[mx.identifier] = mx
                         dailyChargeControllerMap[mx.identifier] = mx
                     }
-                    SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
-                    SolarPacketType.RENOGY_ROVER_STATUS -> {
+                    SolarStatusPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
+                    SolarStatusPacketType.RENOGY_ROVER_STATUS -> {
                         val rover = packet as RoverStatusPacket
                         roverMap[rover.identifier] = rover
                         batteryMap[rover.identifier] = rover
-                        chargeControllerMap[rover.identifier] = rover
+                        basicChargeControllerMap[rover.identifier] = rover
                         dailyChargeControllerMap[rover.identifier] = rover
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
                 }
-            } else if(packet is SupplementarySolarPacket){
+            } else if(packet is SolarExtraPacket){
                 when(packet.packetType){
-                    SupplementarySolarPacketType.FX_DAILY -> {
+                    SolarExtraPacketType.FX_DAILY -> {
                         val dailyFX = packet as DailyFXPacket
                         dailyFXMap[dailyFX.identifier.supplementaryTo] = dailyFX
                     }
@@ -153,8 +153,8 @@ class SolarPacketInfo(
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
         generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
 
-        pvWattage = chargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
-        pvChargerWattage = chargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
+        pvWattage = basicChargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
+        pvChargerWattage = basicChargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
         dailyKWHours = dailyChargeControllerMap.values.map { it.dailyKWH }.sum()
 
         dailyFXInfo = if(dailyFXMap.isEmpty()){
