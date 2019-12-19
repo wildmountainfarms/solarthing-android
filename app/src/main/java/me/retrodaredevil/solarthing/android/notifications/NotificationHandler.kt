@@ -338,7 +338,8 @@ object NotificationHandler {
 
         val dailyFXInfo = info.dailyFXInfo
         val dailyFXLine = if(dailyFXInfo == null) "" else {
-            "FX: Discharge: ${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)} kWh | Charge: ${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)} kWh\n"
+            "FX: Discharge: <strong>${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)}</strong> kWh | " +
+                    "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
 
         val text = "" +
