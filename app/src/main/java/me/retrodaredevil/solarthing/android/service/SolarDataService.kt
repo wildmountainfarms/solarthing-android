@@ -17,6 +17,7 @@ import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
+import me.retrodaredevil.solarthing.packets.identification.Identifiable
 import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
@@ -219,15 +220,15 @@ class SolarDataService(
         val lastPacketInfo = this.lastPacketInfo
         if(lastPacketInfo != null){
             // end of day for loop
-            for(dailyData in currentInfo.dailyDataMap.values){
-                if(dailyData !is SolarPacket) error("dailyDataMap must have SolarPackets!")
-                if(dailyData.dailyKWH == 0f){
-                    val lastDailyData = lastPacketInfo.dailyDataMap[dailyData.identifier] ?: continue
-                    val dailyKWH = lastDailyData.dailyKWH
+            for(dailyChargeController in currentInfo.dailyChargeControllerMap.values){
+                if(dailyChargeController !is Identifiable) error("dailyChargeControllerMap must be identifiable!")
+                if(dailyChargeController.dailyKWH == 0f){
+                    val lastDailyChargeController = lastPacketInfo.dailyChargeControllerMap[dailyChargeController.identifier] ?: continue
+                    val dailyKWH = lastDailyChargeController.dailyKWH
                     if(dailyKWH != 0f){
-                        val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyData, currentInfo.dateMillis)
+                        val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyChargeController, currentInfo.dateMillis)
                         service.getManager().notify(
-                            getEndOfDayInfoID(lastDailyData),
+                            getEndOfDayInfoID(lastDailyChargeController),
                             notificationAndSummary.first
                         )
                         service.getManager().notify(
@@ -391,7 +392,7 @@ class SolarDataService(
             val id = getMoreSolarInfoID(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis
-                val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis, MORE_INFO_ROVER_ACTION)
+                val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis, packetInfo, MORE_INFO_ROVER_ACTION)
                 val notification = pair.first
                 summary = pair.second
                 manager.notify(id, notification)

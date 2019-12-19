@@ -8,14 +8,17 @@ import me.retrodaredevil.solarthing.solar.SolarPacket
 import me.retrodaredevil.solarthing.solar.SolarPacketType
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
 import me.retrodaredevil.solarthing.solar.common.ChargeController
-import me.retrodaredevil.solarthing.solar.common.DailyData
+import me.retrodaredevil.solarthing.solar.common.DailyChargeController
 import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.*
+import me.retrodaredevil.solarthing.solar.outback.fx.supplementary.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacket
+import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPacketType
 import java.text.DecimalFormat
 import kotlin.math.round
 
@@ -25,7 +28,7 @@ import kotlin.math.round
  */
 class SolarPacketInfo(
     val packetGroup: PacketGroup,
-    val batteryVoltageType: BatteryVoltageType
+    batteryVoltageType: BatteryVoltageType
 ) {
     companion object {
         val TENTHS_FORMAT = DecimalFormat("0.0")
@@ -42,8 +45,10 @@ class SolarPacketInfo(
 
     val deviceMap: Map<Identifier, SolarPacket>
     val chargeControllerMap: Map<Identifier, ChargeController>
-    val dailyDataMap: Map<Identifier, DailyData>
+    val dailyChargeControllerMap: Map<Identifier, DailyChargeController>
     val batteryMap: Map<Identifier, BatteryVoltage>
+
+    val fxDailyMap: Map<Identifier, DailyFXPacket>
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -82,8 +87,9 @@ class SolarPacketInfo(
         roverMap = LinkedHashMap()
         deviceMap = LinkedHashMap()
         chargeControllerMap = LinkedHashMap()
-        dailyDataMap = LinkedHashMap()
+        dailyChargeControllerMap = LinkedHashMap()
         batteryMap = LinkedHashMap()
+        fxDailyMap = LinkedHashMap()
         for(packet in packetGroup.packets){
             if(packet is SolarPacket){
                 deviceMap[packet.identifier] = packet
@@ -98,7 +104,7 @@ class SolarPacketInfo(
                         mxMap[mx.identifier] = mx
                         batteryMap[mx.identifier] = mx
                         chargeControllerMap[mx.identifier] = mx
-                        dailyDataMap[mx.identifier] = mx
+                        dailyChargeControllerMap[mx.identifier] = mx
                     }
                     SolarPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarPacketType.RENOGY_ROVER_STATUS -> {
@@ -106,7 +112,16 @@ class SolarPacketInfo(
                         roverMap[rover.identifier] = rover
                         batteryMap[rover.identifier] = rover
                         chargeControllerMap[rover.identifier] = rover
-                        dailyDataMap[rover.identifier] = rover
+                        dailyChargeControllerMap[rover.identifier] = rover
+                    }
+                    null -> throw NullPointerException("packetType is null! packet: $packet")
+                    else -> System.err.println("Unknown packet type: ${packet.packetType}")
+                }
+            } else if(packet is SupplementarySolarPacket){
+                when(packet.packetType){
+                    SupplementarySolarPacketType.FX_DAILY -> {
+                        val dailyFX = packet as DailyFXPacket
+                        fxDailyMap[dailyFX.identifier.supplementaryTo] = dailyFX
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
@@ -125,19 +140,19 @@ class SolarPacketInfo(
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = FORMAT.format(estimatedBatteryVoltage)
 
-        acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acModeMode else ACMode.NO_AC
+        acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acMode else ACMode.NO_AC
         generatorChargingBatteries = if(fxMap.isEmpty()) false else fxMap.values.any {
-            OperationalMode.CHARGE.isActive(it.operatingModeValue)
-                    || OperationalMode.FLOAT.isActive(it.operatingModeValue)
-                    || OperationalMode.EQ.isActive(it.operatingModeValue)
+            OperationalMode.CHARGE.isActive(it.operationalModeValue)
+                    || OperationalMode.FLOAT.isActive(it.operationalModeValue)
+                    || OperationalMode.EQ.isActive(it.operationalModeValue)
         }
-        load = fxMap.values.sumBy { it.outputVoltage * it.inverterCurrent }
-        generatorToBatteryWattage = fxMap.values.sumBy { it.inputVoltage * it.chargerCurrent }
-        generatorTotalWattage = fxMap.values.sumBy { it.inputVoltage * it.buyCurrent }
+        load = fxMap.values.sumBy { it.inverterWattage }
+        generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
+        generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
 
         pvWattage = chargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
         pvChargerWattage = chargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
-        dailyKWHours = dailyDataMap.values.map { it.dailyKWH }.sum()
+        dailyKWHours = dailyChargeControllerMap.values.map { it.dailyKWH }.sum()
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningMode) } }
         hasWarnings = fxMap.isNotEmpty()
@@ -164,7 +179,7 @@ class SolarPacketInfo(
         if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && acMode == ACMode.AC_USE){
             return true
         }
-        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operatingModeValue) }
+        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operationalModeValue) }
     }
 
     override fun equals(other: Any?): Boolean {

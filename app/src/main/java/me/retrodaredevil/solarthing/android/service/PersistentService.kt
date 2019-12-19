@@ -31,6 +31,8 @@ import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplex
 import me.retrodaredevil.solarthing.packets.instance.InstancePackets
 import me.retrodaredevil.solarthing.solar.SolarPackets
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
+import me.retrodaredevil.solarthing.solar.outback.fx.supplementary.DailyFXPackets
+import me.retrodaredevil.solarthing.solar.supplementary.SupplementarySolarPackets
 import java.util.*
 
 
@@ -81,6 +83,7 @@ private class ServiceObject(
 }
 
 class PersistentService : Service(), Runnable{
+    private var initialized = false
     private lateinit var handler: Handler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
@@ -102,7 +105,7 @@ class PersistentService : Service(), Runnable{
             ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
             ServiceObject(
                 SolarDataService(this, solarProfileManager, createMiscProfileProvider(this)), "solarthing",
-                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) })::createFromJson
+                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) }, JsonPacketGetter { SupplementarySolarPackets.createFromJson(it) })::createFromJson
             ),
             ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
         )
@@ -113,6 +116,7 @@ class PersistentService : Service(), Runnable{
         Toast.makeText(this, "SolarThing Notification Service started", Toast.LENGTH_LONG).show()
         println("Starting service")
         updateNotification(System.currentTimeMillis() + 300)
+        initialized = true
         return START_STICKY
     }
     private fun updateNotification(countDownWhen: Long){
@@ -271,7 +275,11 @@ class PersistentService : Service(), Runnable{
     }
 
     override fun onDestroy() {
-        println("[123]Stopping persistent service")
+        if(!initialized){
+            println("This PersistentService wasn't initialized for some reason... Not to worry, we prepared for this!")
+            return
+        }
+        println("Stopping persistent service")
         handler.removeCallbacks(this)
         unregisterReceiver(receiver)
         for(service in services){
