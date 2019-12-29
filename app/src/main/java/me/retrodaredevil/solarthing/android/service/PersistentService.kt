@@ -7,13 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.drawable.Icon
-import android.net.wifi.WifiManager
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.databind.DeserializationFeature
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
@@ -24,14 +23,15 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
-import me.retrodaredevil.solarthing.outhouse.OuthousePackets
-import me.retrodaredevil.solarthing.packets.Packet
-import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetter
-import me.retrodaredevil.solarthing.packets.collection.JsonPacketGetterMultiplexer
-import me.retrodaredevil.solarthing.packets.instance.InstancePackets
-import me.retrodaredevil.solarthing.solar.SolarStatusPackets
-import me.retrodaredevil.solarthing.solar.extra.SolarExtraPackets
-import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPackets
+import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
+import me.retrodaredevil.solarthing.packets.collection.parsing.SimplePacketGroupParser
+import me.retrodaredevil.solarthing.packets.instance.InstancePacket
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
+import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
+import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 
 
@@ -71,7 +71,7 @@ private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android
 private class ServiceObject(
     val dataService: DataService,
     val databaseName: String,
-    val jsonPacketGetter: (JsonObject) -> Packet
+    val packetGroupParser: PacketGroupParser
 ){
     var task: AsyncTask<*, *, *>? = null
 
@@ -82,6 +82,11 @@ private class ServiceObject(
 }
 
 class PersistentService : Service(), Runnable{
+    companion object {
+        private val MAPPER = JacksonUtil.defaultMapper().apply {
+            deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        }
+    }
     private var initialized = false
     private lateinit var handler: Handler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
@@ -101,12 +106,17 @@ class PersistentService : Service(), Runnable{
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
         services = listOf(
-            ServiceObject(OuthouseDataService(this), "outhouse", OuthousePackets::createFromJson),
             ServiceObject(
                 SolarDataService(this, solarProfileManager, createMiscProfileProvider(this)), "solarthing",
-                JsonPacketGetterMultiplexer(JsonPacketGetter { SolarStatusPackets.createFromJson(it) }, JsonPacketGetter { InstancePackets.createFromJson(it) }, JsonPacketGetter { SolarExtraPackets.createFromJson(it) })::createFromJson
+                SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+                    ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
+                    ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
+                    ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
+                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
             ),
-            ServiceObject(CommandFeedbackService(this), "command_feedback", MateCommandFeedbackPackets::createFromJson)
+            ServiceObject(CommandFeedbackService(this), "command_feedback", SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+                ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java)
+            ), PacketParserMultiplexer.LenientType.FULLY_LENIENT)))
         )
         for(service in services){
             service.dataService.onInit()
@@ -254,7 +264,7 @@ class PersistentService : Service(), Runnable{
             service.dataRequesters = couchDbDatabaseConnectionProfile.createCouchProperties().map{
                 CouchDbDataRequester(
                     { CouchPropertiesBuilder(it).setDatabase(service.databaseName).build()},
-                    service.jsonPacketGetter,
+                    service.packetGroupParser,
                     service.dataService::startKey
                 )
             }

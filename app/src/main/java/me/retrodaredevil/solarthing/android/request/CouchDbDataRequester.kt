@@ -1,13 +1,17 @@
 package me.retrodaredevil.solarthing.android.request
 
-import com.google.gson.JsonObject
+import com.fasterxml.jackson.databind.node.MissingNode
+import com.fasterxml.jackson.databind.node.ObjectNode
 import me.retrodaredevil.couchdb.CouchProperties
-import me.retrodaredevil.solarthing.android.PacketParse
-import me.retrodaredevil.solarthing.android.parsePacketGroup
-import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import me.retrodaredevil.solarthing.android.createHttpClient
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
-import org.lightcouch.CouchDbClientAndroid
-import org.lightcouch.CouchDbException
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParseException
+import org.ektorp.DbAccessException
+import org.ektorp.ViewQuery
+import org.ektorp.impl.StdCouchDbConnector
+import org.ektorp.impl.StdCouchDbInstance
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.SocketException
@@ -16,7 +20,7 @@ import java.util.*
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchProperties,
-    private val jsonPacketGetter: (JsonObject) -> Packet,
+    private val packetGroupParser: PacketGroupParser,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
 
@@ -40,16 +44,25 @@ class CouchDbDataRequester(
         var couchProperties: CouchProperties? = null
         try {
             couchProperties = connectionPropertiesCreator()
-            val client = CouchDbClientAndroid(couchProperties.createProperties())
+            val httpClient = createHttpClient(CouchPropertiesBuilder(couchProperties)
+                .setConnectionTimeoutMillis(10_000)
+                .build())
+            val client = StdCouchDbConnector(couchProperties.database, StdCouchDbInstance(httpClient))
 
-            println("Successfully connected!")
+            val query = ViewQuery().designDocId("_design/packets").viewName("millis").startKey(startKeyGetter())
+            val result = client.queryView(query)
+            println("result=$result")
             val list = ArrayList<PacketGroup>()
             var exception: Exception? = null
-            for (jsonObject in client.view("packets/millis").startKey(startKeyGetter()).query(JsonObject::class.java)) {
-                val packetCollection = jsonObject.getAsJsonObject("value")
-                when(val packetParse = parsePacketGroup(packetCollection, jsonPacketGetter)){
-                    is PacketParse.Success -> list.add(packetParse.packetGroup)
-                    is PacketParse.Failure -> exception = packetParse.exception
+            for (row in result.rows) {
+                val objectNode = row.valueAsNode as ObjectNode
+                try {
+                    val packetGroup = packetGroupParser.parse(objectNode)
+                    if(packetGroup != null){
+                        list.add(packetGroup)
+                    }
+                } catch(ex: PacketParseException){
+                    exception = ex
                 }
             }
             if(list.isEmpty() && exception != null){
@@ -65,7 +78,7 @@ class CouchDbDataRequester(
             exception?.printStackTrace()
             println("Updated collections!")
             return DataRequest(list, true, "Request Successful", couchProperties.host, authDebug = getAuthDebug(couchProperties))
-        } catch(ex: CouchDbException){
+        } catch(ex: DbAccessException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
                 "Request Failed", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))

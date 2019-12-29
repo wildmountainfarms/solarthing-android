@@ -5,11 +5,14 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
-import me.retrodaredevil.solarthing.solar.SolarStatusPackets
+import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParseException
+import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
+import me.retrodaredevil.solarthing.packets.collection.parsing.SimplePacketGroupParser
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.util.JacksonUtil
 
 /**
  * Implementation of App Widget functionality.
@@ -37,15 +40,12 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                 if (json != null && appWidgetIds != null && appWidgetIds.isNotEmpty()) {
                     println("got json:")
                     println(json)
-                    val jsonObject = GSON.fromJson(json, JsonObject::class.java)
-                    when(val packetParse = parsePacketGroup(jsonObject, SolarStatusPackets::createFromJson)){
-                        is PacketParse.Success -> {
-                            val info = SolarPacketInfo(packetParse.packetGroup, BatteryVoltageType.FIRST_PACKET) // TODO don't hard code BatteryVoltageType
-                            onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
-                        }
-                        is PacketParse.Failure -> {
-                            packetParse.exception.printStackTrace()
-                        }
+                    try {
+                        val packetGroup = PARSER.parse(MAPPER.valueToTree(json))
+                        val info = SolarPacketInfo(packetGroup, BatteryVoltageType.FIRST_PACKET) // TODO don't hard code BatteryVoltageType
+                        onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
+                    } catch(ex: PacketParseException){
+                        ex.printStackTrace()
                     }
                 }
             }
@@ -56,7 +56,10 @@ class BatteryVoltageWidget : AppWidgetProvider() {
 
 
     companion object {
-        private val GSON = GsonBuilder().create()
+        private val MAPPER = JacksonUtil.defaultMapper()
+        private val PARSER = SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+            ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java)
+        ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
 
         internal fun updateAppWidget(
             context: Context, appWidgetManager: AppWidgetManager,

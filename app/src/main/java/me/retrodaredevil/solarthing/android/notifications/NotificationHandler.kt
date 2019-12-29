@@ -264,7 +264,7 @@ object NotificationHandler {
             for(device in getOrderedValues(info.deviceMap)) {
                 val string = when(device){
                     is FXStatusPacket -> {
-                        val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) {
+                        val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(device.miscValue)) {
                             auxCount++
                             "ON"
                         } else {
@@ -322,7 +322,7 @@ object NotificationHandler {
         val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
         val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
         val roverErrorsString = info.roverMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(info, it)}${Modes.toString(RoverErrorMode::class.java, it.errorMode)}"
+            "${getDeviceString(info, it)}${Modes.toString(RoverErrorMode::class.java, it.errorModeValue)}"
         }
         val batteryVoltagesString = run {
             val map = LinkedHashMap<String, MutableList<String>>() // maintain insertion order
@@ -348,10 +348,10 @@ object NotificationHandler {
                 "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
                 dailyFXLine +
                 "$devicesString$batteryTemperatureString$acModeString\n" +
-                (if(info.fxMap.values.any { it.errorMode != 0 }) "FX Errors: $fxErrorsString\n" else "") +
-                (if(info.mxMap.values.any { it.errorMode != 0 }) "MX Errors: $mxErrorsString\n" else "") +
-                (if(info.roverMap.values.any { it.activeErrors.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
-                (if(info.fxMap.values.any { it.warningMode != 0 }) "FX Warn: $fxWarningsString\n" else "") +
+                (if(info.fxMap.values.any { it.errorModeValue != 0 }) "FX Errors: $fxErrorsString\n" else "") +
+                (if(info.mxMap.values.any { it.errorModeValue != 0 }) "MX Errors: $mxErrorsString\n" else "") +
+                (if(info.roverMap.values.any { it.errorModes.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
+                (if(info.fxMap.values.any { it.warningModeValue != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 "Mode: $modesString\n" +
                 "Batt: $batteryVoltagesString\n" +
                 "Aux: $auxModesString"
@@ -488,8 +488,8 @@ object NotificationHandler {
                                     "AC Output: ${device.outputVoltage} V | AC Input: ${device.inputVoltage} V\n" +
                                     "Inverter Current: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)} | Sell Current: ${Formatting.OPTIONAL_TENTHS.format(device.sellCurrent)}\n" +
                                     "Buy Current: ${Formatting.OPTIONAL_TENTHS.format(device.buyCurrent)} | Charger Current: ${Formatting.OPTIONAL_TENTHS.format(device.chargerCurrent)}\n" +
-                                    "230V: " + (if(MiscMode.FX_230V_UNIT.isActive(device.misc)) "yes" else "no") + " | " +
-                                    "Aux: " + (if(MiscMode.AUX_OUTPUT_ON.isActive(device.misc)) "on" else "off") + " | " +
+                                    "230V: " + (if(MiscMode.FX_230V_UNIT.isActive(device.miscValue)) "yes" else "no") + " | " +
+                                    "Aux: " + (if(MiscMode.AUX_OUTPUT_ON.isActive(device.miscValue)) "on" else "off") + " | " +
                                     "Errors: ${device.errorsString} | Warnings: ${device.warningsString} " +
                                     if(dailyFX == null) "" else ("\n" +
                                             "Battery Min: ${Formatting.TENTHS.format(dailyFX.dailyMinBatteryVoltage)} V Max: ${Formatting.TENTHS.format(dailyFX.dailyMaxBatteryVoltage)} V\n" +
@@ -525,7 +525,7 @@ object NotificationHandler {
                         "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
                         createChargeControllerMoreInfo(device) +
                         "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
-                        "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorMode)}\n" +
+                        "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorModeValue)}\n" +
                         "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
                         "Day: ${device.operatingDaysCount} | kWh: ${device.dailyKWH} | Ah: ${device.dailyAH} | " +
                         "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +

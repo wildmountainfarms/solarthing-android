@@ -23,7 +23,8 @@ import me.retrodaredevil.solarthing.packets.security.ImmutableAuthNewSenderPacke
 import me.retrodaredevil.solarthing.packets.security.ImmutableIntegrityPacket
 import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
-import org.lightcouch.CouchDbClientAndroid
+import org.ektorp.impl.StdCouchDbConnector
+import org.ektorp.impl.StdCouchDbInstance
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.KeyPair
@@ -234,8 +235,11 @@ private class CouchDbUploadToDatabase(
 ) : AsyncTask<Void, Void, Boolean>() {
     override fun doInBackground(vararg params: Void?): Boolean {
         try {
-            val client = CouchDbClientAndroid(CouchPropertiesBuilder(couchProperties).setDatabase("commands").setCreateIfNotExist(true).build().createProperties())
-            client.save(packetCollection)
+            val httpClient = createHttpClient(couchProperties)
+            val instance = StdCouchDbInstance(httpClient)
+            val client = StdCouchDbConnector("commands", instance)
+            client.createDatabaseIfNotExists()
+            client.create(packetCollection)
         } catch(ex: Exception){
             ex.printStackTrace()
             return false

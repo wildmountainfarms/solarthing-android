@@ -10,7 +10,6 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
 import android.support.annotation.RequiresApi
-import com.google.gson.GsonBuilder
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.WidgetHandler
@@ -27,6 +26,7 @@ import me.retrodaredevil.solarthing.packets.identification.Identifiable
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 import kotlin.math.max
 
@@ -43,7 +43,7 @@ class SolarDataService(
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
-        private val GSON = GsonBuilder().create()
+        private val MAPPER = JacksonUtil.defaultMapper()
         private const val MORE_INFO_ACTION = "me.retrodaredevil.solarthing.android.MORE_SOLAR_INFO"
         private const val MORE_INFO_ROVER_ACTION = "me.retrodaredevil.solarthing.android.MORE_ROVER_INFO"
     }
@@ -104,7 +104,6 @@ class SolarDataService(
 
         if(dataRequest.successful) {
             println("[123]Got successful data request")
-            println(GSON.toJson(dataRequest.packetGroupList))
             val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
             packetGroups.limitSize(100_000, 90_000)
             packetGroups.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
@@ -131,7 +130,7 @@ class SolarDataService(
                 val intent = Intent(service, WidgetHandler::class.java)
                 intent.action = SolarPacketCollectionBroadcast.ACTION
                 val latest = packetInfoCollection.last()
-                intent.putExtra(SolarPacketCollectionBroadcast.JSON, GSON.toJson(latest.packetGroup))
+                intent.putExtra(SolarPacketCollectionBroadcast.JSON, MAPPER.writeValueAsString(latest.packetGroup))
                 service.sendBroadcast(intent)
             }
         } else {
