@@ -1,6 +1,5 @@
 package me.retrodaredevil.solarthing.android.request
 
-import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
@@ -46,6 +45,7 @@ class CouchDbDataRequester(
             couchProperties = connectionPropertiesCreator()
             val httpClient = createHttpClient(CouchPropertiesBuilder(couchProperties)
                 .setConnectionTimeoutMillis(10_000)
+                .setSocketTimeoutMillis(Int.MAX_VALUE)
                 .build())
             val client = StdCouchDbConnector(couchProperties.database, StdCouchDbInstance(httpClient))
 
@@ -82,9 +82,6 @@ class CouchDbDataRequester(
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
                 "Request Failed", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
-        } catch(ex: SocketException){
-            return DataRequest(Collections.emptyList(), false,
-                "Request Cut Off", couchProperties?.host, getStackTrace(ex), ex.message, getAuthDebug(couchProperties))
         } catch(ex: NullPointerException){
             ex.printStackTrace()
             return DataRequest(Collections.emptyList(), false,
