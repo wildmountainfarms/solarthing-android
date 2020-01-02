@@ -10,11 +10,13 @@ fun createHttpClient(properties: CouchProperties): HttpClient {
     val proxyPort = properties.proxyPort
     val connectionTimeout = properties.connectionTimeoutMillis
     val socketTimeout = properties.socketTimeoutMillis
+    val path = properties.path ?: ""
     try {
         val builder = AndroidHttpClient.Builder()
-            .url(properties.protocol + "://" + properties.host + ":" + properties.port)
+            .url(properties.protocol + "://" + properties.host + ":" + properties.port + path)
             .username(properties.username)
             .password(properties.password)
+            .proxy(properties.proxyHost)
 
         if(connectionTimeout != 0){
             builder.connectionTimeout(connectionTimeout)

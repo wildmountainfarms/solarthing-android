@@ -38,7 +38,8 @@ object SolarPacketCollectionBroadcast {
 class SolarDataService(
     private val service: Service,
     private val solarProfileProvider: ProfileProvider<SolarProfile>,
-    private val miscProfileProvider: ProfileProvider<MiscProfile>
+    private val miscProfileProvider: ProfileProvider<MiscProfile>,
+    private val solarEventData: SolarEventData
 ) : DataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/

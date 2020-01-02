@@ -14,16 +14,16 @@ import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCom
 import java.text.DateFormat
 import java.util.*
 
-@Suppress("unused")
-class CommandFeedbackService(
-    private val service: Service
+class SolarEventService(
+    private val service: Service,
+    private val data: SolarEventData
 ) : DataService {
-    private val packetGroups = mutableListOf<PacketGroup>()
 
     override fun onInit() { // nothing
     }
 
     override fun onCancel() { // we don't need to cancel notifications because we didn't create any Persistent notifications
+        data.lastCancel = System.currentTimeMillis()
     }
 
     override fun onEnd() {
@@ -34,13 +34,14 @@ class CommandFeedbackService(
 
     override fun onDataRequest(dataRequest: DataRequest) {
         val newPackets = dataRequest.packetGroupList
-        packetGroups.addAll(newPackets)
+        data.packetGroups.addAll(newPackets)
+        data.lastUpdate = System.currentTimeMillis()
         for(packetGroup in newPackets){
             val dateMillis = packetGroup.dateMillis
             for(packet in packetGroup.packets){
                 if(packet is MateCommandFeedbackPacket){
                     when(packet.packetType){
-                        MateCommandFeedbackPacketType.SUCCESS -> doNotify(packet as SuccessMateCommandPacket, dateMillis)
+                        MateCommandFeedbackPacketType.MATE_COMMAND_SUCCESS -> doNotify(packet as SuccessMateCommandPacket, dateMillis)
                         else -> System.err.println("unknown packet type: ${packet.packetType}")
                     }
                 }
@@ -48,6 +49,9 @@ class CommandFeedbackService(
         }
     }
     private fun doNotify(packet: SuccessMateCommandPacket, dateMillis: Long){ // dateMillis is the time that the command was executed
+        if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
+            return // We got a packet from a long time ago. We don't need to display it
+        }
         val source = packet.source!!
         val dataSource = DataSource.createFromStringOrNull(source) // the dateMillis in here is the time the request for the CommandSequence was made, and may be the same for multiple commands
         if(dataSource == null){
@@ -65,7 +69,7 @@ class CommandFeedbackService(
             .setSubText(dataSource.data + " requested at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis}.time))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            val group = "command-feedback-${packet.source}"
+            val group = "command-feedback-$source"
             groupBuilder = getBuilder()
                 .setGroup(group)
                 .setGroupSummary(true)
@@ -90,13 +94,13 @@ class CommandFeedbackService(
     }
 
     override fun onTimeout() {
-        // TODO we may want a way to communicate to the user that we are getting timeouts
+        data.lastTimeout = System.currentTimeMillis()
     }
 
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA
     override val startKey: Long
-        get() = packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (5 * 60 * 1000))
+        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
     override val shouldUpdate: Boolean
-        get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service)
+        get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service) || NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)
 
 }

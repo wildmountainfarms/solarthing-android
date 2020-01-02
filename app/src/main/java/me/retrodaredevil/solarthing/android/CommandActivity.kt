@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import me.retrodaredevil.couchdb.DocumentWrapper
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
@@ -235,11 +236,16 @@ private class CouchDbUploadToDatabase(
 ) : AsyncTask<Void, Void, Boolean>() {
     override fun doInBackground(vararg params: Void?): Boolean {
         try {
-            val httpClient = createHttpClient(couchProperties)
+            val httpClient = createHttpClient(CouchPropertiesBuilder(couchProperties)
+                    .setConnectionTimeoutMillis(10_000)
+                    .setSocketTimeoutMillis(Int.MAX_VALUE)
+                    .build())
             val instance = StdCouchDbInstance(httpClient)
             val client = StdCouchDbConnector("commands", instance)
             client.createDatabaseIfNotExists()
-            client.create(packetCollection)
+            client.create(DocumentWrapper(packetCollection.dbId).apply {
+                `object` = packetCollection
+            })
         } catch(ex: Exception){
             ex.printStackTrace()
             return false

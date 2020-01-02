@@ -14,6 +14,7 @@ import android.os.IBinder
 import android.widget.Toast
 import com.fasterxml.jackson.databind.DeserializationFeature
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
@@ -29,6 +30,7 @@ import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMulti
 import me.retrodaredevil.solarthing.packets.collection.parsing.SimplePacketGroupParser
 import me.retrodaredevil.solarthing.packets.instance.InstancePacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.util.JacksonUtil
@@ -105,17 +107,20 @@ class PersistentService : Service(), Runnable{
         connectionProfileManager = createConnectionProfileManager(this)
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
+        val solarEventData = SolarEventData()
         services = listOf(
             ServiceObject(
-                SolarDataService(this, solarProfileManager, createMiscProfileProvider(this)), "solarthing",
+                SolarDataService(this, solarProfileManager, createMiscProfileProvider(this), solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
                 SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                     ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                     ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
                     ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
                 ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
             ),
-            ServiceObject(CommandFeedbackService(this), "command_feedback", SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-                ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java)
+            ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+                ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java),
+                ObjectMapperPacketConverter(MAPPER, SolarEventPacket::class.java),
+                ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
             ), PacketParserMultiplexer.LenientType.FULLY_LENIENT)))
         )
         for(service in services){

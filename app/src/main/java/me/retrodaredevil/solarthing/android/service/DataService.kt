@@ -2,6 +2,11 @@ package me.retrodaredevil.solarthing.android.service
 
 import me.retrodaredevil.solarthing.android.request.DataRequest
 
+/**
+ * An interface representing different services
+ *
+ * All method calls will be run on the UI thread so they cannot block.
+ */
 interface DataService {
     /**
      * Will only ever be called once.
