@@ -9,9 +9,6 @@ For use with https://github.com/wildmountainfarms/solarthing
 This works best with Android 8, but will still function on older versions.
 
 Known Bugs:
-* The SolarThing notification service seems to crash randomly after the app has been run for many hours.
-    * This is very inconvenient to debug as it doesn't happen right away
-    * Possible culprits could be related to deleting old packets
 * When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)
 * When pressing save at the same time the PersistentService changes the activeUUID, one may overwrite the other
   * This is highly unlikely
@@ -25,6 +22,7 @@ Known Bugs:
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
   * Also remove load information when there are only charge controller packets
 * Clearable notifications for errors
+* **Low/High temperature notifications**
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
@@ -50,8 +48,7 @@ outhouse status
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:
-It has a persistent notification for solar data and for outhouse data. Most likely,
-people will not be using this for outhouse data like I do. 
+It has a persistent notification for solar data.
 
 If you want to set this up for a use case specific to you, 
 you're welcome to fork this and make as many changes as you want.

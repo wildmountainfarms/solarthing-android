@@ -18,8 +18,8 @@ android {
         applicationId "me.retrodaredevil.solarthing.android"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 230
-        versionName "1.23"
+        versionCode 240
+        versionName "1.24"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -58,7 +58,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    def solarthingVersion = "v3.0.2"
+    def solarthingVersion = "v3.0.2" // sometimes you have to include the 'v' and sometimes you don't...
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 
