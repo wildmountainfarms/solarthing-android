@@ -13,12 +13,12 @@ import org.ektorp.impl.StdCouchDbConnector
 import org.ektorp.impl.StdCouchDbInstance
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.net.SocketException
 import java.util.*
 
 
 class CouchDbDataRequester(
     private val connectionPropertiesCreator: () -> CouchProperties,
+    private val databaseName: String,
     private val packetGroupParser: PacketGroupParser,
     private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
 ) : DataRequester {
@@ -47,7 +47,7 @@ class CouchDbDataRequester(
                 .setConnectionTimeoutMillis(10_000)
                 .setSocketTimeoutMillis(Int.MAX_VALUE)
                 .build())
-            val client = StdCouchDbConnector(couchProperties.database, StdCouchDbInstance(httpClient))
+            val client = StdCouchDbConnector(databaseName, StdCouchDbInstance(httpClient))
 
             val query = ViewQuery().designDocId("_design/packets").viewName("millis").startKey(startKeyGetter())
             val result = client.queryView(query)
@@ -96,7 +96,7 @@ class CouchDbDataRequester(
     }
     private fun getAuthDebug(couchProperties: CouchProperties?): String?{
         return if(couchProperties!= null)
-            "Properties: ${couchProperties.protocol} ${couchProperties.host}:${couchProperties.port} ${couchProperties.username} ${couchProperties.database}\n"
+            "Properties: ${couchProperties.protocol} ${couchProperties.host}:${couchProperties.port} ${couchProperties.username} $databaseName\n"
             else null
     }
     private fun getStackTrace(throwable: Throwable): String{

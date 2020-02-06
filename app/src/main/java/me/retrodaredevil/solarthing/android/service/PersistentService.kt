@@ -268,7 +268,8 @@ class PersistentService : Service(), Runnable{
             val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
             service.dataRequesters = couchDbDatabaseConnectionProfile.createCouchProperties().map{
                 CouchDbDataRequester(
-                    { CouchPropertiesBuilder(it).setDatabase(service.databaseName).build()},
+                    { CouchPropertiesBuilder(it).build() },
+                    service.databaseName,
                     service.packetGroupParser,
                     service.dataService::startKey
                 )

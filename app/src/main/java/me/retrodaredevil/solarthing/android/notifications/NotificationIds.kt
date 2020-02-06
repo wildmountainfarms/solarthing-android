@@ -5,8 +5,9 @@ package me.retrodaredevil.solarthing.android.notifications
 
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.solar.common.DailyData
-import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
+import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 
@@ -30,18 +31,20 @@ const val MORE_SOLAR_INFO_GROUP = "more_solar_info"
 
 fun getGroup(id: Int) = "group$id"
 
-fun getEndOfDayInfoID(dailyData: DailyData): Int = when(dailyData){
+fun getEndOfDayInfoId(dailyData: DailyData): Int = when(dailyData){
     is MXStatusPacket -> Objects.hash("end_of_day", dailyData.address)
     is RoverStatusPacket -> Objects.hash("end_of_day", 10 + dailyData.productSerialNumber)
     else -> error("dailyData: $dailyData is not supported!")
 }
-fun getDeviceConnectionStatusID(packet: Packet): Int = when(packet){
-    is OutbackPacket -> Objects.hash("device_connection", packet.address)
+fun getOutbackEndOfDayInfoId(packet: OutbackData): Int = Objects.hash("end_of_day", packet.address)
+
+fun getDeviceConnectionStatusId(packet: Packet): Int = when(packet){
+    is OutbackData -> Objects.hash("device_connection", packet.address)
     is RoverStatusPacket -> Objects.hash("device_connection", 10 + packet.productSerialNumber)
     else -> throw IllegalArgumentException("packet: $packet is not supported!")
 }
-fun getMoreSolarInfoID(packet: Packet): Int = when(packet){
-    is OutbackPacket -> Objects.hash("more_solar_info", packet.address)
+fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
+    is OutbackData -> Objects.hash("more_solar_info", packet.address)
     is RoverStatusPacket -> Objects.hash("more_solar_info", 10 + packet.productSerialNumber)
     else -> throw IllegalArgumentException("$packet is not supported!")
 }

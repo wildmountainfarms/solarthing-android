@@ -58,7 +58,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    def solarthingVersion = "v3.0.2" // sometimes you have to include the 'v' and sometimes you don't...
+    def solarthingVersion = "v3.1.1" // sometimes you have to include the 'v' and sometimes you don't...
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 

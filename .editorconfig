@@ -13,9 +13,9 @@ max_line_length = 100
 
 [{*.xml, *.java, *.kt}]
 indent_style = space
-indent_size = 4
+# indent_size = 4
 
 [{*.java, *.kt}]
-ij_continuation_indent_size = 8
+# ij_continuation_indent_size = 8
 max_line_length = 180
 

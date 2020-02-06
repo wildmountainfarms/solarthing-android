@@ -10,18 +10,22 @@ import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
+import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
 import me.retrodaredevil.solarthing.solar.common.DailyChargeController
-import me.retrodaredevil.solarthing.solar.outback.OutbackPacket
+import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
+import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.MiscMode
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.outback.fx.event.FXDayEndPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
@@ -216,13 +220,13 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(info: SolarPacketInfo, packet: SolarStatusPacket, includeParenthesis: Boolean = true): String{
-        val r = when(packet.packetType){
-            SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as FXStatusPacket).address}</span>"
-            SolarStatusPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as MXStatusPacket).address}</span>"
-            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverID(packet as RoverStatusPacket)}</span>"
+    private fun getDeviceString(info: SolarPacketInfo, packet: DocumentedPacket<*>, includeParenthesis: Boolean = true): String{
+        val r = when(val packetType = packet.getPacketType()){
+            SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
+            SolarStatusPacketType.MXFM_STATUS, SolarExtraPacketType.MXFM_DAILY -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
+            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverId(packet as RoverStatusPacket)}</span>"
             null -> throw NullPointerException()
-            else -> throw UnsupportedOperationException("${packet.packetType} not supported!")
+            else -> throw UnsupportedOperationException("$packetType not supported!")
         }
         return if(includeParenthesis)
             "($r)"
@@ -248,7 +252,7 @@ object NotificationHandler {
             when (it) {
                 is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
                 is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]")
-                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverID(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RV</span>]")
+                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RV</span>]")
                 else -> it.toString()
             }
         }
@@ -307,7 +311,7 @@ object NotificationHandler {
             info.acMode.modeName
         }
         val dailyKWHString = getOrderedValues(info.dailyChargeControllerMap).joinToString(SEPARATOR) {
-            getDeviceString(info, it as SolarStatusPacket) + Formatting.FORMAT.format(it.dailyKWH)
+            getDeviceString(info, it as DocumentedPacket<*>) + Formatting.FORMAT.format(it.dailyKWH)
         }
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
@@ -392,6 +396,7 @@ object NotificationHandler {
 
         return builder.build()
     }
+    @Deprecated("Use createMXDayEnd()")
     fun createEndOfDay(context: Context, currentInfo: SolarPacketInfo, dailyChargeController: DailyChargeController, dateMillis: Long): Pair<Notification, Notification> {
         val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
@@ -399,7 +404,7 @@ object NotificationHandler {
             .setShowWhen(true)
             .setContentTitle(when(dailyChargeController){
                 is MXStatusPacket -> "MX on port ${dailyChargeController.address} end of day"
-                is RoverStatusPacket -> "Rover ${currentInfo.getRoverID(dailyChargeController)} ${dailyChargeController.productSerialNumber} end of day"
+                is RoverStatusPacket -> "Rover ${currentInfo.getRoverId(dailyChargeController)} ${dailyChargeController.productSerialNumber} end of day"
                 else -> error("dailyChargeController: $dailyChargeController is not supported!")
             })
             .setContentText("Got ${Formatting.FORMAT.format(dailyChargeController.dailyKWH)} kWh")
@@ -423,6 +428,58 @@ object NotificationHandler {
         return Pair(builder.build(), summary.build())
     }
 
+    fun createMXDayEnd(context: Context, packet: MXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
+        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+            .setContentTitle("MX on port ${packet.address} end of day")
+            .setContentText("Got ${Formatting.FORMAT.format(packet.dailyKWH)} kWh")
+        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(END_OF_DAY_GROUP)
+            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(MX_COLOR)
+            builder.setCategory(Notification.CATEGORY_STATUS)
+            summary.setColor(MX_COLOR)
+            summary.setCategory(Notification.CATEGORY_STATUS)
+        }
+
+
+        return Pair(builder.build(), summary.build())
+    }
+    fun createFXDayEnd(context: Context, packet: FXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
+        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+            .setContentTitle("FX on port ${packet.address} end of day")
+            .setContentText("(kWH): Discharged: ${Formatting.TENTHS.format(packet.inverterKWH)} | Charged: ${Formatting.TENTHS.format(packet.chargerKWH)} | Bought: ${Formatting.TENTHS.format(packet.buyKWH)} ")
+        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(dateMillis)
+            .setShowWhen(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            builder.setGroup(END_OF_DAY_GROUP)
+            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setColor(MX_COLOR)
+            builder.setCategory(Notification.CATEGORY_STATUS)
+            summary.setColor(MX_COLOR)
+            summary.setCategory(Notification.CATEGORY_STATUS)
+        }
+
+
+        return Pair(builder.build(), summary.build())
+    }
     /**
      * @param context The context
      * @param device The most recent status packet representing a device that has been connected or disconnected
@@ -436,7 +493,7 @@ object NotificationHandler {
             else -> device.packetType.toString()
         }
         val deviceName = when(device){
-            is OutbackPacket -> "$name on port ${device.address}"
+            is OutbackData -> "$name on port ${device.address}"
             is RoverStatusPacket -> "Rover with serial ${device.productSerialNumber}"
             else -> name
         }
@@ -475,7 +532,7 @@ object NotificationHandler {
             }
         }
         when(device){
-            is OutbackPacket -> {
+            is OutbackData -> {
                 when(device.packetType){
                     SolarStatusPacketType.FX_STATUS -> {
                         device as FXStatusPacket

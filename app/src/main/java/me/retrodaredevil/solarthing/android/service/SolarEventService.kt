@@ -5,12 +5,15 @@ import android.app.Service
 import android.os.Build
 import me.retrodaredevil.solarthing.DataSource
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
+import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
-import me.retrodaredevil.solarthing.packets.collection.PacketGroup
+import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
+import me.retrodaredevil.solarthing.solar.event.SolarEventPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCommandPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.event.FXDayEndPacket
+import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import java.text.DateFormat
 import java.util.*
 
@@ -41,14 +44,24 @@ class SolarEventService(
             for(packet in packetGroup.packets){
                 if(packet is MateCommandFeedbackPacket){
                     when(packet.packetType){
-                        MateCommandFeedbackPacketType.MATE_COMMAND_SUCCESS -> doNotify(packet as SuccessMateCommandPacket, dateMillis)
+                        MateCommandFeedbackPacketType.MATE_COMMAND_SUCCESS -> doCommandNotify(packet as SuccessMateCommandPacket, dateMillis)
                         else -> System.err.println("unknown packet type: ${packet.packetType}")
+                    }
+                } else if(packet is SolarEventPacket){
+                    when(val packetType = packet.packetType){
+                        SolarEventPacketType.MXFM_DAILY_DAY_END -> {
+                            doMXDayEnd(packet as MXDayEndPacket, dateMillis)
+                        }
+                        SolarEventPacketType.FX_DAILY_DAY_END -> {
+                            doFXDayEnd(packet as FXDayEndPacket, dateMillis)
+                        }
+                        else -> println("We haven't implemented $packetType yet.")
                     }
                 }
             }
         }
     }
-    private fun doNotify(packet: SuccessMateCommandPacket, dateMillis: Long){ // dateMillis is the time that the command was executed
+    private fun doCommandNotify(packet: SuccessMateCommandPacket, dateMillis: Long){ // dateMillis is the time that the command was executed
         if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
             return // We got a packet from a long time ago. We don't need to display it
         }
@@ -86,6 +99,36 @@ class SolarEventService(
             }
         }
     }
+
+    private fun doMXDayEnd(packet: MXDayEndPacket, dateMillis: Long){
+        if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
+            return // We got a packet from a long time ago. We don't need to display it
+        }
+        val notificationAndSummary = NotificationHandler.createMXDayEnd(service, packet, dateMillis)
+        service.getManager().notify(
+            getOutbackEndOfDayInfoId(packet),
+            notificationAndSummary.first
+        )
+        service.getManager().notify(
+            END_OF_DAY_SUMMARY_ID,
+            notificationAndSummary.second
+        )
+    }
+    private fun doFXDayEnd(packet: FXDayEndPacket, dateMillis: Long){
+        if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
+            return // We got a packet from a long time ago. We don't need to display it
+        }
+        val notificationAndSummary = NotificationHandler.createFXDayEnd(service, packet, dateMillis)
+        service.getManager().notify(
+            getOutbackEndOfDayInfoId(packet),
+            notificationAndSummary.first
+        )
+        service.getManager().notify(
+            END_OF_DAY_SUMMARY_ID,
+            notificationAndSummary.second
+        )
+    }
+
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
         Notification.Builder(service.applicationContext, NotificationChannels.COMMAND_FEEDBACK.id)

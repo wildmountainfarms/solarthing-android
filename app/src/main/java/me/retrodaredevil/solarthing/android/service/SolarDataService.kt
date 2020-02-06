@@ -225,6 +225,7 @@ class SolarDataService(
         val lastPacketInfo = this.lastPacketInfo
         if(lastPacketInfo != null){
             // end of day for loop
+            /*
             for(dailyChargeController in currentInfo.dailyChargeControllerMap.values){
                 if(dailyChargeController !is Identifiable) error("dailyChargeControllerMap must be identifiable!")
                 if(dailyChargeController.dailyKWH == 0f){
@@ -233,7 +234,7 @@ class SolarDataService(
                     if(dailyKWH != 0f){
                         val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyChargeController, currentInfo.dateMillis)
                         service.getManager().notify(
-                            getEndOfDayInfoID(lastDailyChargeController),
+                            getEndOfDayInfoId(lastDailyChargeController),
                             notificationAndSummary.first
                         )
                         service.getManager().notify(
@@ -243,6 +244,7 @@ class SolarDataService(
                     }
                 }
             }
+             */
             // region Device Connection/Disconnection section
             for(device in currentInfo.deviceMap.values){
                 val presentInLast = device.identifier in lastPacketInfo.deviceMap
@@ -250,7 +252,7 @@ class SolarDataService(
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusID(device),
+                            getDeviceConnectionStatusId(device),
                             notificationAndSummary.first
                         )
                         notify(
@@ -266,7 +268,7 @@ class SolarDataService(
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusID(device),
+                            getDeviceConnectionStatusId(device),
                             notificationAndSummary.first
                         )
                         notify(
@@ -394,7 +396,7 @@ class SolarDataService(
         var summary: Notification? = null
 
         for(device in getOrderedValues(packetInfo.deviceMap)){
-            val id = getMoreSolarInfoID(device)
+            val id = getMoreSolarInfoId(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis
                 val pair = NotificationHandler.createMoreInfoNotification(service, device, dateMillis, packetInfo, MORE_INFO_ROVER_ACTION)
@@ -418,7 +420,7 @@ class SolarDataService(
         val dateMillis = packetInfo.packetGroup.getDateMillis(rover) ?: packetInfo.dateMillis
         val pair = NotificationHandler.createMoreRoverInfoNotification(service, rover, dateMillis)
 
-        val id = getMoreSolarInfoID(rover) + 1
+        val id = getMoreSolarInfoId(rover) + 1
         service.getManager().apply {
             notify(id, pair.first)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
