@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.wifi.SupplicantState
 import android.net.wifi.WifiManager
-import android.support.v4.content.ContextCompat
+import androidx.core.content.ContextCompat
 
 class SSIDPermissionException : Exception()
 class SSIDNotAvailable : Exception()

@@ -9,7 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.WidgetHandler
@@ -22,7 +22,6 @@ import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
-import me.retrodaredevil.solarthing.packets.identification.Identifiable
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket

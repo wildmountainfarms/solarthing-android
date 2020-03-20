@@ -18,16 +18,16 @@ fun createHttpClient(properties: CouchProperties): HttpClient {
             .password(properties.password)
             .proxy(properties.proxyHost)
 
-        if(connectionTimeout != 0){
+        if(connectionTimeout != null){
             builder.connectionTimeout(connectionTimeout)
         }
-        if(socketTimeout != 0){
+        if(socketTimeout != null){
             builder.socketTimeout(socketTimeout)
         }
-        if(maxConnections != 0){
+        if(maxConnections != null){
             builder.maxConnections(maxConnections)
         }
-        if(proxyPort != 0){
+        if(proxyPort != null){
             builder.proxyPort(proxyPort)
         }
         return builder.build()
