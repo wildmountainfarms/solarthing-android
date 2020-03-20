@@ -187,12 +187,9 @@ class SolarPacketInfo(
                 + RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
     }
 
+    @Deprecated("")
     val pvWattageString by lazy { pvWattage.toString() }
-    val pvChargerWattageString: String by lazy { Formatting.FORMAT.format(pvChargerWattage) }
     val dailyKWHoursString: String by lazy { Formatting.FORMAT.format(dailyKWHours) }
-    val loadString by lazy { load.toString() }
-    val generatorToBatteryWattageString by lazy { generatorToBatteryWattage.toString() }
-    val generatorTotalWattageString by lazy { generatorTotalWattage.toString() }
 
     /**
      * Because older firmware doesn't always report the FXs being in float mode, we can use a custom battery voltage

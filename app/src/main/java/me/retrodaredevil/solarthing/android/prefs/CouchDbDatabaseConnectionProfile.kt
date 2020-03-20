@@ -31,8 +31,6 @@ interface CouchDbDatabaseConnectionProfile : DatabaseConnectionProfile {
 
         return hosts.map {
             CouchPropertiesBuilder(
-                null,
-                false,
                 protocol,
                 it,
                 port,

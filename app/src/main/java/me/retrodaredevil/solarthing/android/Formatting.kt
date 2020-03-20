@@ -10,3 +10,7 @@ object Formatting {
 
     val OPTIONAL_TENTHS = DecimalFormat("0.#")
 }
+
+fun wattsToKilowattsString(watts: Number): String {
+    return Formatting.HUNDREDTHS.format(watts.toDouble() / 1000.0)
+}

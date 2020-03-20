@@ -12,6 +12,7 @@ import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
+import me.retrodaredevil.solarthing.packets.support.Support
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
@@ -171,8 +172,8 @@ object NotificationHandler {
                 acUseStartString +
                 lastACDropString +
                 floatStartedText +
-                "Charger: ${info.generatorToBatteryWattageString} W\n" +
-                "Total: ${info.generatorTotalWattageString} W\n" +
+                "Charger: ${wattsToKilowattsString(info.generatorToBatteryWattage)} kW\n" +
+                "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
                 "Pass Thru: $passThru W\n" +
                 "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.inputVoltage} + "\n" +
                 "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.chargerCurrent } + "\n" +
@@ -195,7 +196,7 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setContentTitle(title)
-            .setContentText("charger:${info.generatorToBatteryWattageString} total:${info.generatorTotalWattageString} pass thru:$passThru")
+            .setContentText("charger:${wattsToKilowattsString(info.generatorToBatteryWattage)} total:${wattsToKilowattsString(info.generatorTotalWattage)} pass thru:${wattsToKilowattsString(passThru)}")
             .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
             .setShowWhen(true)
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -316,10 +317,10 @@ object NotificationHandler {
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${(it.pvCurrent.toDouble() * it.inputVoltage.toDouble()).toInt()}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.pvCurrent.toDouble() * it.inputVoltage.toDouble())}"
         }
         val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${it.chargingPower.toInt()}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.chargingPower)}"
         }
 
         val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.warningsString}" }
@@ -347,8 +348,8 @@ object NotificationHandler {
         }
 
         val text = "" +
-                "PV: $pvWattagesString | Total: <strong>${info.pvWattageString}</strong> W\n" +
-                "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${info.pvChargerWattageString}</strong> W") + "\n" +
+                "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
+                "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n" +
                 "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
                 dailyFXLine +
                 "$devicesString$batteryTemperatureString$acModeString\n" +
@@ -370,9 +371,8 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W")
-//            .setContentTitle("Battery: ${info.batteryVoltageString} V Load: ${info.loadString} W Charge: ${DecimalFormat("0.0").format(info.pvChargerWattage / 1000)} kW")
-            .setContentText("pv:${info.pvWattageString} kwh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
+            .setContentTitle("Batt: ${info.batteryVoltageString} V Load: ${wattsToKilowattsString(info.load)} kW")
+            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} kWh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
@@ -460,7 +460,7 @@ object NotificationHandler {
             .setWhen(dateMillis)
             .setShowWhen(true)
             .setContentTitle("FX on port ${packet.address} end of day")
-            .setContentText("(kWH): Discharged: ${Formatting.TENTHS.format(packet.inverterKWH)} | Charged: ${Formatting.TENTHS.format(packet.chargerKWH)} | Bought: ${Formatting.TENTHS.format(packet.buyKWH)} ")
+            .setContentText("(kWh): Discharged: ${Formatting.TENTHS.format(packet.inverterKWH)} | Charged: ${Formatting.TENTHS.format(packet.chargerKWH)} | Bought: ${Formatting.TENTHS.format(packet.buyKWH)} ")
         val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
@@ -567,8 +567,11 @@ object NotificationHandler {
                                     "Aux Mode: ${device.auxModeName} | FM Aux On: " + (if(AuxMode.isAuxModeActive(device.rawAuxModeValue)) "yes" else "no") + "\n" +
                                     "Errors: ${device.errorsString}\n" +
                                     "Daily kWh: ${device.dailyKWH} | " +
-                                    "Daily Ah: ${device.dailyAH}\n" +
-                                    "Check sum: ${device.chksum}"
+                                    "Daily Ah: ${device.dailyAH} " + when(device.dailyAHSupport!!) {
+                                        Support.FULLY_SUPPORTED -> ""
+                                        Support.NOT_SUPPORTED -> "(Not Supported)"
+                                        Support.UNKNOWN -> "(Maybe supported)"
+                                    }
                         )
                     }
                     else -> throw IllegalArgumentException("$device not supported!")

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ST</string>
+    <string name="app_name">SolarThing</string>
 
     <string name="generator_done_notification">Generator Done Alert</string>
     <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when
