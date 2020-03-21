@@ -36,11 +36,15 @@ class SolarEventService(
     }
 
     override fun onDataRequest(dataRequest: DataRequest) {
-        val newPackets = dataRequest.packetGroupList
-        data.packetGroups = newPackets
+        val lastDateMillis = data.packetGroups.lastOrNull()?.dateMillis
+        val receivedPackets = dataRequest.packetGroupList
+        data.packetGroups = receivedPackets
         data.lastUpdate = System.currentTimeMillis()
-        for(packetGroup in newPackets){
+        for(packetGroup in receivedPackets){
             val basicDateMillis = packetGroup.dateMillis
+            if(lastDateMillis != null && basicDateMillis <= lastDateMillis){
+                continue
+            }
             for(packet in packetGroup.packets){
                 val dateMillis = packetGroup.getDateMillis(packet) ?: basicDateMillis
                 if(packet is MateCommandFeedbackPacket){
