@@ -185,11 +185,5 @@
                 android:text="Stop Service"
                 android:layout_width="143dp"
                 android:layout_height="wrap_content" android:id="@+id/stop_button" android:onClick="stopService"/>
-        <Button
-                android:text="Commands"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:id="@+id/open_commands"
-                android:onClick="openCommands"/>
     </LinearLayout>
-<!--</androidx.constraintlayout.widget.ConstraintLayout>-->
 </androidx.core.widget.NestedScrollView>

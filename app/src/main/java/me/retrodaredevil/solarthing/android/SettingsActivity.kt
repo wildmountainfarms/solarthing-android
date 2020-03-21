@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.net.Uri
@@ -14,7 +13,6 @@ import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
 import android.widget.*
-import androidx.appcompat.widget.Toolbar
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
@@ -27,8 +25,6 @@ class SettingsActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_COARSE_LOCATION_RC = 1801
     }
-
-    private lateinit var toolbar: Toolbar
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var connectionProfileHeader: ProfileHeaderHandler
@@ -90,7 +86,6 @@ class SettingsActivity : AppCompatActivity() {
                 requestCoarseLocation()
             }
         )
-        toolbar = findViewById(R.id.toolbar)
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -108,7 +103,7 @@ class SettingsActivity : AppCompatActivity() {
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
 
-        getDrawer(this, toolbar)
+        initializeDrawer(this)
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
@@ -193,10 +188,6 @@ class SettingsActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     fun stopService(view: View){
         stopService(this)
-    }
-    @Suppress("UNUSED_PARAMETER")
-    fun openCommands(view: View){
-        startActivity(Intent(this, CommandActivity::class.java))
     }
     // endregion
 

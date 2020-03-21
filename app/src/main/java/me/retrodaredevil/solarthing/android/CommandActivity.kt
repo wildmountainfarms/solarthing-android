@@ -52,6 +52,7 @@ class CommandActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_command)
+        initializeDrawer(this)
         profileManager = createConnectionProfileManager(this)
         sender = "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
 

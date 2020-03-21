@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context=".CommandActivity"
+        tools:showIn="@layout/activity_command">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <TextView
+                    android:text="Sender name: "
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/textView2"/>
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/sender_name" android:layout_weight="1"/>
+        </LinearLayout>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <TextView
+                    android:text="Public Key:"
+                    android:layout_width="210dp"
+                    android:layout_height="wrap_content" android:id="@+id/textView4" android:layout_weight="1"/>
+            <TextView
+                    android:layout_width="429dp"
+                    android:layout_height="wrap_content" android:id="@+id/public_key" android:layout_weight="1"/>
+        </LinearLayout>
+        <Button
+                android:text="Generate New Keys"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/button" android:onClick="generateNewKey"/>
+        <Button
+                android:text="Delete Key"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/button2" android:onClick="deleteKey"/>
+        <Button
+                android:text="Send New Auth Request"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/button4" android:onClick="sendAuthRequest"/>
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:text="GEN OFF"
+                android:ems="10"
+                android:id="@+id/command_text" android:hint="Command to send"/>
+        <Button
+                android:text="Send Command"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/button6" android:onClick="sendCommand"/>
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="100dp"/>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <TextView
+                    android:text="Current Task:"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/textView" android:layout_weight="1"/>
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:id="@+id/current_task" android:layout_weight="1"/>
+        </LinearLayout>
+        <Button
+                android:text="Cancel Current Task"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/button3" android:onClick="cancelCurrentTask"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
