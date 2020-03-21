@@ -135,7 +135,7 @@ class PersistentService : Service(), Runnable{
     }
     private fun updateNotification(countDownWhen: Long){
         // unanswered question with problem we're having here: https://stackoverflow.com/questions/47703216/android-clicking-grouped-notifications-restarts-app
-        val mainActivityIntent = Intent(this, MainActivity::class.java)
+        val mainActivityIntent = Intent(this, SettingsActivity::class.java)
         val builder = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)

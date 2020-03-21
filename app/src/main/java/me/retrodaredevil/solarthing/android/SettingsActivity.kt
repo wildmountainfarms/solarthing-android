@@ -14,6 +14,7 @@ import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
 import android.widget.*
+import androidx.appcompat.widget.Toolbar
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
@@ -22,10 +23,12 @@ import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class SettingsActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_COARSE_LOCATION_RC = 1801
     }
+
+    private lateinit var toolbar: Toolbar
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var connectionProfileHeader: ProfileHeaderHandler
@@ -58,7 +61,8 @@ class MainActivity : AppCompatActivity() {
     // region Initialization
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_settings)
+
 
         connectionProfileManager = createConnectionProfileManager(this)
         connectionProfileHeader = ProfileHeaderHandler(
@@ -86,6 +90,7 @@ class MainActivity : AppCompatActivity() {
                 requestCoarseLocation()
             }
         )
+        toolbar = findViewById(R.id.toolbar)
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
@@ -102,6 +107,8 @@ class MainActivity : AppCompatActivity() {
         virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
+
+        getDrawer(this, toolbar)
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
@@ -122,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                     channelGroup.id, channelGroup.getName(this)
                 ).apply {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        description = channelGroup.getDescription(this@MainActivity)
+                        description = channelGroup.getDescription(this@SettingsActivity)
                     }
                 })
             }
@@ -132,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                     notificationChannel.getName(this),
                     notificationChannel.importance
                 ).apply {
-                    description = notificationChannel.getDescription(this@MainActivity)
+                    description = notificationChannel.getDescription(this@SettingsActivity)
                     enableLights(notificationChannel.enableLights)
                     if (notificationChannel.lightColor != null) {
                         lightColor = notificationChannel.lightColor

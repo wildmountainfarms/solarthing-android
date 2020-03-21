@@ -1,66 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="me.retrodaredevil.solarthing.android">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="me.retrodaredevil.solarthing.android">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android:persistent"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android:persistent" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-            android:allowBackup="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:supportsRtl="true"
-            android:theme="@style/AppTheme"
-            android:usesCleartextTraffic="true"
-            tools:ignore="GoogleAppIndexingWarning"
-            tools:targetApi="m" android:fullBackupContent="@xml/backup_descriptor">
+        android:name=".SolarThingApplication"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_descriptor"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
+        tools:ignore="GoogleAppIndexingWarning"
+        tools:targetApi="m">
+        <activity
+                android:name=".EventDisplayActivity"
+                android:label="@string/title_activity_event_display"
+                android:theme="@style/AppTheme.NoActionBar"></activity>
+
         <receiver android:name=".BatteryVoltageWidget">
             <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-                <action android:name="me.retrodaredevil.solarthing.android.service.solar-packet-collection"/>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="me.retrodaredevil.solarthing.android.service.solar-packet-collection" />
             </intent-filter>
 
             <meta-data
-                    android:name="android.appwidget.provider"
-                    android:resource="@xml/battery_voltage_widget_info"/>
+                android:name="android.appwidget.provider"
+                android:resource="@xml/battery_voltage_widget_info" />
         </receiver>
-        <receiver android:name=".WidgetHandler" android:permission="" tools:ignore="ExportedReceiver">
+        <receiver
+            android:name=".WidgetHandler"
+            android:permission=""
+            tools:ignore="ExportedReceiver">
             <intent-filter>
-                <action android:name="me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"/>
+                <action android:name="me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".CommandActivity">
-        </activity>
+        <activity android:name=".CommandActivity"></activity>
 
         <uses-library
-                android:name="org.apache.http.legacy"
-                android:required="false"/>
-
-<!--    TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware    -->
+            android:name="org.apache.http.legacy"
+            android:required="false" /> <!-- TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware -->
         <receiver
-                android:name=".BootReceiver"
-                android:directBootAware="true"
-                tools:targetApi="n">
+            android:name=".BootReceiver"
+            android:directBootAware="true"
+            tools:targetApi="n">
             <intent-filter>
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".SettingsActivity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
@@ -68,7 +74,7 @@
                 android:name=".service.PersistentService"
                 android:enabled="true"
                 android:exported="true"
-                android:permission="android.permission.BIND_JOB_SERVICE"/>
+                android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>
 
 </manifest>
