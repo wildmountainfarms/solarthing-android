@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import com.fasterxml.jackson.databind.node.ObjectNode
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
@@ -41,7 +42,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                     println("got json:")
                     println(json)
                     try {
-                        val packetGroup = PARSER.parse(MAPPER.valueToTree(json))
+                        val packetGroup = PARSER.parse(MAPPER.readTree(json) as ObjectNode)
                         val info = SolarPacketInfo(packetGroup, BatteryVoltageType.FIRST_PACKET) // TODO don't hard code BatteryVoltageType
                         onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
                     } catch(ex: PacketParseException){

@@ -46,6 +46,6 @@
     <string name="outhouse_group">Outhouse</string>
     <string name="outhouse_group_description">All notifications related to outhouse status</string>
 
-    <string name="appwidget_text">99.9</string>
+    <string name="appwidget_text">\?</string>
     <string name="add_widget">Add widget</string>
 </resources>

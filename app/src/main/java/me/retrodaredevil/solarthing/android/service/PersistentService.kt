@@ -110,7 +110,7 @@ class PersistentService : Service(), Runnable{
         val solarEventData = SolarEventData()
         services = listOf(
             ServiceObject(
-                SolarDataService(this, solarProfileManager, createMiscProfileProvider(this), solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
+                SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
                 SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                     ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                     ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),

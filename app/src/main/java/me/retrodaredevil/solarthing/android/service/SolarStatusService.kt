@@ -34,7 +34,7 @@ object SolarPacketCollectionBroadcast {
     const val JSON = "json"
 }
 
-class SolarDataService(
+class SolarStatusService(
     private val service: Service,
     private val solarProfileProvider: ProfileProvider<SolarProfile>,
     private val miscProfileProvider: ProfileProvider<MiscProfile>,

@@ -37,11 +37,12 @@ class SolarEventService(
 
     override fun onDataRequest(dataRequest: DataRequest) {
         val newPackets = dataRequest.packetGroupList
-        data.packetGroups.addAll(newPackets)
+        data.packetGroups = newPackets
         data.lastUpdate = System.currentTimeMillis()
         for(packetGroup in newPackets){
-            val dateMillis = packetGroup.dateMillis
+            val basicDateMillis = packetGroup.dateMillis
             for(packet in packetGroup.packets){
+                val dateMillis = packetGroup.getDateMillis(packet) ?: basicDateMillis
                 if(packet is MateCommandFeedbackPacket){
                     when(packet.packetType){
                         MateCommandFeedbackPacketType.MATE_COMMAND_SUCCESS -> doCommandNotify(packet as SuccessMateCommandPacket, dateMillis)
@@ -55,6 +56,18 @@ class SolarEventService(
                         SolarEventPacketType.FX_DAILY_DAY_END -> {
                             doFXDayEnd(packet as FXDayEndPacket, dateMillis)
                         }
+                        SolarEventPacketType.FX_AC_MODE_CHANGE -> {
+                            println("We will eventually implement a notification for generator turning on and off")
+                        }
+                        SolarEventPacketType.FX_AUX_STATE_CHANGE -> {
+                            println("We will eventually implement a notification for aux state changing (fx)")
+                        }
+                        SolarEventPacketType.MXFM_AUX_MODE_CHANGE -> {
+                            println("We will eventually implement a notification for aux state changing (mx)")
+                        }
+                        SolarEventPacketType.FX_OPERATIONAL_MODE_CHANGE, SolarEventPacketType.MXFM_CHARGER_MODE_CHANGE -> {}
+                        SolarEventPacketType.MXFM_RAW_DAY_END -> {}
+                        SolarEventPacketType.FX_ERROR_MODE_CHANGE, SolarEventPacketType.FX_WARNING_MODE_CHANGE, SolarEventPacketType.MXFM_ERROR_MODE_CHANGE -> {}
                         else -> println("We haven't implemented $packetType yet.")
                     }
                 }
@@ -140,9 +153,11 @@ class SolarEventService(
         data.lastTimeout = System.currentTimeMillis()
     }
 
-    override val updatePeriodType = UpdatePeriodType.SMALL_DATA
+    override val updatePeriodType = UpdatePeriodType.SMALL_DATA // it should always be small data
     override val startKey: Long
-        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
+        get() = System.currentTimeMillis() - (18 * 60 * 60 * 1000) // we want to make sure we always have all the data
+//        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
+
     override val shouldUpdate: Boolean
         get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service) || NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)
 
