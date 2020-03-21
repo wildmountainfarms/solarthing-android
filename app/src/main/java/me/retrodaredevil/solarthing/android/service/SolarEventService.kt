@@ -38,8 +38,7 @@ class SolarEventService(
     override fun onDataRequest(dataRequest: DataRequest) {
         val lastDateMillis = data.packetGroups.lastOrNull()?.dateMillis
         val receivedPackets = dataRequest.packetGroupList
-        data.packetGroups = receivedPackets
-        data.lastUpdate = System.currentTimeMillis()
+        data.onPacketReceive(receivedPackets)
         for(packetGroup in receivedPackets){
             val basicDateMillis = packetGroup.dateMillis
             if(lastDateMillis != null && basicDateMillis <= lastDateMillis){

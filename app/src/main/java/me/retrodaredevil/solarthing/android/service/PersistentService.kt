@@ -108,6 +108,8 @@ class PersistentService : Service(), Runnable{
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
         val solarEventData = SolarEventData()
+        val application = application as SolarThingApplication
+        application.solarEventData = solarEventData
         services = listOf(
             ServiceObject(
                 SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
