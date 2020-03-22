@@ -8,12 +8,22 @@
     tools:context=".EventDisplayActivity"
     tools:showIn="@layout/activity_event_display">
 
-<!--    We'll need this later: https://stackoverflow.com/questions/16699772/scrollview-can-host-only-one-direct-child-->
-
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/events_display_recycler_view"
-            android:scrollbars="vertical"
+    <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="wrap_content" android:orientation="vertical">
+        <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onRefreshClick"
+                android:text="Refresh"/>
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/events_display_last_updated_text" />
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/events_display_recycler_view"
+                android:scrollbars="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+    </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

@@ -174,7 +174,7 @@ object NotificationHandler {
                 floatStartedText +
                 "Charger: ${wattsToKilowattsString(info.generatorToBatteryWattage)} kW\n" +
                 "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
-                "Pass Thru: $passThru W\n" +
+                "Pass Thru: ${wattsToKilowattsString(passThru)} kW\n" +
                 "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.inputVoltage} + "\n" +
                 "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.chargerCurrent } + "\n" +
                 "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.buyCurrent }
