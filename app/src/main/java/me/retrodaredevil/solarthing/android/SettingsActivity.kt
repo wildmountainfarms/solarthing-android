@@ -234,8 +234,8 @@ class SettingsActivity : AppCompatActivity() {
         val uuid = solarProfileHeader.editUUID
         solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
         solarProfileManager.getProfile(uuid).let {
-            it.generatorFloatTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-            it.virtualFloatMinimumBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
+            it.voltageTimerTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
+            it.voltageTimerBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
             it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
             it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull()
             val position = batteryVoltageTypeSpinner.selectedItemPosition
@@ -284,8 +284,8 @@ class SettingsActivity : AppCompatActivity() {
         val name = solarProfileManager.getProfileName(uuid)
         solarProfileHeader.profileName = name
         profile.let {
-            generatorFloatHours.setText(it.generatorFloatTimeHours.toString())
-            virtualFloatModeMinimumBatteryVoltage.setText(it.virtualFloatMinimumBatteryVoltage?.toString() ?: "")
+            generatorFloatHours.setText(it.voltageTimerTimeHours.toString())
+            virtualFloatModeMinimumBatteryVoltage.setText(it.voltageTimerBatteryVoltage?.toString() ?: "")
             lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
             criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
 

@@ -9,12 +9,12 @@ class JsonSolarProfile(
     private val jsonSaver: JsonSaver
 ) : SolarProfile {
 
-    override var generatorFloatTimeHours: Float
+    override var voltageTimerTimeHours: Float
         get() = jsonSaver.getAsFloat(SaveKeys.generatorFloatTimeHours) ?: DefaultOptions.generatorFloatTimeHours
         set(value) {
             jsonSaver[SaveKeys.generatorFloatTimeHours] = value
         }
-    override var virtualFloatMinimumBatteryVoltage: Float?
+    override var voltageTimerBatteryVoltage: Float?
         get() = jsonSaver.getAsFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage)
         set(value) {
             jsonSaver[SaveKeys.virtualFloatModeMinimumBatteryVoltage] = value

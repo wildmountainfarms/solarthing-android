@@ -26,13 +26,18 @@ import me.retrodaredevil.solarthing.solar.outback.mx.event.MXErrorModeChangePack
 import java.text.DateFormat
 import java.util.*
 
+/*
+Some useful documentation: https://developer.android.com/guide/topics/ui/layout/recyclerview#kotlin
+https://developer.android.com/jetpack/androidx/releases/recyclerview
+ */
+
 private class MyViewHolder(
     view: View
 ) : RecyclerView.ViewHolder(view) {
-    val nameText = view.findViewById<TextView>(R.id.event_display_name)
-    val titleText = view.findViewById<TextView>(R.id.event_display_title)
-    val textText = view.findViewById<TextView>(R.id.event_display_text)
-    val timeText = view.findViewById<TextView>(R.id.event_display_time)
+    val nameText: TextView = view.findViewById(R.id.event_display_name)
+    val titleText: TextView = view.findViewById(R.id.event_display_title)
+    val textText: TextView = view.findViewById(R.id.event_display_text)
+    val timeText: TextView = view.findViewById(R.id.event_display_time)
 }
 private class ViewData(
     val name: String,

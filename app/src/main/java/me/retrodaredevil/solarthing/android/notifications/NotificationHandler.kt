@@ -23,6 +23,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.MiscMode
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingMode
 import me.retrodaredevil.solarthing.solar.outback.fx.event.FXDayEndPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -118,6 +119,10 @@ object NotificationHandler {
         }
         return r
     }
+    private fun millisToHoursString(millis: Long): String {
+        val hours = millis / (60 * 60 * 1000.0)
+        return Formatting.HUNDREDTHS.format(hours)
+    }
 
     /**
      * @param context the context
@@ -125,16 +130,15 @@ object NotificationHandler {
      * @param beginningACDropInfo The packet where the ac mode is [ACMode.AC_DROP] but packets before this packet the ac mode was [ACMode.NO_AC]
      * @param lastACDropInfo The last packet where the ac mode is [ACMode.AC_DROP]. This is normally the same as [lastACDropInfo] but may be a more recent packet
      * @param acUseInfo The first packet where the ac mode is [ACMode.AC_USE]. If [beginningACDropInfo] is not null, this should be right after it.
-     * @param floatModeActivatedInfo The packet where float or virtual float was activated
-     * @param generatorFloatTimeMillis The amount of time in milliseconds that the generator stays in float mode
+     * @param voltageTimerStartedInfo The packet where the voltage timer was started
+     * @param voltageTimerTimeMillis The amount of time in milliseconds for the voltage timer
      * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
      */
     fun createPersistentGenerator(
             context: Context, info: SolarPacketInfo,
             beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
             acUseInfo: SolarPacketInfo?,
-            floatModeActivatedInfo: SolarPacketInfo?,
-            generatorFloatTimeMillis: Long,
+            voltageTimerStartedInfo: SolarPacketInfo?,
             uncertainGeneratorStartInfo: Boolean
     ): Notification{
         val acMode = info.acMode
@@ -153,15 +157,11 @@ object NotificationHandler {
             "Last AC Drop at $time\n"
         } else ""
 
-        val floatStartedText = if(floatModeActivatedInfo != null){
+        val voltageTimerStartedText = if(voltageTimerStartedInfo != null){
             val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
-                GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time
+                GregorianCalendar().apply { timeInMillis = voltageTimerStartedInfo.dateMillis }.time
             )
-            if(floatModeActivatedInfo.isGeneratorInFloat(null)){
-                "Float start at $timeTurnedOnString\n"
-            } else {
-                "Virtual float start at $timeTurnedOnString\n"
-            }
+            "Voltage timer start at $timeTurnedOnString\n"
         } else {
             ""
         }
@@ -171,7 +171,7 @@ object NotificationHandler {
                 acDropStartString +
                 acUseStartString +
                 lastACDropString +
-                floatStartedText +
+                voltageTimerStartedText +
                 "Charger: ${wattsToKilowattsString(info.generatorToBatteryWattage)} kW\n" +
                 "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
                 "Pass Thru: ${wattsToKilowattsString(passThru)} kW\n" +
@@ -179,49 +179,76 @@ object NotificationHandler {
                 "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.chargerCurrent } + "\n" +
                 "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.buyCurrent }
 
-        val title = if(acUseInfo == null){
-            "Generator Starting"
-        } else {
-            val onText = if(acMode == ACMode.AC_DROP) "DROP" else "ON"
-            "Generator $onText | " + when {
-                info.fxMap.values.any { OperationalMode.FLOAT.isActive(it.operationalModeValue) } -> "float charge"
-                info.fxMap.values.any { OperationalMode.EQ.isActive(it.operationalModeValue) } -> "EQ charge"
-                info.fxMap.values.any { OperationalMode.CHARGE.isActive(it.operationalModeValue) } -> "charging"
-                else -> "not charging"
-            }
-        }
-
         val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_PERSISTENT.id, GENERATOR_PERSISTENT_ID)
             .setSmallIcon(R.drawable.solar_panel)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
-            .setContentTitle(title)
             .setContentText("charger:${wattsToKilowattsString(info.generatorToBatteryWattage)} total:${wattsToKilowattsString(info.generatorTotalWattage)} pass thru:${wattsToKilowattsString(passThru)}")
             .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
             .setShowWhen(true)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-//            builder.setSortKey("c")
-//        }
+
+        val title = if(acUseInfo == null){
+            builder.setWhen(beginningACDropInfo!!.dateMillis)
+            "Generator Starting"
+        } else {
+            var remainingTime: Long? = null
+            if(acMode == ACMode.AC_USE){
+                val operationalMode = (info.masterFXStatusPacket ?: error("AC Mode is use, we should have a master FX!")).operationalMode
+
+                val fxChargingPacket = info.fxChargingPacket
+                if(fxChargingPacket != null){
+                    "Generator | " + when(val mode = fxChargingPacket.fxChargingMode){
+                        FXChargingMode.BULK_TO_ABSORB -> "Bulk"
+                        FXChargingMode.BULK_TO_EQ -> "Bulk to EQ"
+                        FXChargingMode.ABSORB -> {
+                            remainingTime = fxChargingPacket.remainingAbsorbTimeMillis
+                            "Absorb (${millisToHoursString(remainingTime)})"
+                        }
+                        FXChargingMode.EQ -> {
+                            remainingTime = fxChargingPacket.remainingEqualizeTimeMillis
+                            "EQ (${millisToHoursString(remainingTime)})"
+                        }
+                        FXChargingMode.SILENT -> "not charging (Silent)"
+                        FXChargingMode.REFLOAT -> "ReFloat"
+                        FXChargingMode.FLOAT -> {
+                            remainingTime = fxChargingPacket.remainingFloatTimeMillis
+                            "Float (${millisToHoursString(remainingTime)})"
+                        }
+                        null -> "not charging (${operationalMode.modeName})"
+                        else -> error("Unsupported mode: $mode")
+                    }
+                } else {
+                    "Generator | " + when (operationalMode) {
+                        OperationalMode.FLOAT -> "ReFloat/Float"
+                        OperationalMode.EQ -> "Bulk/EQ"
+                        OperationalMode.CHARGE -> "Bulk/Absorb"
+                        else -> "not charging (${operationalMode.modeName})"
+                    }
+                }.also {
+                    if (remainingTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        builder.setWhen(info.dateMillis + remainingTime)
+                        builder.setUsesChronometer(true)
+                        builder.setChronometerCountDown(true)
+                    } else {
+                        builder.setWhen(acUseInfo.dateMillis)
+                    }
+                }
+            } else { // DROP
+                builder.setWhen(acUseInfo.dateMillis)
+                "Generator DROP"
+            }
+        }
+        builder.setContentTitle(title)
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setColor(0x654321) // brown
-        }
-        if(floatModeActivatedInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
-            builder.setWhen(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis)
-            builder.setUsesChronometer(true)
-            builder.setChronometerCountDown(true)
-        } else {
-            if(acUseInfo != null) {
-                builder.setWhen(acUseInfo.dateMillis)
-            } else {
-                builder.setWhen(beginningACDropInfo!!.dateMillis)
-            }
-            builder.setUsesChronometer(true)
         }
         return builder.build()
     }
 
     private fun getDeviceString(info: SolarPacketInfo, packet: DocumentedPacket<*>, includeParenthesis: Boolean = true): String{
+        @Suppress("UsePropertyAccessSyntax")
         val r = when(val packetType = packet.getPacketType()){
             SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
             SolarStatusPacketType.MXFM_STATUS, SolarExtraPacketType.MXFM_DAILY -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"

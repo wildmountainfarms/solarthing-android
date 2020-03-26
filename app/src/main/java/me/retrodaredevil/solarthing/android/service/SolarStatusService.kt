@@ -183,14 +183,16 @@ class SolarStatusService(
         if(beginningACDropInfo != null && acUseInfo != null && beginningACDropInfo.dateMillis > acUseInfo.dateMillis){
             beginningACDropInfo = null // beginningACDropInfo didn't actually happen before AC Use started so set it to null
         }
-        var floatModeActivatedInfo: SolarPacketInfo? = null
+        var voltageTimerActivatedInfo: SolarPacketInfo? = null
         val activeSolarProfile = solarProfileProvider.activeProfile
-        val virtualFloatModeMinimumBatteryVoltage = activeSolarProfile.virtualFloatMinimumBatteryVoltage
-        for (info in packetInfoCollection.reversed()) { // latest packets to oldest
-            if (!info.isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage)) {
-                break
+        val voltageTimerBatteryVoltage = activeSolarProfile.voltageTimerBatteryVoltage
+        if(voltageTimerBatteryVoltage != null && currentInfo.acMode == ACMode.AC_USE){ // TODO make this happen in any AC mode and remove from generator notification
+            for (info in packetInfoCollection.reversed()) { // latest packets to oldest
+                if (!info.isBatteryVoltageAboveSetpoint(voltageTimerBatteryVoltage)) {
+                    break
+                }
+                voltageTimerActivatedInfo = info
             }
-            floatModeActivatedInfo = info // get the oldest packet where all the packets up to the current packet have float mode active (the packet where float mode started)
         }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
@@ -214,8 +216,7 @@ class SolarStatusService(
                 NotificationHandler.createPersistentGenerator(
                     service, currentInfo,
                     beginningACDropInfo, lastACDropInfo, acUseInfo,
-                    floatModeActivatedInfo,
-                    (activeSolarProfile.generatorFloatTimeHours * 60 * 60 * 1000).toLong(), uncertainGeneratorStartInfo
+                    voltageTimerActivatedInfo, uncertainGeneratorStartInfo
                 )
             )
         } else {
@@ -283,18 +284,18 @@ class SolarStatusService(
 
 
         // region Generator float timer notification
-        if(floatModeActivatedInfo != null){
+        if(voltageTimerActivatedInfo != null){
             // check to see if we should send a notification
-            val generatorFloatTimeMillis = (activeSolarProfile.generatorFloatTimeHours * 60 * 60 * 1000).toLong()
+            val generatorFloatTimeMillis = (activeSolarProfile.voltageTimerTimeHours * 60 * 60 * 1000).toLong()
             val now = System.currentTimeMillis()
-            if(floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
+            if(voltageTimerActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
                 val last = lastFloatGeneratorNotification
                 if (last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                     service.getManager().notify(
                         GENERATOR_FLOAT_NOTIFICATION_ID,
                         NotificationHandler.createFloatGeneratorAlert(
                             service.applicationContext,
-                            floatModeActivatedInfo, currentInfo, generatorFloatTimeMillis
+                            voltageTimerActivatedInfo, currentInfo, generatorFloatTimeMillis
                         )
                     )
                     lastFloatGeneratorNotification = now

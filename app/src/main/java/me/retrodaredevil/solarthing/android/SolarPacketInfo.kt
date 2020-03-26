@@ -12,7 +12,9 @@ import me.retrodaredevil.solarthing.solar.common.DailyChargeController
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
+import me.retrodaredevil.solarthing.solar.outback.OutbackUtil
 import me.retrodaredevil.solarthing.solar.outback.fx.*
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -53,6 +55,9 @@ class SolarPacketInfo(
 
     val dailyFXMap: Map<Identifier, DailyFXPacket>
     val dailyMXMap: Map<Identifier, DailyMXPacket>
+
+    val masterFXStatusPacket: FXStatusPacket?
+    val fxChargingPacket: FXChargingPacket?
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -98,6 +103,7 @@ class SolarPacketInfo(
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
         dailyMXMap = LinkedHashMap()
+        var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
             if(packet is SolarStatusPacket){
                 deviceMap[packet.identifier] = packet
@@ -138,29 +144,31 @@ class SolarPacketInfo(
                         dailyMXMap[packet.identifier.supplementaryTo] = packet
                         dailyChargeControllerMap[packet.identifier.supplementaryTo] = packet
                     }
+                    SolarExtraPacketType.FX_CHARGING -> {
+                        packet as FXChargingPacket
+                        fxChargingPacket = packet
+                    }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unimplemented packet type: ${packet.packetType}")
                 }
             }
         }
+        masterFXStatusPacket = OutbackUtil.getMasterFX(fxMap.values) // TODO there may be a better way to indicate the master in the main solarthing codebase
+        this.fxChargingPacket = fxChargingPacket
         batteryVoltage = when(batteryVoltageType){
             BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
             BatteryVoltageType.FIRST_PACKET -> batteryMap.values.first().batteryVoltage
             BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxBy { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
-            BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.first { it is OutbackData }.batteryVoltage
-            BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.first().batteryVoltage
-        }
+            BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.firstOrNull { it is OutbackData }?.batteryVoltage
+            BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.firstOrNull()?.batteryVoltage
+        } ?: batteryMap.values.first().batteryVoltage
         batteryVoltageString = Formatting.TENTHS.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acMode else ACMode.NO_AC
-        generatorChargingBatteries = if(fxMap.isEmpty()) false else fxMap.values.any {
-            OperationalMode.CHARGE.isActive(it.operationalModeValue)
-                    || OperationalMode.FLOAT.isActive(it.operationalModeValue)
-                    || OperationalMode.EQ.isActive(it.operationalModeValue)
-        }
+        generatorChargingBatteries = if(masterFXStatusPacket == null) false else masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
         load = fxMap.values.sumBy { it.inverterWattage }
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
         generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
@@ -172,8 +180,7 @@ class SolarPacketInfo(
         dailyFXInfo = if(dailyFXMap.isEmpty()){
             null
         } else {
-            DailyFXInfo(
-                    dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat(),
+            DailyFXInfo(dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat(),
                     dailyFXMap.values.sumByDouble { it.buyKWH.toDouble() }.toFloat(),
                     dailyFXMap.values.sumByDouble { it.chargerKWH.toDouble() }.toFloat(),
                     dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat()
@@ -182,27 +189,15 @@ class SolarPacketInfo(
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningModeValue) } }
         hasWarnings = fxMap.isNotEmpty()
-        errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorModeValue) } }
-                + MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorModeValue) } }
-                + RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
+        errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorModeValue) } } +
+                MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorModeValue) } } +
+                RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
     }
 
-    @Deprecated("")
-    val pvWattageString by lazy { pvWattage.toString() }
     val dailyKWHoursString: String by lazy { Formatting.FORMAT.format(dailyKWHours) }
 
-    /**
-     * Because older firmware doesn't always report the FXs being in float mode, we can use a custom battery voltage
-     * check to see if they should be in float mode.
-     * @param virtualFloatModeMinimumBatteryVoltage The minimum battery voltage this needs for this method to return true
-     *                                              or null to only check the FXs for being in float mode
-     * @return true if any of the FXs are in float mode or if the batteryVoltage >= virtualFloatModeMinimumBatteryVoltage
-     */
-    fun isGeneratorInFloat(virtualFloatModeMinimumBatteryVoltage: Float?): Boolean {
-        if(virtualFloatModeMinimumBatteryVoltage != null && batteryVoltage >= virtualFloatModeMinimumBatteryVoltage && acMode == ACMode.AC_USE){
-            return true
-        }
-        return fxMap.values.any { OperationalMode.FLOAT.isActive(it.operationalModeValue) }
+    fun isBatteryVoltageAboveSetpoint(setpointVoltage: Float): Boolean {
+        return batteryVoltage >= setpointVoltage
     }
 
     override fun equals(other: Any?): Boolean {
