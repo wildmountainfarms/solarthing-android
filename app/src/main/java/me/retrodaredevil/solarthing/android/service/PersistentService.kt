@@ -141,7 +141,7 @@ class PersistentService : Service(), Runnable{
         val builder = getBuilder()
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.horse)
+            .setSmallIcon(R.drawable.sun)
             .setContentTitle("SolarThing service is running")
             .setContentText("${services.count { it.dataService.shouldUpdate }} service(s) are running")
             .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
@@ -164,7 +164,7 @@ class PersistentService : Service(), Runnable{
             // buttons
             builder.addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.horse),
+                    Icon.createWithResource(this, R.drawable.sun),
                     "Stop",
                     PendingIntent.getBroadcast(
                         this, 0,
@@ -175,7 +175,7 @@ class PersistentService : Service(), Runnable{
             )
             builder.addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.horse),
+                    Icon.createWithResource(this, R.drawable.sun),
                     "Reload",
                     PendingIntent.getBroadcast(
                         this, 0,
@@ -186,7 +186,7 @@ class PersistentService : Service(), Runnable{
             )
             builder.addAction(
                 Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.horse),
+                    Icon.createWithResource(this, R.drawable.sun),
                     "Restart",
                     PendingIntent.getBroadcast(
                         this, 0,
@@ -298,7 +298,9 @@ class PersistentService : Service(), Runnable{
         }
         println("Stopping persistent service")
         handler.removeCallbacks(this)
-        unregisterReceiver(receiver)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            unregisterReceiver(receiver)
+        }
         for(service in services){
             service.task?.cancel(true)
             service.dataService.onCancel()

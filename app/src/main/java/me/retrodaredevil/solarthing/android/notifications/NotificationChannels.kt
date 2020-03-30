@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.graphics.Color
 import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import me.retrodaredevil.solarthing.android.R
 
 @TargetApi(Build.VERSION_CODES.N)
@@ -79,16 +80,20 @@ enum class NotificationChannels(
     fun getDescription(context: Context): String = context.getString(descriptionResId)
 
     fun isCurrentlyEnabled(context: Context): Boolean {
-        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            if(notificationChannelGroups != null){
-                if(manager.getNotificationChannelGroup(notificationChannelGroups.id).isBlocked){
-                    return false
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if(notificationChannelGroups != null){
+                    if(manager.getNotificationChannelGroup(notificationChannelGroups.id).isBlocked){
+                        return false
+                    }
                 }
+                val importance = manager.getNotificationChannel(this.id).importance
+                return importance != NotificationManager.IMPORTANCE_NONE
             }
-            val importance = manager.getNotificationChannel(this.id).importance
-            return importance != NotificationManager.IMPORTANCE_NONE
+            return manager.areNotificationsEnabled()
         }
-        return manager.areNotificationsEnabled()
+        val notificationManagerCompat = NotificationManagerCompat.from(context)
+        return notificationManagerCompat.areNotificationsEnabled()
     }
 }
