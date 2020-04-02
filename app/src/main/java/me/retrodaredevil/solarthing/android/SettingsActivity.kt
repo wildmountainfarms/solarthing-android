@@ -44,8 +44,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var subsequentRequestTimeout: EditText
 
 
-    private lateinit var generatorFloatHours: EditText
-    private lateinit var virtualFloatModeMinimumBatteryVoltage: EditText
+    private lateinit var voltageTimerHours: EditText
+    private lateinit var voltageTimerBatteryVoltage: EditText
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
     private lateinit var batteryVoltageTypeSpinner: Spinner
@@ -92,14 +92,14 @@ class SettingsActivity : AppCompatActivity() {
         username = findViewById(R.id.username)
         password = findViewById(R.id.password)
         useAuth = findViewById(R.id.use_auth)
-        generatorFloatHours = findViewById(R.id.generator_float_hours)
+        voltageTimerHours = findViewById(R.id.voltage_timer_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
         maxFragmentTime = findViewById(R.id.max_fragment_time)
         lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
         batteryVoltageTypeSpinner = findViewById(R.id.battery_type_spinner)
-        virtualFloatModeMinimumBatteryVoltage = findViewById(R.id.virtual_float_mode_minimum_battery_voltage)
+        voltageTimerBatteryVoltage = findViewById(R.id.voltage_timer_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
 
@@ -234,8 +234,8 @@ class SettingsActivity : AppCompatActivity() {
         val uuid = solarProfileHeader.editUUID
         solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
         solarProfileManager.getProfile(uuid).let {
-            it.voltageTimerTimeHours = generatorFloatHours.text.toString().toFloatOrNull() ?: DefaultOptions.generatorFloatTimeHours
-            it.voltageTimerBatteryVoltage = virtualFloatModeMinimumBatteryVoltage.text.toString().toFloatOrNull()
+            it.voltageTimerTimeHours = voltageTimerHours.text.toString().toFloatOrNull() ?: DefaultOptions.voltageTimerTimeHours
+            it.voltageTimerBatteryVoltage = voltageTimerBatteryVoltage.text.toString().toFloatOrNull()
             it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
             it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull()
             val position = batteryVoltageTypeSpinner.selectedItemPosition
@@ -284,8 +284,8 @@ class SettingsActivity : AppCompatActivity() {
         val name = solarProfileManager.getProfileName(uuid)
         solarProfileHeader.profileName = name
         profile.let {
-            generatorFloatHours.setText(it.voltageTimerTimeHours.toString())
-            virtualFloatModeMinimumBatteryVoltage.setText(it.voltageTimerBatteryVoltage?.toString() ?: "")
+            voltageTimerHours.setText(it.voltageTimerTimeHours.toString())
+            voltageTimerBatteryVoltage.setText(it.voltageTimerBatteryVoltage?.toString() ?: "")
             lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
             criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
 

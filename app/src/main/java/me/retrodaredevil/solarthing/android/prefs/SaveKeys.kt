@@ -15,7 +15,7 @@ object SaveKeys{
         const val ssid = "ssid"
     }
 
-    const val generatorFloatTimeHours = "generator_float_hours"
+    const val voltageTimerTimeHours = "generator_float_hours" // use this save key for backwards compatibility // we will probably stop using this in the future anyway
 
     const val initialRequestTimeSeconds = "initial_request_timeout"
     const val subsequentRequestTimeSeconds = "subsequent_request_timeout"
@@ -24,7 +24,7 @@ object SaveKeys{
 
     const val maxFragmentTimeMinutes = "max_fragment_time"
 
-    const val virtualFloatModeMinimumBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
+    const val voltageTimerBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
 
     const val lowBatteryVoltage = "low_battery_voltage"
     const val criticalBatteryVoltage = "critical_battery_voltage"

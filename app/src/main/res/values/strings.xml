@@ -5,9 +5,8 @@
     <string name="commands_select">Commands</string>
 
     <string name="generator_done_notification">Generator Done Alert</string>
-    <string name="generator_done_notification_description">Sends an alert when the generator should be turned off when
-        it has stopped charging the batteries or is done with float mode
-    </string>
+    <string name="generator_done_notification_description">Sends an alert when the generator stopped charging the batteries</string>
+
     <string name="battery_notification">Low Battery Alert</string>
     <string name="battery_notification_description">Sends an alert when the battery voltage is below a configurable
         value

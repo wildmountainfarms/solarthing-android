@@ -15,7 +15,7 @@ object DefaultOptions {
         val ssid: String? = null
     }
 
-    const val generatorFloatTimeHours = 1.5F
+    const val voltageTimerTimeHours = 1.5F
 
     const val importantAlertIntervalMillis = 5 * 60 * 1000L
 

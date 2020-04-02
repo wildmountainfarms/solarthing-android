@@ -49,23 +49,24 @@ object NotificationHandler {
         return "<span style=\"white-space: nowrap\">$string</span>"
     }
 
-    fun createFloatGeneratorAlert(context: Context, floatModeActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, generatorFloatTimeMillis: Long): Notification {
-        val shouldHaveTurnedOffAt = floatModeActivatedInfo.dateMillis + generatorFloatTimeMillis
+    fun createVoltageTimerAlert(context: Context, voltageTimerActivatedInfo: SolarPacketInfo, currentInfo: SolarPacketInfo, voltageTimerTimeMillis: Long): Notification {
+        val shouldHaveTurnedOffAt = voltageTimerActivatedInfo.dateMillis + voltageTimerTimeMillis
         val now = System.currentTimeMillis()
         if(now < shouldHaveTurnedOffAt){
             throw IllegalArgumentException("The generator alert should be to alert someone to turn it off! " +
                     "Not to alert them when in the future they should turn it off.")
         }
         val turnedOnAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
-                .format(GregorianCalendar().apply { timeInMillis = floatModeActivatedInfo.dateMillis }.time)
+                .format(GregorianCalendar().apply { timeInMillis = voltageTimerActivatedInfo.dateMillis }.time)
         val turnOffAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
                 .format(GregorianCalendar().apply { timeInMillis = shouldHaveTurnedOffAt }.time)
 
-        val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+        // TODO make this use a different NotificationChannel
+        val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, VOLTAGE_TIMER_NOTIFICATION_ID)
                 .setSmallIcon(R.drawable.power_button)
                 .setContentTitle("Generator")
                 .setContentText("Should have turned off at $turnOffAtString!")
-                .setSubText("Float started at $turnedOnAtString")
+                .setSubText("Voltage Timer started at $turnedOnAtString")
                 .setWhen(shouldHaveTurnedOffAt)
                 .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -79,7 +80,7 @@ object NotificationHandler {
         val stoppedChargingAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
                 .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_FLOAT_NOTIFICATION_ID)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, VOLTAGE_TIMER_NOTIFICATION_ID)
                 .setSmallIcon(R.drawable.power_button)
                 .setContentTitle("Generator")
                 .setContentText("The generator stopped charging the batteries")

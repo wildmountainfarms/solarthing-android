@@ -51,7 +51,7 @@ class SolarStatusService(
     private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
     private var packetInfoCollection: Collection<SolarPacketInfo> = emptySet()
     private var lastPacketInfo: SolarPacketInfo? = null
-    private var lastFloatGeneratorNotification: Long? = null
+    private var lastVoltageTimerNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
     private var lastLowBatteryNotification: Long? = null
     private var lastCriticalBatteryNotification: Long? = null
@@ -79,7 +79,7 @@ class SolarStatusService(
             cancel(SOLAR_NOTIFICATION_ID)
             cancel(GENERATOR_PERSISTENT_ID)
         }
-        cancelFloatGeneratorNotification()
+        cancelVoltageTimerNotification()
     }
 
     override fun onEnd() {
@@ -286,26 +286,26 @@ class SolarStatusService(
         // region Generator float timer notification
         if(voltageTimerActivatedInfo != null){
             // check to see if we should send a notification
-            val generatorFloatTimeMillis = (activeSolarProfile.voltageTimerTimeHours * 60 * 60 * 1000).toLong()
+            val voltageTimerTimeMillis = (activeSolarProfile.voltageTimerTimeHours * 60 * 60 * 1000).toLong()
             val now = System.currentTimeMillis()
-            if(voltageTimerActivatedInfo.dateMillis + generatorFloatTimeMillis < now) { // should it be turned off?
-                val last = lastFloatGeneratorNotification
+            if(voltageTimerActivatedInfo.dateMillis + voltageTimerTimeMillis < now) { // should it be turned off?
+                val last = lastVoltageTimerNotification
                 if (last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                     service.getManager().notify(
-                        GENERATOR_FLOAT_NOTIFICATION_ID,
-                        NotificationHandler.createFloatGeneratorAlert(
+                        VOLTAGE_TIMER_NOTIFICATION_ID,
+                        NotificationHandler.createVoltageTimerAlert(
                             service.applicationContext,
-                            voltageTimerActivatedInfo, currentInfo, generatorFloatTimeMillis
+                            voltageTimerActivatedInfo, currentInfo, voltageTimerTimeMillis
                         )
                     )
-                    lastFloatGeneratorNotification = now
+                    lastVoltageTimerNotification = now
                 }
             } else {
-                cancelFloatGeneratorNotification()
+                cancelVoltageTimerNotification()
             }
         } else {
             // reset the generator notification because the generator is either off or not in float mode
-            cancelFloatGeneratorNotification()
+            cancelVoltageTimerNotification()
         }
         // endregion
 
@@ -356,9 +356,9 @@ class SolarStatusService(
         }
         return true
     }
-    private fun cancelFloatGeneratorNotification(){
-        service.getManager().cancel(GENERATOR_FLOAT_NOTIFICATION_ID)
-        lastFloatGeneratorNotification = null
+    private fun cancelVoltageTimerNotification(){
+        service.getManager().cancel(VOLTAGE_TIMER_NOTIFICATION_ID)
+        lastVoltageTimerNotification = null
     }
     private fun cancelDoneGeneratorNotification(){
         service.getManager().cancel(GENERATOR_DONE_NOTIFICATION_ID)

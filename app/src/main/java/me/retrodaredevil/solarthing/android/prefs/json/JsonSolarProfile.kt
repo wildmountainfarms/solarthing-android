@@ -10,14 +10,14 @@ class JsonSolarProfile(
 ) : SolarProfile {
 
     override var voltageTimerTimeHours: Float
-        get() = jsonSaver.getAsFloat(SaveKeys.generatorFloatTimeHours) ?: DefaultOptions.generatorFloatTimeHours
+        get() = jsonSaver.getAsFloat(SaveKeys.voltageTimerTimeHours) ?: DefaultOptions.voltageTimerTimeHours
         set(value) {
-            jsonSaver[SaveKeys.generatorFloatTimeHours] = value
+            jsonSaver[SaveKeys.voltageTimerTimeHours] = value
         }
     override var voltageTimerBatteryVoltage: Float?
-        get() = jsonSaver.getAsFloat(SaveKeys.virtualFloatModeMinimumBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage)
+        get() = jsonSaver.getAsFloat(SaveKeys.voltageTimerBatteryVoltage, DefaultOptions.virtualFloatModeMinimumBatteryVoltage)
         set(value) {
-            jsonSaver[SaveKeys.virtualFloatModeMinimumBatteryVoltage] = value
+            jsonSaver[SaveKeys.voltageTimerBatteryVoltage] = value
         }
     override var lowBatteryVoltage: Float?
         get() = jsonSaver.getAsFloat(SaveKeys.lowBatteryVoltage, DefaultOptions.lowBatteryVoltage)

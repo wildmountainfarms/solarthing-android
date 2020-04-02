@@ -26,6 +26,7 @@ Known Bugs:
   * Also remove load information when there are only charge controller packets
 * Clearable notifications for errors
 * **Low/High temperature notifications**
+* Multiple configurable voltage timers
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's

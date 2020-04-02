@@ -113,14 +113,14 @@
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
                 android:ems="10"
-                android:id="@+id/generator_float_hours" android:hint="Generator Float Hours"/>
+                android:id="@+id/voltage_timer_hours" android:hint="Voltage Timer Hours"/>
         <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
                 android:ems="10"
-                android:id="@+id/virtual_float_mode_minimum_battery_voltage"
-                android:hint="Virtual Float Mode Minimum Battery Voltage"/>
+                android:id="@+id/voltage_timer_battery_voltage"
+                android:hint="Voltage Timer Battery Voltage"/>
         <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
