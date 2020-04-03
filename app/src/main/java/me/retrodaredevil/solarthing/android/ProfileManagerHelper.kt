@@ -4,10 +4,10 @@ import android.content.Context
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.android.prefs.*
-import me.retrodaredevil.solarthing.android.prefs.json.JsonConnectionProfile
-import me.retrodaredevil.solarthing.android.prefs.json.JsonProfileManager
-import me.retrodaredevil.solarthing.android.prefs.json.JsonSolarProfile
-import me.retrodaredevil.solarthing.android.prefs.json.PreferencesJsonSaver
+import me.retrodaredevil.solarthing.android.prefs.gson.JsonConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.gson.JsonProfileManager
+import me.retrodaredevil.solarthing.android.prefs.gson.JsonSolarProfile
+import me.retrodaredevil.solarthing.android.prefs.gson.PreferencesJsonSaver
 import java.util.*
 
 private const val SHARED_PREFERENCES = "profiles_preferences"

@@ -1,7 +1,8 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import com.google.gson.JsonObject
 
+@Deprecated("This is part of the old prefs code")
 class NestedJsonSaver(
     private val jsonObjectGetter: () -> JsonObject,
     private val doReload: () -> Unit,

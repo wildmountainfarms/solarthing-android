@@ -1,10 +1,11 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import com.google.gson.JsonObject
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import java.util.*
 import kotlin.NoSuchElementException
 
+@Deprecated("This is part of the old prefs code")
 class JsonProfileManager<T>(
     private val jsonSaver: JsonSaver,
     private val newProfileJsonCreator: () -> JsonObject,

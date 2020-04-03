@@ -1,8 +1,9 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
+@Deprecated("This is part of the old prefs code")
 interface JsonSaver {
     val jsonObject: JsonObject
     fun reload()

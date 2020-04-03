@@ -1,7 +1,8 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import me.retrodaredevil.solarthing.android.prefs.*
 
+@Deprecated("This is part of the old prefs code")
 class JsonConnectionProfile(
     private val jsonSaver: JsonSaver
 ) : ConnectionProfile {
@@ -28,6 +29,7 @@ class JsonConnectionProfile(
         set(value) = TODO("not implemented")
 
 }
+@Deprecated("This is part of the old prefs code")
 internal class JsonDatabaseConnectionProfile(
     private val jsonSaver: JsonSaver
 ) : CouchDbDatabaseConnectionProfile {
@@ -63,6 +65,7 @@ internal class JsonDatabaseConnectionProfile(
             jsonSaver[SaveKeys.CouchDb.useAuth] = value
         }
 }
+@Deprecated("This is part of the old prefs code")
 internal class JsonNetworkSwitchingProfile(
     private val jsonSaver: JsonSaver
 ) : NetworkSwitchingProfile {

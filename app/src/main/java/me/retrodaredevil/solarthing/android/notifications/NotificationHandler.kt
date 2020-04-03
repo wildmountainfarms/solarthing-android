@@ -80,7 +80,7 @@ object NotificationHandler {
         val stoppedChargingAtString = DateFormat.getTimeInstance(DateFormat.SHORT)
                 .format(GregorianCalendar().apply { timeInMillis = stoppedChargingAt }.time)
 
-        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, VOLTAGE_TIMER_NOTIFICATION_ID)
+        return createNotificationBuilder(context, NotificationChannels.GENERATOR_DONE_NOTIFICATION.id, GENERATOR_DONE_NOTIFICATION_ID)
                 .setSmallIcon(R.drawable.power_button)
                 .setContentTitle("Generator")
                 .setContentText("The generator stopped charging the batteries")

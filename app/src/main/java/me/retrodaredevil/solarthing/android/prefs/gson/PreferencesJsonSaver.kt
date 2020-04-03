@@ -1,9 +1,10 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import android.content.SharedPreferences
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 
+@Deprecated("This is part of the old prefs code")
 class PreferencesJsonSaver(
     private val sharedPreferences: SharedPreferences,
     private val preferencesKey: String,

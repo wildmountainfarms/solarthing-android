@@ -1,10 +1,11 @@
-package me.retrodaredevil.solarthing.android.prefs.json
+package me.retrodaredevil.solarthing.android.prefs.gson
 
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.SaveKeys
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 
+@Deprecated("This is part of the old prefs code")
 class JsonSolarProfile(
     private val jsonSaver: JsonSaver
 ) : SolarProfile {

@@ -27,6 +27,7 @@ Known Bugs:
 * Clearable notifications for errors
 * **Low/High temperature notifications**
 * Multiple configurable voltage timers
+* OTG Cable Outback MATE Serial display
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
