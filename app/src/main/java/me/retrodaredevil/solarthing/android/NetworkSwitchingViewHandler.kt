@@ -11,8 +11,7 @@ import me.retrodaredevil.solarthing.android.prefs.NetworkSwitchingProfile
 class NetworkSwitchingViewHandler(
     private val context: Context,
     view: View,
-    private val networkSwitchingProfileGetter: () -> NetworkSwitchingProfile,
-    requestCoarseLocation: () -> Unit
+    requestFineLocation: () -> Unit
 ) {
     private val isEnabledCheckBox: CheckBox = view.findViewById(R.id.is_enabled)
     private val isBackupCheckBox: CheckBox = view.findViewById(R.id.is_backup)
@@ -33,20 +32,15 @@ class NetworkSwitchingViewHandler(
                 networkSSID = getSSID(context)
                 updateCurrentNetwork()
             } catch (ex: SSIDPermissionException){
-                requestCoarseLocation()
+                requestFineLocation()
             } catch(ex: SSIDNotAvailable){
                 Toast.makeText(context, "SSID currently not available. Is location enabled?", Toast.LENGTH_LONG).show()
             }
         }
     }
-    fun save(){
-        val profile = networkSwitchingProfileGetter()
-        profile.isEnabled = isEnabledCheckBox.isChecked
-        profile.isBackup = isBackupCheckBox.isChecked
-        profile.ssid = networkSSID
-    }
-    fun load(){
-        val profile = networkSwitchingProfileGetter()
+    fun getNetworkSwitchingProfile() = NetworkSwitchingProfile(isEnabledCheckBox.isChecked, isBackupCheckBox.isChecked, networkSSID)
+
+    fun load(profile: NetworkSwitchingProfile){
         val isEnabled = profile.isEnabled
         val isBackup = profile.isBackup
         isEnabledCheckBox.isChecked = isEnabled

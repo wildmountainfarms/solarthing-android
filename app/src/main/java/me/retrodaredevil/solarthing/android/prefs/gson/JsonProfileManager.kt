@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android.prefs.gson
 
 import com.google.gson.JsonObject
+import me.retrodaredevil.solarthing.android.prefs.ProfileHolder
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import java.util.*
 import kotlin.NoSuchElementException
@@ -9,10 +10,10 @@ import kotlin.NoSuchElementException
 class JsonProfileManager<T>(
     private val jsonSaver: JsonSaver,
     private val newProfileJsonCreator: () -> JsonObject,
-    private val profileCreator: (JsonSaver) -> T
+    private val profileCreator: (JsonSaver) -> ProfileHolder<T>
 ) : ProfileManager<T> {
 
-    private val profileMapCache: MutableMap<UUID, T> = HashMap()
+    private val profileMapCache: MutableMap<UUID, ProfileHolder<T>> = HashMap()
 
     override fun getProfileName(uuid: UUID): String {
         return (getJsonProfile(uuid, reload = true) ?: throw NoSuchElementException("No such profile with uuid: $uuid"))["name"].asString
@@ -34,7 +35,7 @@ class JsonProfileManager<T>(
             println("Setting active UUID to: $value")
             jsonSaver["active"] = value.toString()
         }
-    override val activeProfile: T
+    override val activeProfile: ProfileHolder<T>
         get() = getProfile(activeUUID)
     override val activeProfileName: String
         get() = (getJsonProfile(activeUUID, reload = true) ?: error("No json profile with active UUID!"))["name"].asString
@@ -79,7 +80,7 @@ class JsonProfileManager<T>(
         return null
     }
 
-    override fun addAndCreateProfile(name: String): Pair<UUID, T> {
+    override fun addAndCreateProfile(name: String): Pair<UUID, ProfileHolder<T>> {
         val uuid = UUID.randomUUID()
         val array = jsonSaver.reloadedJsonObject["profiles"].asJsonArray
         val jsonObject = JsonObject()
@@ -116,7 +117,7 @@ class JsonProfileManager<T>(
         jsonSaver.save()
     }
 
-    override fun getProfile(uuid: UUID): T {
+    override fun getProfile(uuid: UUID): ProfileHolder<T> {
         return profileMapCache[uuid] ?: run {
             reloadProfiles()
             profileMapCache[uuid] ?: throw NoSuchElementException("No such uuid: $uuid map: $profileMapCache")

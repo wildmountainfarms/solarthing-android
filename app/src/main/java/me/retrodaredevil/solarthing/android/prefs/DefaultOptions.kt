@@ -15,6 +15,7 @@ object DefaultOptions {
         val ssid: String? = null
     }
 
+    @Deprecated("Not using this anymore")
     const val voltageTimerTimeHours = 1.5F
 
     const val importantAlertIntervalMillis = 5 * 60 * 1000L
@@ -24,10 +25,11 @@ object DefaultOptions {
     const val maxFragmentTimeMinutes = 2.0F
 
     const val subsequentRequestTimeSeconds = 30
+    @Deprecated("Not using this anymore")
     val virtualFloatModeMinimumBatteryVoltage: Float? = null
 
-    val lowBatteryVoltage: Float? = 22.6F
-    val criticalBatteryVoltage: Float? = 22.2F
+    val lowBatteryVoltage: Float? = null
+    val criticalBatteryVoltage: Float? = null
     val batteryVoltageType = BatteryVoltageType.FIRST_OUTBACK
 
     const val startOnBoot = true

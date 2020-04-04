@@ -115,9 +115,7 @@ class CommandActivity : AppCompatActivity() {
         }
     }
     private fun getCouchProperties(): CouchProperties {
-        // TODO figure out a better option than just choosing the first value
-        // TODO also make better way instead of casting
-        return (profileManager.activeProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).createCouchProperties()[0]
+        return (profileManager.activeProfile.profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).createCouchProperties()
     }
     @SuppressLint("SetTextI18n")
     private fun sendAuthRequest(publicKey: PublicKey){

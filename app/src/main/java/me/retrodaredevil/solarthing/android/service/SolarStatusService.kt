@@ -10,10 +10,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
-import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.SolarPacketInfo
-import me.retrodaredevil.solarthing.android.WidgetHandler
-import me.retrodaredevil.solarthing.android.getOrderedValues
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.MiscProfile
@@ -25,7 +22,6 @@ import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
-import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 import kotlin.math.max
 
@@ -43,7 +39,7 @@ class SolarStatusService(
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
-        private val MAPPER = JacksonUtil.defaultMapper()
+        private val MAPPER = createDefaultObjectMapper()
         private const val MORE_INFO_ACTION = "me.retrodaredevil.solarthing.android.MORE_SOLAR_INFO"
         private const val MORE_INFO_ROVER_ACTION = "me.retrodaredevil.solarthing.android.MORE_ROVER_INFO"
     }
@@ -111,12 +107,12 @@ class SolarStatusService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            val maxTimeDistance = (miscProfileProvider.activeProfile.maxFragmentTimeMinutes * 60 * 1000).toLong()
+            val maxTimeDistance = (miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000).toLong()
             val sortedPackets = PacketGroups.sortPackets(packetGroups, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
             if(sortedPackets.isNotEmpty()) {
                 packetInfoCollection = sortedPackets.values.first().mapNotNull {// TODO allow multiple instance sources instead of just one
                     try {
-                        SolarPacketInfo(it, solarProfileProvider.activeProfile.batteryVoltageType)
+                        SolarPacketInfo(it, solarProfileProvider.activeProfile.profile.batteryVoltageType)
                     } catch (ex: IllegalArgumentException) {
                         ex.printStackTrace()
                         println("${it.dateMillis} is a packet collection without packets")
@@ -183,17 +179,17 @@ class SolarStatusService(
         if(beginningACDropInfo != null && acUseInfo != null && beginningACDropInfo.dateMillis > acUseInfo.dateMillis){
             beginningACDropInfo = null // beginningACDropInfo didn't actually happen before AC Use started so set it to null
         }
-        var voltageTimerActivatedInfo: SolarPacketInfo? = null
-        val activeSolarProfile = solarProfileProvider.activeProfile
-        val voltageTimerBatteryVoltage = activeSolarProfile.voltageTimerBatteryVoltage
-        if(voltageTimerBatteryVoltage != null && currentInfo.acMode == ACMode.AC_USE){ // TODO make this happen in any AC mode and remove from generator notification
-            for (info in packetInfoCollection.reversed()) { // latest packets to oldest
-                if (!info.isBatteryVoltageAboveSetpoint(voltageTimerBatteryVoltage)) {
-                    break
-                }
-                voltageTimerActivatedInfo = info
-            }
-        }
+//        var voltageTimerActivatedInfo: SolarPacketInfo? = null
+        val activeSolarProfile = solarProfileProvider.activeProfile.profile
+//        val voltageTimerBatteryVoltage = activeSolarProfile.voltageTimerBatteryVoltage
+//        if(voltageTimerBatteryVoltage != null && currentInfo.acMode == ACMode.AC_USE){ // TODO make this happen in any AC mode and remove from generator notification
+//            for (info in packetInfoCollection.reversed()) { // latest packets to oldest
+//                if (!info.isBatteryVoltageAboveSetpoint(voltageTimerBatteryVoltage)) {
+//                    break
+//                }
+//                voltageTimerActivatedInfo = info
+//            }
+//        }
         var doneChargingActivatedInfo: SolarPacketInfo? = null
         for(info in packetInfoCollection.reversed()){ // latest packets to oldest
             if(info.acMode != ACMode.AC_USE || info.generatorChargingBatteries){
@@ -216,7 +212,7 @@ class SolarStatusService(
                 NotificationHandler.createPersistentGenerator(
                     service, currentInfo,
                     beginningACDropInfo, lastACDropInfo, acUseInfo,
-                    voltageTimerActivatedInfo, uncertainGeneratorStartInfo
+                    /*voltageTimerActivatedInfo*/ null, uncertainGeneratorStartInfo
                 )
             )
         } else {
@@ -283,7 +279,8 @@ class SolarStatusService(
         this.lastPacketInfo = currentInfo
 
 
-        // region Generator float timer notification
+        // region Voltage Timer notification
+        /* TODO implement multi voltage timers
         if(voltageTimerActivatedInfo != null){
             // check to see if we should send a notification
             val voltageTimerTimeMillis = (activeSolarProfile.voltageTimerTimeHours * 60 * 60 * 1000).toLong()
@@ -307,6 +304,7 @@ class SolarStatusService(
             // reset the generator notification because the generator is either off or not in float mode
             cancelVoltageTimerNotification()
         }
+         */
         // endregion
 
         // region Generator Done Charging Notification

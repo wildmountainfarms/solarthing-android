@@ -1,15 +1,16 @@
 package me.retrodaredevil.solarthing.android.prefs
 
-interface NetworkSwitchingProfile {
+import com.fasterxml.jackson.annotation.JsonProperty
 
-    var isEnabled: Boolean
-
-    var isBackup: Boolean
-
+class NetworkSwitchingProfile(
+    @JsonProperty(SaveKeys.NetworkSwitching.isEnabled)
+    val isEnabled: Boolean,
+    @JsonProperty(SaveKeys.NetworkSwitching.isBackup)
+    val isBackup: Boolean,
     /**
      * If [isBackup] is true, the value of this has no meaning
      * @return The SSID of the WiFi network or null to represent being off WiFi (On a network)
      */
-    var ssid: String?
-
-}
+    @JsonProperty(SaveKeys.NetworkSwitching.ssid)
+    val ssid: String?
+)

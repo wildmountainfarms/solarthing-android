@@ -108,19 +108,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 layout="@layout/profile_header"/>
-        <EditText
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                android:ems="10"
-                android:id="@+id/voltage_timer_hours" android:hint="Voltage Timer Hours"/>
-        <EditText
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                android:ems="10"
-                android:id="@+id/voltage_timer_battery_voltage"
-                android:hint="Voltage Timer Battery Voltage"/>
+<!--        <EditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:inputType="numberDecimal"-->
+<!--                android:ems="10"-->
+<!--                android:id="@+id/voltage_timer_hours" android:hint="Voltage Timer Hours"/>-->
+<!--        <EditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:inputType="numberDecimal"-->
+<!--                android:ems="10"-->
+<!--                android:id="@+id/voltage_timer_battery_voltage"-->
+<!--                android:hint="Voltage Timer Battery Voltage"/>-->
         <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

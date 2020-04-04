@@ -1,7 +1,12 @@
 package me.retrodaredevil.solarthing.android.prefs
 
-interface MiscProfile {
-    var maxFragmentTimeMinutes: Float
-    var startOnBoot: Boolean
-    var networkSwitchingEnabled: Boolean
-}
+import com.fasterxml.jackson.annotation.JsonProperty
+
+class MiscProfile(
+    @JsonProperty(SaveKeys.maxFragmentTimeMinutes)
+    val maxFragmentTimeMinutes: Float,
+    @JsonProperty(SaveKeys.startOnBoot)
+    val startOnBoot: Boolean,
+    @JsonProperty(SaveKeys.networkSwitchingEnabled)
+    val networkSwitchingEnabled: Boolean
+)

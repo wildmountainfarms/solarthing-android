@@ -1,20 +1,32 @@
 package me.retrodaredevil.solarthing.android.prefs
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 
-interface CouchDbDatabaseConnectionProfile : DatabaseConnectionProfile {
+//@JsonTypeName("COUCHDB")
+@JsonIgnoreProperties(SaveKeys.connectionType)
+class CouchDbDatabaseConnectionProfile(
+    @JsonProperty(SaveKeys.CouchDb.protocol)
+    val protocol: String,
+    @JsonProperty(SaveKeys.CouchDb.host)
+    val host: String,
+    @JsonProperty(SaveKeys.CouchDb.port)
+    val port: Int,
+    @JsonProperty(SaveKeys.CouchDb.username)
+    val username: String,
+    @JsonProperty(SaveKeys.CouchDb.password)
+    val password: String,
+    @JsonProperty(SaveKeys.CouchDb.useAuth)
+    val useAuth: Boolean
+) : DatabaseConnectionProfile {
     override val connectionType: DatabaseConnectionType
         get() = DatabaseConnectionType.COUCHDB
 
-    var protocol: String
-    var host: String
-    var port: Int
-    var username: String
-    var password: String
-    var useAuth: Boolean
 
-    fun createCouchProperties(): List<CouchProperties> {
+    fun createCouchProperties(): CouchProperties {
         val username: String?
         val password: String?
         if(useAuth){
@@ -24,19 +36,13 @@ interface CouchDbDatabaseConnectionProfile : DatabaseConnectionProfile {
             username = null
             password = null
         }
-        val protocol = protocol
-        val port = port
-        val hostsString = host
-        val hosts = hostsString.split(",")
 
-        return hosts.map {
-            CouchPropertiesBuilder(
-                protocol,
-                it,
-                port,
-                username,
-                password
-            ).build()
-        }
+        return CouchPropertiesBuilder(
+            protocol,
+            host,
+            port,
+            username,
+            password
+        ).build()
     }
 }

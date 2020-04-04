@@ -12,7 +12,7 @@ class SSIDNotAvailable : Exception()
 
 @Throws(SSIDPermissionException::class, SSIDNotAvailable::class)
 fun getSSID(context: Context): String?{
-    if(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+    if(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
         throw SSIDPermissionException()
     }
     val manager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager

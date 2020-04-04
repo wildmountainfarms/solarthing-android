@@ -15,6 +15,7 @@ object SaveKeys{
         const val ssid = "ssid"
     }
 
+    @Deprecated("We don't care about retaining this setting")
     const val voltageTimerTimeHours = "generator_float_hours" // use this save key for backwards compatibility // we will probably stop using this in the future anyway
 
     const val initialRequestTimeSeconds = "initial_request_timeout"
@@ -24,6 +25,7 @@ object SaveKeys{
 
     const val maxFragmentTimeMinutes = "max_fragment_time"
 
+    @Deprecated("We don't care about retaining this setting")
     const val voltageTimerBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
 
     const val lowBatteryVoltage = "low_battery_voltage"
@@ -32,4 +34,6 @@ object SaveKeys{
 
     const val startOnBoot = "start_on_boot"
     const val networkSwitchingEnabled = "network_switching_enabled"
+
+    const val connectionType = "connection_type"
 }

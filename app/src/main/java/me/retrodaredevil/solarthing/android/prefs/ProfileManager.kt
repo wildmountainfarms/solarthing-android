@@ -2,8 +2,8 @@ package me.retrodaredevil.solarthing.android.prefs
 
 import java.util.*
 
-interface ProfileManager<T> : ProfileProvider<T>{
-    override val activeProfile: T
+interface ProfileManager<T> : ProfileProvider<T> {
+    override val activeProfile: ProfileHolder<T>
     val activeProfileName: String
 
     var activeUUID: UUID
@@ -16,10 +16,10 @@ interface ProfileManager<T> : ProfileProvider<T>{
      * @return true if The profile was removed, false otherwise
      */
     fun removeProfile(uuid: UUID): Boolean
-    fun addAndCreateProfile(name: String): Pair<UUID, T>
+    fun addAndCreateProfile(name: String): Pair<UUID, ProfileHolder<T>>
 
     fun setProfileName(uuid: UUID, name: String)
     fun getProfileName(uuid: UUID): String
 
-    fun getProfile(uuid: UUID): T
+    fun getProfile(uuid: UUID): ProfileHolder<T>
 }

@@ -27,7 +27,7 @@ class BootReceiver : BroadcastReceiver() {
             }
         }
         println("Received on boot!")
-        val miscProfile = createMiscProfileProvider(context).activeProfile
+        val miscProfile = createMiscProfileProvider(context).activeProfile.profile
         if(miscProfile.startOnBoot) {
             println("Starting on boot")
             startServiceIfNotRunning(context)

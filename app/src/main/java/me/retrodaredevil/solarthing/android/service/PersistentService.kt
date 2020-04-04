@@ -13,7 +13,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
 import com.fasterxml.jackson.databind.DeserializationFeature
-import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
@@ -33,7 +32,6 @@ import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
-import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 
 
@@ -85,8 +83,8 @@ private class ServiceObject(
 
 class PersistentService : Service(), Runnable{
     companion object {
-        private val MAPPER = JacksonUtil.defaultMapper().apply {
-            deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        private val MAPPER = createDefaultObjectMapper().apply {
+            deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // we will update SolarThing and add new features
         }
     }
     private var initialized = false
@@ -219,7 +217,7 @@ class PersistentService : Service(), Runnable{
     private fun <T> getProfileToSwitchTo(ssid: String?, manager: ProfileManager<T>, networkSwitchingProfileGetter: (T) -> NetworkSwitchingProfile): UUID? {
         var r: UUID? = null
         for(uuid in manager.profileUUIDs){
-            val networkSwitchingProfile = networkSwitchingProfileGetter(manager.getProfile(uuid))
+            val networkSwitchingProfile = networkSwitchingProfileGetter(manager.getProfile(uuid).profile)
             if(networkSwitchingProfile.isEnabled){
                 if(networkSwitchingProfile.isBackup){
                     if(r == null){
@@ -233,8 +231,11 @@ class PersistentService : Service(), Runnable{
         return r
     }
 
+    /*
+    This is called periocially whenever we need to update
+     */
     override fun run() {
-        if(miscProfileProvider.activeProfile.networkSwitchingEnabled) {
+        if(miscProfileProvider.activeProfile.profile.networkSwitchingEnabled) {
             try {
                 val id = getSSID(this)
                 println("Current ssid: $id")
@@ -251,7 +252,7 @@ class PersistentService : Service(), Runnable{
             // TODO when we get the profile to switch to, figure out how to notify the UI layer
         }
 
-        val activeConnectionProfile = connectionProfileManager.activeProfile
+        val activeConnectionProfile = connectionProfileManager.activeProfile.profile
 
         var needsLargeData = false
         for(service in services){
@@ -268,14 +269,15 @@ class PersistentService : Service(), Runnable{
             }
 
             val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
-            service.dataRequesters = couchDbDatabaseConnectionProfile.createCouchProperties().map{
+            val properties = couchDbDatabaseConnectionProfile.createCouchProperties()
+            service.dataRequesters = listOf(
                 CouchDbDataRequester(
-                    { CouchPropertiesBuilder(it).build() },
+                    { properties }, // this can be constant because we change this frequently enough for it to alwasy be accurate
                     service.databaseName,
                     service.packetGroupParser,
                     service.dataService::startKey
                 )
-            }
+            )
             if(service.dataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
                 needsLargeData = true
             }

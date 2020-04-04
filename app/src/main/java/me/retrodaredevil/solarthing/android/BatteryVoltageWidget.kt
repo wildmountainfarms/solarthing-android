@@ -57,7 +57,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
 
 
     companion object {
-        private val MAPPER = JacksonUtil.defaultMapper()
+        private val MAPPER = createDefaultObjectMapper()
         private val PARSER = SimplePacketGroupParser(PacketParserMultiplexer(listOf(
             ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java)
         ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))

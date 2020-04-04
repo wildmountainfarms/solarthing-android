@@ -98,7 +98,7 @@ class ProfileHeaderHandler(
                 selectedPosition = position
             }
         }
-        selectedPosition ?: error("No active uuid: $editUUID in uuids: $uuids")
+        selectedPosition ?: error("No uuid: $editUUID in uuids: $uuids")
         spinner.adapter = adapter
         spinner.setSelection(selectedPosition)
     }

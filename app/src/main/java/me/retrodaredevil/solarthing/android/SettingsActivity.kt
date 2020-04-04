@@ -23,7 +23,7 @@ import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
     companion object {
-        private const val REQUEST_COARSE_LOCATION_RC = 1801
+        private const val REQUEST_FINE_LOCATION_RC = 1801
     }
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
@@ -44,8 +44,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var subsequentRequestTimeout: EditText
 
 
-    private lateinit var voltageTimerHours: EditText
-    private lateinit var voltageTimerBatteryVoltage: EditText
+//    @Deprecated("Going to update voltage timer soon")
+//    private lateinit var voltageTimerHours: EditText
+//    @Deprecated("Going to update voltage timer soon")
+//    private lateinit var voltageTimerBatteryVoltage: EditText
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
     private lateinit var batteryVoltageTypeSpinner: Spinner
@@ -80,26 +82,23 @@ class SettingsActivity : AppCompatActivity() {
 
         miscProfileProvider = createMiscProfileProvider(this)
 
-        connectionProfileNetworkSwitchingViewHandler = NetworkSwitchingViewHandler(
-            this, findViewById(R.id.network_switching), { connectionProfileManager.getProfile(connectionProfileHeader.editUUID).networkSwitchingProfile },
-            {
-                requestCoarseLocation()
-            }
-        )
+        connectionProfileNetworkSwitchingViewHandler = NetworkSwitchingViewHandler(this, findViewById(R.id.network_switching)) {
+            requestFineLocation()
+        }
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
         port = findViewById(R.id.port)
         username = findViewById(R.id.username)
         password = findViewById(R.id.password)
         useAuth = findViewById(R.id.use_auth)
-        voltageTimerHours = findViewById(R.id.voltage_timer_hours)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
         maxFragmentTime = findViewById(R.id.max_fragment_time)
         lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
         batteryVoltageTypeSpinner = findViewById(R.id.battery_type_spinner)
-        voltageTimerBatteryVoltage = findViewById(R.id.voltage_timer_battery_voltage)
+//        voltageTimerHours = findViewById(R.id.voltage_timer_hours)
+//        voltageTimerBatteryVoltage = findViewById(R.id.voltage_timer_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
 
@@ -161,12 +160,12 @@ class SettingsActivity : AppCompatActivity() {
         startServiceIfNotRunning(this)
     }
 
-    private fun requestCoarseLocation(){
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), REQUEST_COARSE_LOCATION_RC)
+    private fun requestFineLocation(){
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_FINE_LOCATION_RC)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if(requestCode == REQUEST_COARSE_LOCATION_RC){
+        if(requestCode == REQUEST_FINE_LOCATION_RC){
             val success = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
             if(success){
                 Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
@@ -204,11 +203,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
         saveConnectionSettings()
         saveSolarSettings()
-        miscProfileProvider.activeProfile.let {
-            it.maxFragmentTimeMinutes = maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes
-            it.startOnBoot = startOnBoot.isChecked
-            it.networkSwitchingEnabled = networkSwitchingEnabledCheckBox.isChecked
-        }
+        miscProfileProvider.activeProfile.profile = MiscProfile(
+            maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
+            startOnBoot.isChecked,
+            networkSwitchingEnabledCheckBox.isChecked
+        )
 
         if(reloadSettings) loadSettings()
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
@@ -216,33 +215,35 @@ class SettingsActivity : AppCompatActivity() {
     private fun saveConnectionSettings(){
         val uuid = connectionProfileHeader.editUUID
         connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
-        connectionProfileNetworkSwitchingViewHandler.save() // as of right now only connection profiles have a network switching handler
-        connectionProfileManager.getProfile(uuid).apply {
-            (databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let { // TODO don't cast
-                it.protocol = protocol.text.toString()
-                it.host = host.text.toString()
-                it.port = port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port
-                it.username = username.text.toString()
-                it.password = password.text.toString()
-                it.useAuth = useAuth.isChecked
-            }
-            initialRequestTimeSeconds = initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds
-            subsequentRequestTimeSeconds = subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
-        }
+        connectionProfileManager.getProfile(uuid).profile = ConnectionProfile(
+            CouchDbDatabaseConnectionProfile(
+                protocol.text.toString(),
+                host.text.toString(),
+                port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
+                username.text.toString(),
+                password.text.toString(),
+                useAuth.isChecked
+            ),
+            connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
+            initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
+            subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+        )
     }
     private fun saveSolarSettings(){
         val uuid = solarProfileHeader.editUUID
         solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
-        solarProfileManager.getProfile(uuid).let {
-            it.voltageTimerTimeHours = voltageTimerHours.text.toString().toFloatOrNull() ?: DefaultOptions.voltageTimerTimeHours
-            it.voltageTimerBatteryVoltage = voltageTimerBatteryVoltage.text.toString().toFloatOrNull()
-            it.lowBatteryVoltage = lowBatteryVoltage.text.toString().toFloatOrNull()
-            it.criticalBatteryVoltage = criticalBatteryVoltage.text.toString().toFloatOrNull()
-            val position = batteryVoltageTypeSpinner.selectedItemPosition
-            if(position != AdapterView.INVALID_POSITION){
-                it.batteryVoltageType = BatteryVoltageType.values()[position]
-            }
+        val position = batteryVoltageTypeSpinner.selectedItemPosition
+        val batteryVoltageType = if(position != AdapterView.INVALID_POSITION){
+            BatteryVoltageType.values()[position]
+        } else {
+            DefaultOptions.batteryVoltageType
         }
+        solarProfileManager.getProfile(uuid).profile =  SolarProfile(
+            emptyList(), emptyList(),
+            lowBatteryVoltage.text.toString().toFloatOrNull(),
+            criticalBatteryVoltage.text.toString().toFloatOrNull(),
+            batteryVoltageType
+        )
     }
     private fun loadSettings(){
         connectionProfileHeader.editUUID.let{
@@ -254,15 +255,16 @@ class SettingsActivity : AppCompatActivity() {
             solarProfileHeader.loadSpinner(it)
         }
 
-        miscProfileProvider.activeProfile.let {
+        miscProfileProvider.activeProfile.profile.let {
             maxFragmentTime.setText(it.maxFragmentTimeMinutes.toString())
             startOnBoot.isChecked = it.startOnBoot
             networkSwitchingEnabledCheckBox.isChecked = it.networkSwitchingEnabled
         }
     }
     private fun loadConnectionSettings(uuid: UUID) {
-        connectionProfileNetworkSwitchingViewHandler.load()
-        val profile = connectionProfileManager.getProfile(uuid)
+        val profile = connectionProfileManager.getProfile(uuid).profile
+        connectionProfileNetworkSwitchingViewHandler.load(profile.networkSwitchingProfile)
+
         val name = connectionProfileManager.getProfileName(uuid)
         connectionProfileHeader.profileName = name
         (profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
@@ -280,12 +282,10 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
     private fun loadSolarSettings(uuid: UUID) {
-        val profile = solarProfileManager.getProfile(uuid)
+        val profile = solarProfileManager.getProfile(uuid).profile
         val name = solarProfileManager.getProfileName(uuid)
         solarProfileHeader.profileName = name
         profile.let {
-            voltageTimerHours.setText(it.voltageTimerTimeHours.toString())
-            voltageTimerBatteryVoltage.setText(it.voltageTimerBatteryVoltage?.toString() ?: "")
             lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
             criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
 
