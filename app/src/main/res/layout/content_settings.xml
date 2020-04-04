@@ -157,6 +157,9 @@
                 android:text="Auto Network Switching Enable"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/network_switching_enabled"/>
+        <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/temperature_unit_spinner"/>
         <include
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

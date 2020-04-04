@@ -10,6 +10,9 @@ import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
+import me.retrodaredevil.solarthing.android.util.TemperatureUnit
+import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsius
+import me.retrodaredevil.solarthing.android.util.shortRepresentation
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.support.Support
@@ -276,7 +279,7 @@ object NotificationHandler {
      * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
      * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String = "", extraInfoPendingIntent: PendingIntent? = null): Notification {
+    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String, extraInfoPendingIntent: PendingIntent?, temperatureUnit: TemperatureUnit): Notification {
         val devicesString = getOrderedValues(info.deviceMap).joinToString("") {
             when (it) {
                 is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
@@ -288,7 +291,7 @@ object NotificationHandler {
 
         val batteryTemperatureString = when {
             info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + info.roverMap.values.first().batteryTemperature + "C"
+            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsius(info.roverMap.values.first().batteryTemperature.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
         }
         var auxCount = 0
         val auxModesString = run {

@@ -34,7 +34,8 @@ constructor(
                     SaveKeys.startOnBoot,
                     DefaultOptions.startOnBoot
                 ),
-                networkSwitchingEnabled
+                networkSwitchingEnabled,
+                DefaultOptions.temperatureUnit
             )
         }
         set(value) {

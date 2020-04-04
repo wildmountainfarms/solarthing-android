@@ -1,5 +1,7 @@
 package me.retrodaredevil.solarthing.android.prefs
 
+import me.retrodaredevil.solarthing.android.util.TemperatureUnit
+
 object DefaultOptions {
     object CouchDb {
         const val port = 5984
@@ -34,4 +36,5 @@ object DefaultOptions {
 
     const val startOnBoot = true
     const val networkSwitchingEnabled = false
+    val temperatureUnit = TemperatureUnit.CELSIUS
 }

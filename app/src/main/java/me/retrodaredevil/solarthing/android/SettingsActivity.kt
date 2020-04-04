@@ -21,6 +21,7 @@ import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
+import me.retrodaredevil.solarthing.android.util.TemperatureUnit
 import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
@@ -57,6 +58,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var maxFragmentTime: EditText
     private lateinit var startOnBoot: CheckBox
     private lateinit var networkSwitchingEnabledCheckBox: CheckBox
+    private lateinit var temperatureUnitSpinner: Spinner
 
     // region Initialization
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,6 +105,7 @@ class SettingsActivity : AppCompatActivity() {
 //        voltageTimerBatteryVoltage = findViewById(R.id.voltage_timer_battery_voltage)
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
+        temperatureUnitSpinner = findViewById(R.id.temperature_unit_spinner)
 
         initializeDrawer(this, onActivityIntentRequest = { _, intent ->
             if(isConnectionProfileNotSaved() || isSolarProfileNotSaved() || isMiscProfileNotSaved()) {
@@ -258,11 +261,16 @@ class SettingsActivity : AppCompatActivity() {
             batteryVoltageType
         )
     }
-    private fun getMiscProfile() = MiscProfile(
-        maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
-        startOnBoot.isChecked,
-        networkSwitchingEnabledCheckBox.isChecked
-    )
+    private fun getMiscProfile(): MiscProfile {
+        val position = temperatureUnitSpinner.selectedItemPosition
+        val temperatureUnit = if(position != AdapterView.INVALID_POSITION) TemperatureUnit.values()[position] else DefaultOptions.temperatureUnit
+        return MiscProfile(
+            maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
+            startOnBoot.isChecked,
+            networkSwitchingEnabledCheckBox.isChecked,
+            temperatureUnit
+        )
+    }
     private fun isConnectionProfileNotSaved() = getConnectionProfile() != connectionProfileManager.getProfile(connectionProfileHeader.editUUID).profile
     private fun isSolarProfileNotSaved() = getSolarProfile() != solarProfileManager.getProfile(solarProfileHeader.editUUID).profile
     private fun isMiscProfileNotSaved() = getMiscProfile() != miscProfileProvider.activeProfile.profile
@@ -285,12 +293,7 @@ class SettingsActivity : AppCompatActivity() {
             loadSolarSettings(it)
             solarProfileHeader.loadSpinner(it)
         }
-
-        miscProfileProvider.activeProfile.profile.let {
-            maxFragmentTime.setText(it.maxFragmentTimeMinutes.toString())
-            startOnBoot.isChecked = it.startOnBoot
-            networkSwitchingEnabledCheckBox.isChecked = it.networkSwitchingEnabled
-        }
+        loadMiscSettings(miscProfileProvider.activeProfile)
     }
     private fun loadConnectionSettings(uuid: UUID) {
         val profile = connectionProfileManager.getProfile(uuid).profile
@@ -335,6 +338,27 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
     }
+    private fun loadMiscSettings(profileHolder: ProfileHolder<MiscProfile>) {
+        profileHolder.profile.let {
+            maxFragmentTime.setText(it.maxFragmentTimeMinutes.toString())
+            startOnBoot.isChecked = it.startOnBoot
+            networkSwitchingEnabledCheckBox.isChecked = it.networkSwitchingEnabled
+
+            temperatureUnitSpinner.let { spinner ->
+                val array = TemperatureUnit.values()
+                spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, getNiceTemperatureUnitStringList(array))
+                val temperatureUnit = it.temperatureUnit
+                var selection: Int? = null
+                for((i, type) in array.withIndex()){
+                    if(type == temperatureUnit){
+                        selection = i
+                    }
+                }
+                selection!!
+                spinner.setSelection(selection)
+            }
+        }
+    }
     // endregion
     private fun getNiceBatteryVoltageStringList(values: Array<BatteryVoltageType>): List<String> {
         return values.map {
@@ -344,6 +368,14 @@ class SettingsActivity : AppCompatActivity() {
                 BatteryVoltageType.MOST_RECENT -> "Most recent"
                 BatteryVoltageType.FIRST_OUTBACK -> "First Outback"
                 BatteryVoltageType.FIRST_OUTBACK_FX -> "First Outback FX"
+            }
+        }
+    }
+    private fun getNiceTemperatureUnitStringList(values: Array<TemperatureUnit>): List<String> {
+        return values.map {
+            when(it) {
+                TemperatureUnit.FAHRENHEIT -> "Fahrenheit"
+                TemperatureUnit.CELSIUS -> "Celsius"
             }
         }
     }

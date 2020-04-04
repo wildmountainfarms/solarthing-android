@@ -1,13 +1,15 @@
 package me.retrodaredevil.solarthing.android.prefs
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import me.retrodaredevil.solarthing.android.util.TemperatureUnit
 
-// note despite there being @JsonProperty annotations here, this doesn't use Jackson deserialization yet
 data class MiscProfile(
-    @JsonProperty(SaveKeys.maxFragmentTimeMinutes)
+    @JsonProperty(SaveKeys.maxFragmentTimeMinutes, required = true)
     val maxFragmentTimeMinutes: Float,
-    @JsonProperty(SaveKeys.startOnBoot)
+    @JsonProperty(SaveKeys.startOnBoot, required = true)
     val startOnBoot: Boolean,
-    @JsonProperty(SaveKeys.networkSwitchingEnabled)
-    val networkSwitchingEnabled: Boolean
+    @JsonProperty(SaveKeys.networkSwitchingEnabled, required = true)
+    val networkSwitchingEnabled: Boolean,
+    @JsonProperty(SaveKeys.temperatureUnit, required = true)
+    val temperatureUnit: TemperatureUnit
 )

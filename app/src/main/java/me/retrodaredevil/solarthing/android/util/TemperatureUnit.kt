@@ -11,3 +11,10 @@ fun convertTemperatureCelsius(temperatureCelsius: Float, desiredTemperatureUnit:
         TemperatureUnit.CELSIUS -> temperatureCelsius
     }
 }
+val TemperatureUnit.shortRepresentation: String
+    get() {
+        return when(this){
+            TemperatureUnit.FAHRENHEIT -> "F"
+            TemperatureUnit.CELSIUS -> "C"
+        }
+    }

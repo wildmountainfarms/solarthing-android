@@ -198,14 +198,13 @@ class SolarStatusService(
             doneChargingActivatedInfo = info
         }
 
-        notify(
-            NotificationHandler.createStatusNotification(
-                service.applicationContext,
-                currentInfo,
-                summary,
-                moreInfoIntent
-            )
-        )
+        notify(NotificationHandler.createStatusNotification(
+            service.applicationContext,
+            currentInfo,
+            summary,
+            moreInfoIntent,
+            miscProfileProvider.activeProfile.profile.temperatureUnit
+        ))
         if(beginningACDropInfo != null || acUseInfo != null){
             service.getManager().notify(
                 GENERATOR_PERSISTENT_ID,

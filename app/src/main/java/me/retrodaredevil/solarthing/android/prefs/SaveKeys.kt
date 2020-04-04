@@ -36,4 +36,5 @@ object SaveKeys{
     const val networkSwitchingEnabled = "network_switching_enabled"
 
     const val connectionType = "connection_type"
+    const val temperatureUnit = "temperature_unit"
 }
