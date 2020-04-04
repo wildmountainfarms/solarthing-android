@@ -17,14 +17,7 @@ fun createConnectionProfileManager(context: Context): ProfileManager<ConnectionP
 
     return BasicProfileManager.createJacksonProfileManager(
         SharedPreferencesStringValueSaver(context.getDeviceProtectedStorageSharedPreferences(SHARED_PREFERENCES, 0), "connection_properties")
-    ) {
-        ConnectionProfile(
-            CouchDbDatabaseConnectionProfile(DefaultOptions.CouchDb.protocol, DefaultOptions.CouchDb.host, DefaultOptions.CouchDb.port, DefaultOptions.CouchDb.username, DefaultOptions.CouchDb.password, DefaultOptions.CouchDb.useAuth),
-            NetworkSwitchingProfile(false, false, null),
-            DefaultOptions.initialRequestTimeSeconds,
-            DefaultOptions.subsequentRequestTimeSeconds
-        )
-    }
+    ) { ConnectionProfile() }
 }
 fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
     return BasicProfileManager.createJacksonProfileManager(

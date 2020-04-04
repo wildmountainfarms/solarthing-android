@@ -13,9 +13,12 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 Thanks https://android.jlelse.eu/android-using-navigation-drawer-across-multiple-activities-the-easiest-way-b011f152aebd
 and of course thanks https://github.com/mikepenz/MaterialDrawer
  */
-fun initializeDrawer(activity: Activity) = initializeDrawer(activity, activity.findViewById(R.id.toolbar))
 
-fun initializeDrawer(activity: Activity, toolbar: Toolbar) {
+fun initializeDrawer(
+    activity: Activity,
+    toolbar: Toolbar = activity.findViewById(R.id.toolbar),
+    onActivityIntentRequest: (View, Intent) -> Unit = { view, intent -> view.context.startActivity(intent) }
+) {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 
     val drawerItemSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(1)
@@ -36,7 +39,12 @@ fun initializeDrawer(activity: Activity, toolbar: Toolbar) {
         .withActionBarDrawerToggle(true)
         .withActionBarDrawerToggleAnimated(true)
         .withCloseOnClick(true)
-        .withSelectedItem(-1)
+        .withSelectedItem(when(activity){
+            is SettingsActivity -> 1
+            is EventDisplayActivity -> 2
+            is CommandActivity -> 3
+            else -> -1
+        })
         .addDrawerItems(
             drawerEmptyItem,
             drawerItemSettings,
@@ -48,19 +56,19 @@ fun initializeDrawer(activity: Activity, toolbar: Toolbar) {
             override fun onItemClick(view: View?, position: Int, drawerItem: IDrawerItem<*>): Boolean {
                 view!!
                 when(drawerItem.identifier){
-                    1L -> launchActivity<SettingsActivity>(view, activity)
-                    2L -> launchActivity<EventDisplayActivity>(view, activity)
-                    3L -> launchActivity<CommandActivity>(view, activity)
+                    1L -> launchActivity<SettingsActivity>(view, activity, onActivityIntentRequest)
+                    2L -> launchActivity<EventDisplayActivity>(view, activity, onActivityIntentRequest)
+                    3L -> launchActivity<CommandActivity>(view, activity, onActivityIntentRequest)
                 }
                 return true
             }
         })
         .build()
 }
-private inline fun <reified T> launchActivity(view: View, currentActivity: Activity) {
+private inline fun <reified T> launchActivity(view: View, currentActivity: Activity, onActivityIntentRequest: (View, Intent) -> Unit) {
     if(currentActivity is T){
         return
     }
     val intent = Intent(currentActivity, T::class.java)
-    view.context.startActivity(intent)
+    onActivityIntentRequest(view, intent)
 }

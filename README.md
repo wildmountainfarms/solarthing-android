@@ -10,7 +10,7 @@ Available at https://play.google.com/store/apps/details?id=me.retrodaredevil.sol
 
 For use with https://github.com/wildmountainfarms/solarthing
 
-This works best with Android 8, but will still function on older versions.
+This works best with Android 8+, but will still work down to Android 4.4.
 
 Known Bugs:
 * When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)

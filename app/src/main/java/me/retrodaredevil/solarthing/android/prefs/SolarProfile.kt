@@ -11,17 +11,14 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
     "generator_float_hours", // we aren't using this anymore
     "virtual_float_mode_minimum_battery_voltage" // we aren't using this anymore
 )
-class SolarProfile
-@JsonCreator
-constructor(
-    @get:JsonProperty()
-    val voltageTimerNodes: List<VoltageTimerNode> = emptyList(),
+data class SolarProfile(
+    val voltageTimerNodes: List<VoltageTimerNode> = emptyList(), // TODO eventually use these
     val temperatureNodes: List<TemperatureNode> = emptyList(),
-    @get:JsonProperty(SaveKeys.lowBatteryVoltage)
+    @JsonProperty(SaveKeys.lowBatteryVoltage)
     val lowBatteryVoltage: Float? = DefaultOptions.lowBatteryVoltage,
-    @get:JsonProperty(SaveKeys.criticalBatteryVoltage)
+    @JsonProperty(SaveKeys.criticalBatteryVoltage)
     val criticalBatteryVoltage: Float? = DefaultOptions.criticalBatteryVoltage,
-    @get:JsonProperty(SaveKeys.batteryVoltageType)
+    @JsonProperty(SaveKeys.batteryVoltageType)
     val batteryVoltageType: BatteryVoltageType = DefaultOptions.batteryVoltageType
 )
 enum class BatteryVoltageType(

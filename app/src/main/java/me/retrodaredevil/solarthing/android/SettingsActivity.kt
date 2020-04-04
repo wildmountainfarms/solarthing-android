@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import android.Manifest
+import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
@@ -9,6 +10,7 @@ import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import androidx.core.app.ActivityCompat
 import androidx.appcompat.app.AppCompatActivity
 import android.view.View
@@ -102,7 +104,28 @@ class SettingsActivity : AppCompatActivity() {
         startOnBoot = findViewById(R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
 
-        initializeDrawer(this)
+        initializeDrawer(this, onActivityIntentRequest = { _, intent ->
+            if(isConnectionProfileNotSaved() || isSolarProfileNotSaved() || isMiscProfileNotSaved()) {
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle("You have unsaved changes")
+                val input = EditText(this)
+                input.inputType = InputType.TYPE_CLASS_TEXT
+                builder.setView(input)
+                builder.setPositiveButton("Save"){ _, _ ->
+                    saveSettings(reloadSettings = false, showToast = true)
+                    startActivity(intent)
+                }
+                builder.setNegativeButton("Don't Save"){ _, _ ->
+                    startActivity(intent)
+                }
+                builder.setNeutralButton("Cancel") { dialog, _ ->
+                    dialog.cancel()
+                }
+                builder.create().show()
+            } else {
+                startActivity(intent)
+            }
+        })
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
@@ -203,47 +226,55 @@ class SettingsActivity : AppCompatActivity() {
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
         saveConnectionSettings()
         saveSolarSettings()
-        miscProfileProvider.activeProfile.profile = MiscProfile(
-            maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
-            startOnBoot.isChecked,
-            networkSwitchingEnabledCheckBox.isChecked
-        )
+        miscProfileProvider.activeProfile.profile = getMiscProfile()
 
         if(reloadSettings) loadSettings()
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
-    private fun saveConnectionSettings(){
-        val uuid = connectionProfileHeader.editUUID
-        connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
-        connectionProfileManager.getProfile(uuid).profile = ConnectionProfile(
-            CouchDbDatabaseConnectionProfile(
-                protocol.text.toString(),
-                host.text.toString(),
-                port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
-                username.text.toString(),
-                password.text.toString(),
-                useAuth.isChecked
-            ),
-            connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
-            initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
-            subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
-        )
-    }
-    private fun saveSolarSettings(){
-        val uuid = solarProfileHeader.editUUID
-        solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
+    private fun getConnectionProfile() = ConnectionProfile(
+        CouchDbDatabaseConnectionProfile(
+            protocol.text.toString(),
+            host.text.toString(),
+            port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
+            username.text.toString(),
+            password.text.toString(),
+            useAuth.isChecked
+        ),
+        connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
+        initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
+        subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+    )
+    private fun getSolarProfile(): SolarProfile {
         val position = batteryVoltageTypeSpinner.selectedItemPosition
         val batteryVoltageType = if(position != AdapterView.INVALID_POSITION){
             BatteryVoltageType.values()[position]
         } else {
             DefaultOptions.batteryVoltageType
         }
-        solarProfileManager.getProfile(uuid).profile =  SolarProfile(
+        return SolarProfile(
             emptyList(), emptyList(),
             lowBatteryVoltage.text.toString().toFloatOrNull(),
             criticalBatteryVoltage.text.toString().toFloatOrNull(),
             batteryVoltageType
         )
+    }
+    private fun getMiscProfile() = MiscProfile(
+        maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
+        startOnBoot.isChecked,
+        networkSwitchingEnabledCheckBox.isChecked
+    )
+    private fun isConnectionProfileNotSaved() = getConnectionProfile() != connectionProfileManager.getProfile(connectionProfileHeader.editUUID).profile
+    private fun isSolarProfileNotSaved() = getSolarProfile() != solarProfileManager.getProfile(solarProfileHeader.editUUID).profile
+    private fun isMiscProfileNotSaved() = getMiscProfile() != miscProfileProvider.activeProfile.profile
+    private fun saveConnectionSettings(){
+        val uuid = connectionProfileHeader.editUUID
+        connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
+        connectionProfileManager.getProfile(uuid).profile = getConnectionProfile()
+    }
+    private fun saveSolarSettings(){
+        val uuid = solarProfileHeader.editUUID
+        solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
+        solarProfileManager.getProfile(uuid).profile = getSolarProfile()
     }
     private fun loadSettings(){
         connectionProfileHeader.editUUID.let{
