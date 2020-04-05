@@ -11,7 +11,7 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.util.TemperatureUnit
-import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsius
+import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsiusTo
 import me.retrodaredevil.solarthing.android.util.shortRepresentation
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
@@ -291,7 +291,7 @@ object NotificationHandler {
 
         val batteryTemperatureString = when {
             info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsius(info.roverMap.values.first().batteryTemperature.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
+            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(info.roverMap.values.first().batteryTemperature.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
         }
         var auxCount = 0
         val auxModesString = run {

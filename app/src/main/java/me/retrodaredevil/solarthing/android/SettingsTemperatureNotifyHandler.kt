@@ -2,16 +2,21 @@ package me.retrodaredevil.solarthing.android
 
 import android.app.Dialog
 import android.content.Context
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import me.retrodaredevil.solarthing.android.prefs.TemperatureNode
 import me.retrodaredevil.solarthing.android.util.TemperatureUnit
-import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsius
+import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsiusTo
+import me.retrodaredevil.solarthing.android.util.convertToCelsius
 import me.retrodaredevil.solarthing.android.util.shortRepresentation
 import java.util.*
 
@@ -47,10 +52,10 @@ private class TemperatureViewAdapter(
         val typesName = if(typesNameList.isEmpty()) "None" else typesNameList.joinToString(", ")
         holder.typesName.text = typesName
         holder.highTemperature.text = temperatureNode.highThresholdCelsius?.let {
-            Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsius(temperatureNode.highThresholdCelsius, temperatureUnit)) + temperatureUnit.shortRepresentation
+            Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(temperatureNode.highThresholdCelsius, temperatureUnit)) + temperatureUnit.shortRepresentation
         } ?: "no high threshold"
         holder.lowTemperature.text = temperatureNode.lowThresholdCelsius?.let {
-            Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsius(temperatureNode.lowThresholdCelsius, temperatureUnit)) + temperatureUnit.shortRepresentation
+            Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(temperatureNode.lowThresholdCelsius, temperatureUnit)) + temperatureUnit.shortRepresentation
         } ?: "no low threshold"
         holder.view.setOnClickListener {
             onClick(viewData)
@@ -85,14 +90,68 @@ class SettingsTemperatureNotifyHandler(
         val newButton = customView.findViewById<Button>(R.id.settings_temperature_popup_new_button)
         newButton.setOnClickListener {
             dialog.dismiss()
-            updatedNodes.add(TemperatureNodeData(UUID.randomUUID(), TemperatureNode()))
+            val nodeData = TemperatureNodeData(UUID.randomUUID(), TemperatureNode())
+            updatedNodes.add(nodeData)
+            showEditDialog(temperatureUnit, nodeData)
         }
-        val recyclerView = customView.findViewById<RecyclerView>(R.id.settings_temperature_popup_recyclerview).apply {
+        customView.findViewById<RecyclerView>(R.id.settings_temperature_popup_recyclerview).apply {
             layoutManager = LinearLayoutManager(context)
+            adapter = TemperatureViewAdapter(updatedNodes, temperatureUnit) {
+                dialog.dismiss()
+                showEditDialog(temperatureUnit, it)
+            }
         }
-        recyclerView.adapter = TemperatureViewAdapter(updatedNodes, temperatureUnit) {
+        dialog.show()
+    }
+    private fun showEditDialog(temperatureUnit: TemperatureUnit, nodeData: TemperatureNodeData) {
+        val updatedNodes = updatedNodes ?: throw IllegalStateException("You should have initialized the nodes!")
+        val layoutInflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val customView = layoutInflater.inflate(R.layout.content_settings_temperature_popup_edit, null)
+        val batteryCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_battery_checkbox)
+        val controllerCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_controller_checkbox)
+        val deviceCpuCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_device_cpu_checkbox)
+        val deviceCpuIdsEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_device_cpu_ids_text)
+        val highTemperatureThresholdEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_high_temperature_threshold)
+        highTemperatureThresholdEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        val lowTemperatureThresholdEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_low_temperature_threshold)
+        lowTemperatureThresholdEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        val isCriticalCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_is_critical)
+
+        deviceCpuCheckbox.setOnCheckedChangeListener { _, isChecked ->
+            deviceCpuIdsEditText.isVisible = isChecked
+        }
+
+        nodeData.temperatureNode.let { node ->
+            batteryCheckbox.isChecked = node.battery
+            controllerCheckbox.isChecked = node.controller
+            deviceCpuCheckbox.isChecked = node.deviceCpu
+            deviceCpuIdsEditText.isVisible = node.deviceCpu
+            deviceCpuIdsEditText.setText(node.deviceCpuIds.joinToString(", "))
+            highTemperatureThresholdEditText.setText(node.highThresholdCelsius?.let { Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(it, temperatureUnit)) } ?: "")
+            lowTemperatureThresholdEditText.setText(node.lowThresholdCelsius?.let { Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(it, temperatureUnit)) } ?: "")
+            isCriticalCheckbox.isChecked = node.isCritical
+        }
+
+        val dialog = Dialog(context).apply {
+            setCanceledOnTouchOutside(true)
+            setContentView(customView)
+        }
+        dialog.setOnDismissListener {  // this is also called if the dialog is cancelled
+            nodeData.temperatureNode = TemperatureNode(
+                battery = batteryCheckbox.isChecked,
+                controller = controllerCheckbox.isChecked,
+                deviceCpu = deviceCpuCheckbox.isChecked,
+                deviceCpuIds = deviceCpuIdsEditText.text.split(",").mapNotNull { it.trim().toIntOrNull() },
+                highThresholdCelsius = highTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
+                lowThresholdCelsius = lowTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
+                isCritical = isCriticalCheckbox.isChecked
+            )
+            showDialog(temperatureUnit)
+        }
+        val deleteButton = customView.findViewById<Button>(R.id.settings_temperature_popup_delete_button)
+        deleteButton.setOnClickListener {
             dialog.dismiss()
-            println("You clicked!")
+            updatedNodes.remove(nodeData)
         }
         dialog.show()
     }

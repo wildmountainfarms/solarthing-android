@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content" android:orientation="vertical"
+        >
+    <Space
+            android:layout_width="300dp"
+            android:layout_height="0dp">
+    </Space>
+
+    <CheckBox
+            android:id="@+id/settings_temperature_node_battery_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Battery" />
+
+    <CheckBox
+            android:id="@+id/settings_temperature_node_controller_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Controller" />
+
+    <CheckBox
+            android:id="@+id/settings_temperature_node_device_cpu_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Device CPU" />
+
+    <EditText
+            android:id="@+id/settings_temperature_node_device_cpu_ids_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="Device IDs (1,2). Blank for any"
+            android:inputType="number" />
+
+    <EditText
+            android:id="@+id/settings_temperature_node_high_temperature_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="High Temperature Threshold"
+            />
+
+    <EditText
+            android:id="@+id/settings_temperature_node_low_temperature_threshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="Low Temperature Threshold"
+            />
+    <CheckBox
+            android:id="@+id/settings_temperature_node_is_critical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Is Critical Alert" />
+
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/settings_temperature_popup_delete_button"
+            android:text="Delete"/>
+</LinearLayout>
