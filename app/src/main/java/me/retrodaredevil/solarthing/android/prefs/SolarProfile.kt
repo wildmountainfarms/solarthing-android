@@ -1,9 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonValue
+import com.fasterxml.jackson.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 
@@ -12,7 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
     "virtual_float_mode_minimum_battery_voltage" // we aren't using this anymore
 )
 data class SolarProfile(
-    val voltageTimerNodes: List<VoltageTimerNode> = emptyList(), // TODO eventually use these
+    @JsonAlias("voltageTimerNodes") // we can remove this soon
+    @JsonProperty(SaveKeys.voltageTimerNodes)
+    val voltageTimerNodes: List<VoltageTimerNode> = emptyList(),
+    @JsonAlias("temperatureNodes") // we can remove this soon
+    @JsonProperty(SaveKeys.temperatureNodes)
     val temperatureNodes: List<TemperatureNode> = emptyList(),
     @JsonProperty(SaveKeys.lowBatteryVoltage)
     val lowBatteryVoltage: Float? = DefaultOptions.lowBatteryVoltage,

@@ -28,6 +28,8 @@ object SaveKeys{
     @Deprecated("We don't care about retaining this setting")
     const val voltageTimerBatteryVoltage = "virtual_float_mode_minimum_battery_voltage"
 
+    const val voltageTimerNodes = "voltage_timer_nodes"
+    const val temperatureNodes = "temperature_nodes"
     const val lowBatteryVoltage = "low_battery_voltage"
     const val criticalBatteryVoltage = "critical_battery_voltage"
     const val batteryVoltageType = "battery_voltage_type"

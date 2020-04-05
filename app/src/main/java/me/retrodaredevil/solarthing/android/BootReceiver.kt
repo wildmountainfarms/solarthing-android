@@ -22,7 +22,8 @@ class BootReceiver : BroadcastReceiver() {
                     return
                 } else {
                     println("Even though SDK_INT >= N, this isn't started yet!")
-                    Toast.makeText(context, "SolarThing: Report this: Unexpected boot alreadyStarted=false", Toast.LENGTH_LONG).show()
+                    // This is called every time. I remember writing this code a while ago, but I don't remember why this was important enough for a toast
+//                    Toast.makeText(context, "SolarThing: Report this: Unexpected boot alreadyStarted=false", Toast.LENGTH_LONG).show()
                 }
             }
         }

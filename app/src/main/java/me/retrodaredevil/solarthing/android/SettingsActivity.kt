@@ -1,20 +1,19 @@
 package me.retrodaredevil.solarthing.android
 
 import android.Manifest
-import android.app.AlertDialog
-import android.app.NotificationChannel
-import android.app.NotificationChannelGroup
-import android.app.NotificationManager
+import android.app.*
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
-import androidx.core.app.ActivityCompat
-import androidx.appcompat.app.AppCompatActivity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
@@ -28,6 +27,8 @@ class SettingsActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_FINE_LOCATION_RC = 1801
     }
+
+    private val temperatureNotifyHandler = SettingsTemperatureNotifyHandler(this)
 
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var connectionProfileHeader: ProfileHeaderHandler
@@ -214,6 +215,9 @@ class SettingsActivity : AppCompatActivity() {
     fun stopService(view: View){
         stopService(this)
     }
+    fun openTemperatureNotifySettings(view: View){
+        temperatureNotifyHandler.showDialog(getMiscProfile().temperatureUnit)
+    }
     // endregion
 
     private fun onUseAuthUpdate(){
@@ -255,7 +259,7 @@ class SettingsActivity : AppCompatActivity() {
             DefaultOptions.batteryVoltageType
         }
         return SolarProfile(
-            emptyList(), emptyList(),
+            emptyList(), temperatureNotifyHandler.getTemperatureNodesToSave(),
             lowBatteryVoltage.text.toString().toFloatOrNull(),
             criticalBatteryVoltage.text.toString().toFloatOrNull(),
             batteryVoltageType
@@ -336,6 +340,7 @@ class SettingsActivity : AppCompatActivity() {
                 selection!!
                 spinner.setSelection(selection)
             }
+            temperatureNotifyHandler.loadTemperatureNodes(it.temperatureNodes)
         }
     }
     private fun loadMiscSettings(profileHolder: ProfileHolder<MiscProfile>) {

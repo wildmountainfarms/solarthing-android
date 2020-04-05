@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content" android:orientation="vertical"
+        >
+    <ScrollView
+            android:layout_width="300dp"
+            android:layout_height="300dp">
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/settings_temperature_popup_recyclerview"
+                android:scrollbars="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+    </ScrollView>
+    <Space
+            android:layout_width="match_parent"
+            android:layout_height="30dp"/>
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/settings_temperature_popup_new_button"
+            android:text="New"/>
+</LinearLayout>
