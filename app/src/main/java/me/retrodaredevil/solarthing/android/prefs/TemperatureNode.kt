@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TemperatureNode(
@@ -10,11 +11,15 @@ data class TemperatureNode(
     @JsonProperty("notify_device_cpu", required = true)
     val deviceCpu: Boolean = false,
     @JsonProperty("device_cpu_ids", required = true)
-    val deviceCpuIds: List<Int> = emptyList(),
+    val deviceCpuIds: List<Int?> = emptyList(),
     @JsonProperty("high_threshold_celsius", required = true)
     val highThresholdCelsius: Float? = null,
     @JsonProperty("low_threshold_celsius", required = true)
     val lowThresholdCelsius: Float? = null,
     @JsonProperty("is_critical", required = true)
     val isCritical: Boolean = false
-)
+) {
+    @get:JsonIgnore
+    val deviceCpuIdsString: String
+        get() = deviceCpuIds.map { it ?: "default" }.joinToString(", ")
+}

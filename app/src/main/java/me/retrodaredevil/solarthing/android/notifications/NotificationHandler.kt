@@ -692,6 +692,32 @@ object NotificationHandler {
         }
         return null
     }
+    fun createTemperatureNotification(context: Context, dateMillis: Long, temperatureName: String, deviceName: String, temperatureCelsius: Float, over: Boolean, critical: Boolean, temperatureUnit: TemperatureUnit): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.TEMPERATURE_NOTIFICATION.id, null)
+            .setSmallIcon(R.drawable.power_button)
+            .setShowWhen(true)
+            .setWhen(dateMillis)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if(critical){
+                builder.setColorized(true)
+            }
+        }
+        val temperatureString = "${Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(temperatureCelsius, temperatureUnit))}${temperatureUnit.shortRepresentation}"
+        if(over){
+            val start = if(critical) "$temperatureName is HIGH! " else "$temperatureName is high!"
+            builder.setContentTitle("$start $temperatureString")
+        } else {
+            val start = if(critical) "$temperatureName is LOW! " else "$temperatureName is low!"
+            builder.setContentTitle("$start $temperatureString")
+        }
+        builder.setContentText("From $deviceName")
+
+        val r = builder.build()
+        if(critical) {
+            r.flags = r.flags or Notification.FLAG_INSISTENT
+        }
+        return r
+    }
     private fun getTimeString(dateMillis: Long) = DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time)
 
     private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int?): Notification.Builder {

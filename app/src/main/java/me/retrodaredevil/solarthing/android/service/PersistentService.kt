@@ -23,6 +23,7 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
+import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
@@ -114,7 +115,8 @@ class PersistentService : Service(), Runnable{
                 SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                     ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                     ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
-                    ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
+                    ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
+                    ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java)
                 ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
             ),
             ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(

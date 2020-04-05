@@ -48,7 +48,7 @@ private class TemperatureViewAdapter(
         val temperatureNode = viewData.temperatureNode
         val typesNameList = (if(temperatureNode.battery) listOf("Battery") else emptyList()) +
                 (if(temperatureNode.controller) listOf("Controller") else emptyList()) +
-                (if(temperatureNode.deviceCpu) listOf("CPU") else emptyList())
+                (if(temperatureNode.deviceCpu) listOf("CPU ${temperatureNode.deviceCpuIdsString}") else emptyList())
         val typesName = if(typesNameList.isEmpty()) "None" else typesNameList.joinToString(", ")
         holder.typesName.text = typesName
         holder.highTemperature.text = temperatureNode.highThresholdCelsius?.let {
@@ -112,9 +112,7 @@ class SettingsTemperatureNotifyHandler(
         val deviceCpuCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_device_cpu_checkbox)
         val deviceCpuIdsEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_device_cpu_ids_text)
         val highTemperatureThresholdEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_high_temperature_threshold)
-        highTemperatureThresholdEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         val lowTemperatureThresholdEditText = customView.findViewById<EditText>(R.id.settings_temperature_node_low_temperature_threshold)
-        lowTemperatureThresholdEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         val isCriticalCheckbox = customView.findViewById<CheckBox>(R.id.settings_temperature_node_is_critical)
 
         deviceCpuCheckbox.setOnCheckedChangeListener { _, isChecked ->
@@ -126,7 +124,7 @@ class SettingsTemperatureNotifyHandler(
             controllerCheckbox.isChecked = node.controller
             deviceCpuCheckbox.isChecked = node.deviceCpu
             deviceCpuIdsEditText.isVisible = node.deviceCpu
-            deviceCpuIdsEditText.setText(node.deviceCpuIds.joinToString(", "))
+            deviceCpuIdsEditText.setText(node.deviceCpuIdsString)
             highTemperatureThresholdEditText.setText(node.highThresholdCelsius?.let { Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(it, temperatureUnit)) } ?: "")
             lowTemperatureThresholdEditText.setText(node.lowThresholdCelsius?.let { Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(it, temperatureUnit)) } ?: "")
             isCriticalCheckbox.isChecked = node.isCritical
@@ -141,7 +139,7 @@ class SettingsTemperatureNotifyHandler(
                 battery = batteryCheckbox.isChecked,
                 controller = controllerCheckbox.isChecked,
                 deviceCpu = deviceCpuCheckbox.isChecked,
-                deviceCpuIds = deviceCpuIdsEditText.text.split(",").mapNotNull { it.trim().toIntOrNull() },
+                deviceCpuIds = deviceCpuIdsEditText.text.split(",").map { it.trim().toIntOrNull() },
                 highThresholdCelsius = highTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
                 lowThresholdCelsius = lowTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
                 isCritical = isCriticalCheckbox.isChecked

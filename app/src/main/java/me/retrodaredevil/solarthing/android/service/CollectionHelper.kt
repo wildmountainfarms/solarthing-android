@@ -27,7 +27,7 @@ fun NavigableSet<*>.limitSize(maxSize: Int, sizeIfResizeNeeded: Int = maxSize){
     }
     if(size > maxSize){
         val removeAmount = size - sizeIfResizeNeeded
-        for(i in 0..removeAmount){
+        for(i in 1..removeAmount){
             pollFirst()
         }
     }

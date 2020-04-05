@@ -4,6 +4,7 @@
 package me.retrodaredevil.solarthing.android.notifications
 
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -46,3 +47,12 @@ fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
     is RoverStatusPacket -> Objects.hash("more_solar_info", 10 + packet.productSerialNumber)
     else -> throw IllegalArgumentException("$packet is not supported!")
 }
+fun getBatteryTemperatureId(packet: SolarStatusPacket) = when(packet){
+    is RoverStatusPacket -> Objects.hash("battery_temperature_over", packet.productSerialNumber)
+    else -> throw IllegalArgumentException("$packet is not supported!")
+}
+fun getControllerTemperatureId(packet: SolarStatusPacket) = when(packet){
+    is RoverStatusPacket -> Objects.hash("controller_temperature_over", packet.productSerialNumber)
+    else -> throw IllegalArgumentException("$packet is not supported!")
+}
+fun getDeviceCpuTemperatureId(fragmentId: Int?) = Objects.hash("device_cpu_temperature", fragmentId)

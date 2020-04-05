@@ -44,6 +44,7 @@ class SolarStatusService(
         private const val MORE_INFO_ROVER_ACTION = "me.retrodaredevil.solarthing.android.MORE_ROVER_INFO"
     }
 
+    private val temperatureNotifyHandler = TemperatureNotifyHandler(service, solarProfileProvider, miscProfileProvider)
     private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
     private var packetInfoCollection: Collection<SolarPacketInfo> = emptySet()
     private var lastPacketInfo: SolarPacketInfo? = null
@@ -346,6 +347,19 @@ class SolarStatusService(
                 )
                 lastLowBatteryNotification = now
             }
+        }
+        // endregion
+        // region Temperature Alert Notifications
+        for(rover in currentInfo.roverMap.values){
+            val batteryTemperature = rover.batteryTemperature
+            val controllerTemperature = rover.controllerTemperature
+            temperatureNotifyHandler.checkBatteryTemperature(currentInfo.dateMillis, rover, batteryTemperature.toFloat())
+            temperatureNotifyHandler.checkControllerTemperature(currentInfo.dateMillis, rover, controllerTemperature.toFloat())
+        }
+        println("Going to do thing")
+        for((fragmentId, temperatureCelsius) in currentInfo.deviceCpuTemperatureMap) {
+            println("Heyyyyyy $fragmentId $temperatureCelsius")
+            temperatureNotifyHandler.checkDeviceCpuTemperature(currentInfo.dateMillis, fragmentId, temperatureCelsius)
         }
         // endregion
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

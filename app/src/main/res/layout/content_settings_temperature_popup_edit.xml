@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="High Temperature Threshold"
-            />
+            android:inputType="numberDecimal|numberSigned" />
 
     <EditText
             android:id="@+id/settings_temperature_node_low_temperature_threshold"
@@ -50,7 +50,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="Low Temperature Threshold"
-            />
+            android:inputType="numberDecimal|numberSigned" />
     <CheckBox
             android:id="@+id/settings_temperature_node_is_critical"
             android:layout_width="match_parent"

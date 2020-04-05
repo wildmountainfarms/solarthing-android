@@ -12,6 +12,9 @@
         value
     </string>
 
+    <string name="temperature_alert">Temperature Alert</string>
+    <string name="temperature_alert_description">Sends an alert when the temperature of something is outside of the configured threshold</string>
+
     <string name="mx_end_of_day">Charge Controller End of Day</string>
     <string name="mx_end_of_day_description">Sends information on each charge controller device after daily kWh is reset back to 0
         indicating a new day

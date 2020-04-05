@@ -63,6 +63,10 @@ enum class NotificationChannels(
         R.string.battery_notification,
         R.string.battery_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.RED, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR, sound = R.raw.battery),
+    TEMPERATURE_NOTIFICATION("temperature_notification",
+        R.string.temperature_alert,
+        R.string.temperature_alert_description, NotificationManager.IMPORTANCE_HIGH,
+        enableLights = true, lightColor = Color.RED, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
     VACANT_NOTIFICATION("vacant_notification_v2",
         R.string.vacant_notification,

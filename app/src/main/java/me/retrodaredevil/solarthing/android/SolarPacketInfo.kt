@@ -1,7 +1,11 @@
 package me.retrodaredevil.solarthing.android
 
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
+import me.retrodaredevil.solarthing.misc.device.CpuTemperaturePacket
+import me.retrodaredevil.solarthing.misc.device.DevicePacket
+import me.retrodaredevil.solarthing.misc.device.DevicePacketType
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
@@ -38,6 +42,7 @@ class SolarPacketInfo(
     val packetGroup: PacketGroup,
     batteryVoltageType: BatteryVoltageType
 ) {
+    private val fragmentedPacketGroup = packetGroup as? FragmentedPacketGroup
     val dateMillis = packetGroup.dateMillis
 
 
@@ -92,6 +97,8 @@ class SolarPacketInfo(
     val hasWarnings: Boolean
     val errorsCount: Int
 
+    val deviceCpuTemperatureMap: Map<Int?, Float>
+
     init {
         fxMap = LinkedHashMap()
         mxMap = LinkedHashMap()
@@ -103,6 +110,7 @@ class SolarPacketInfo(
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
         dailyMXMap = LinkedHashMap()
+        deviceCpuTemperatureMap = LinkedHashMap()
         var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
             if(packet is SolarStatusPacket){
@@ -150,6 +158,17 @@ class SolarPacketInfo(
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unimplemented packet type: ${packet.packetType}")
+                }
+            } else if(packet is DevicePacket){
+                when(packet.packetType){
+                    DevicePacketType.DEVICE_CPU_TEMPERATURE -> {
+                        packet as CpuTemperaturePacket
+                        if(fragmentedPacketGroup != null){
+                            deviceCpuTemperatureMap[fragmentedPacketGroup.getFragmentId(packet)] = packet.cpuTemperatureCelsius
+                        }
+                    }
+                    null -> throw NullPointerException()
+                    else -> System.err.println("Unimplemented device packet type: ${packet.packetType}")
                 }
             }
         }
