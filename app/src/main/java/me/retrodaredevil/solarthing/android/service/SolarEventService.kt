@@ -19,7 +19,7 @@ import java.util.*
 
 class SolarEventService(
     private val service: Service,
-    private val data: SolarEventData
+    private val data: PacketGroupData
 ) : DataService {
 
     override fun onInit() { // nothing
@@ -38,7 +38,7 @@ class SolarEventService(
     override fun onDataRequest(dataRequest: DataRequest) {
         val lastDateMillis = data.packetGroups.lastOrNull()?.dateMillis
         val receivedPackets = dataRequest.packetGroupList
-        data.onPacketReceive(receivedPackets)
+        data.onAllPacketReceive(receivedPackets)
         for(packetGroup in receivedPackets){
             val basicDateMillis = packetGroup.dateMillis
             if(lastDateMillis != null && basicDateMillis <= lastDateMillis){

@@ -8,6 +8,7 @@ import android.widget.RemoteViews
 import com.fasterxml.jackson.databind.node.ObjectNode
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
+import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParseException
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
@@ -31,23 +32,23 @@ class BatteryVoltageWidget : AppWidgetProvider() {
         }
     }
 
-    override fun onReceive(context: Context?, intent: Intent?) {
-        if(intent!!.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE){
+    override fun onReceive(context: Context, intent: Intent) {
+        if(intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE){
             val extras = intent.extras
             if (extras != null) {
                 val appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS)
-                val json = intent.getStringExtra(SolarPacketCollectionBroadcast.JSON)
-
-                if (json != null && appWidgetIds != null && appWidgetIds.isNotEmpty()) {
-                    println("got json:")
-                    println(json)
-                    try {
-                        val packetGroup = PARSER.parse(MAPPER.readTree(json) as ObjectNode)
-                        val info = SolarPacketInfo(packetGroup, BatteryVoltageType.FIRST_PACKET) // TODO don't hard code BatteryVoltageType
-                        onUpdate(context!!, AppWidgetManager.getInstance(context), appWidgetIds, info)
-                    } catch(ex: PacketParseException){
-                        ex.printStackTrace()
+                appWidgetIds ?: return
+                val applicationContext = context.applicationContext
+                if (applicationContext is SolarThingApplication) {
+                    val solarStatusData = applicationContext.solarStatusData
+                    if (solarStatusData != null) {
+                        val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, 10 * 60 * 1000)
+                        onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, SolarPacketInfo(sorted.values.first().last(), BatteryVoltageType.FIRST_PACKET))
+                    } else {
+                        System.err.println("So we got an event to update, but the data is null? Weird...")
                     }
+                } else {
+                    System.err.println("BAD!! What kind of Android version are we running here? Now we can't update this widget!")
                 }
             }
         } else {

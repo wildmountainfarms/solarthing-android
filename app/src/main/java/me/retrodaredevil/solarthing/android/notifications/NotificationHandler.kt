@@ -15,6 +15,7 @@ import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsiusTo
 import me.retrodaredevil.solarthing.android.util.shortRepresentation
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
+import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.support.Support
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
@@ -562,12 +563,13 @@ object NotificationHandler {
                 builder.setCategory(Notification.CATEGORY_STATUS)
             }
         }
+        val fragmentId = packetInfo.packetGroup.getFragmentId(device)
         when(device){
             is OutbackData -> {
                 when(device.packetType){
                     SolarStatusPacketType.FX_STATUS -> {
                         device as FXStatusPacket
-                        val dailyFX = packetInfo.dailyFXMap[device.identifier]
+                        val dailyFX = packetInfo.dailyFXMap[IdentifierFragment(fragmentId, device.identifier)]
                         builder.setContentTitle("FX on port ${device.address}")
                         val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
                         builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | Inv: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)}A | ${getTimeString(dateMillis)}")

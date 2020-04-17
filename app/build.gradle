@@ -69,21 +69,21 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.1.0'
-    implementation 'androidx.navigation:navigation-fragment:2.2.1'
-    implementation 'androidx.navigation:navigation-ui:2.2.1'
+    implementation 'androidx.navigation:navigation-fragment:2.2.2'
+    implementation 'androidx.navigation:navigation-ui:2.2.2'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.2.1'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.2.1'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.2.2'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.2.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    def solarthingVersion = "v3.4.0"
+    def solarthingVersion = "v3.5.0"
     // sometimes you have to include the 'v' and sometimes you don't...
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 
-    def jacksonVersion = "2.10.2"
+    def jacksonVersion = "2.10.3"
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"

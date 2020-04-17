@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import me.retrodaredevil.solarthing.packets.identification.Identifier
+import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
@@ -46,13 +47,13 @@ fun getModeName(packet: SolarStatusPacket): String =
         is RoverStatusPacket -> getChargingStateName(packet)
         else -> throw IllegalArgumentException("packet: $packet is not supported")
     }
-fun getOrderedIdentifiers(identifiers: Collection<Identifier>): List<Identifier> {
+fun getOrderedIdentifiers(identifiers: Collection<IdentifierFragment>): List<IdentifierFragment> {
     return TreeSet(identifiers).toList()
 }
-fun <T> getOrderedValues(map: Map<Identifier, T>): List<T> {
+fun <T> getOrderedValues(map: Map<IdentifierFragment, T>): List<T> {
     val r = mutableListOf<T>()
-    for(identifier in getOrderedIdentifiers(map.keys)){
-        r.add(map[identifier] ?: error("getOrderedIdentifiers just changes the order, it doesn't remove keys!!"))
+    for(identifierFragment in getOrderedIdentifiers(map.keys)){
+        r.add(map[identifierFragment] ?: error("getOrderedIdentifiers just changes the order, it doesn't remove keys!!"))
     }
     return r
 }

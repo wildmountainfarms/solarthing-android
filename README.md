@@ -28,6 +28,7 @@ Known Bugs:
 * **Low/High temperature notifications**
 * Multiple configurable voltage timers
 * OTG Cable Outback MATE Serial display
+* Use Ektorp's ChangeFeed class to make sure we get ALL of the packets since the last time we queried
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's

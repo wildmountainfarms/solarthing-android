@@ -106,12 +106,14 @@ class PersistentService : Service(), Runnable{
         connectionProfileManager = createConnectionProfileManager(this)
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
-        val solarEventData = SolarEventData()
+        val solarStatusData = PacketGroupData()
+        val solarEventData = PacketGroupData()
         val application = application as SolarThingApplication
+        application.solarStatusData = solarStatusData
         application.solarEventData = solarEventData
         services = listOf(
             ServiceObject(
-                SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
+                SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
                 SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                     ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                     ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),

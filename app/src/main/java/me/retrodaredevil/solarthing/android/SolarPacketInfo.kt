@@ -8,6 +8,7 @@ import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.Identifier
+import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
@@ -39,27 +40,26 @@ class DailyFXInfo(
  * A class that deals with making a [PacketGroup] with solar data easier to retrieve values from
  */
 class SolarPacketInfo(
-    val packetGroup: PacketGroup,
+    val packetGroup: FragmentedPacketGroup,
     batteryVoltageType: BatteryVoltageType
 ) {
-    private val fragmentedPacketGroup = packetGroup as? FragmentedPacketGroup
     val dateMillis = packetGroup.dateMillis
 
 
     /** A map of the port number to the FX status packet associated with that device*/
-    val fxMap: Map<Identifier, FXStatusPacket>
+    val fxMap: Map<IdentifierFragment, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
-    val mxMap: Map<Identifier, MXStatusPacket>
-    val roverMap: Map<RoverIdentifier, RoverStatusPacket>
+    val mxMap: Map<IdentifierFragment, MXStatusPacket>
+    val roverMap: Map<RoverIdentifier, RoverStatusPacket> // TODO change key to IdentifierFragment
 
-    val deviceMap: Map<Identifier, SolarStatusPacket>
-    val basicChargeControllerMap: Map<Identifier, BasicChargeController>
-    val rawDailyChargeControllerMap: Map<Identifier, DailyChargeController>
-    val dailyChargeControllerMap: Map<Identifier, DailyChargeController>
-    val batteryMap: Map<Identifier, BatteryVoltage>
+    val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
+    val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
+    val rawDailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
+    val dailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
+    val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
-    val dailyFXMap: Map<Identifier, DailyFXPacket>
-    val dailyMXMap: Map<Identifier, DailyMXPacket>
+    val dailyFXMap: Map<IdentifierFragment, DailyFXPacket>
+    val dailyMXMap: Map<IdentifierFragment, DailyMXPacket>
 
     val masterFXStatusPacket: FXStatusPacket?
     val fxChargingPacket: FXChargingPacket?
@@ -114,43 +114,45 @@ class SolarPacketInfo(
         var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
             if(packet is SolarStatusPacket){
-                deviceMap[packet.identifier] = packet
+                val identifierFragment = IdentifierFragment(packetGroup.getFragmentId(packet), packet.identifier)
+                deviceMap[identifierFragment] = packet
                 when(packet.packetType){
                     SolarStatusPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
-                        fxMap[fx.identifier] = fx
-                        batteryMap[fx.identifier] = fx
+                        fxMap[identifierFragment] = fx
+                        batteryMap[identifierFragment] = fx
                     }
                     SolarStatusPacketType.MXFM_STATUS -> {
                         val mx = packet as MXStatusPacket
-                        mxMap[mx.identifier] = mx
-                        batteryMap[mx.identifier] = mx
-                        basicChargeControllerMap[mx.identifier] = mx
-                        rawDailyChargeControllerMap[mx.identifier] = mx
-                        (dailyChargeControllerMap as MutableMap).getOrPut(mx.identifier) { mx }
+                        mxMap[identifierFragment] = mx
+                        batteryMap[identifierFragment] = mx
+                        basicChargeControllerMap[identifierFragment] = mx
+                        rawDailyChargeControllerMap[identifierFragment] = mx
+                        (dailyChargeControllerMap as MutableMap).getOrPut(identifierFragment) { mx }
                     }
                     SolarStatusPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarStatusPacketType.RENOGY_ROVER_STATUS -> {
                         val rover = packet as RoverStatusPacket
                         roverMap[rover.identifier] = rover
-                        batteryMap[rover.identifier] = rover
-                        basicChargeControllerMap[rover.identifier] = rover
-                        rawDailyChargeControllerMap[rover.identifier] = rover
-                        dailyChargeControllerMap[rover.identifier] = rover
+                        batteryMap[identifierFragment] = rover
+                        basicChargeControllerMap[identifierFragment] = rover
+                        rawDailyChargeControllerMap[identifierFragment] = rover
+                        dailyChargeControllerMap[identifierFragment] = rover
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
                 }
             } else if(packet is SolarExtraPacket){
+                val fragmentId = packetGroup.getFragmentId(packet)
                 when(packet.packetType){
                     SolarExtraPacketType.FX_DAILY -> {
                         packet as DailyFXPacket
-                        dailyFXMap[packet.identifier.supplementaryTo] = packet
+                        dailyFXMap[IdentifierFragment(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.MXFM_DAILY -> {
                         packet as DailyMXPacket
-                        dailyMXMap[packet.identifier.supplementaryTo] = packet
-                        dailyChargeControllerMap[packet.identifier.supplementaryTo] = packet
+                        dailyMXMap[IdentifierFragment(fragmentId, packet.identifier)] = packet
+                        dailyChargeControllerMap[IdentifierFragment(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.FX_CHARGING -> {
                         packet as FXChargingPacket
@@ -163,9 +165,7 @@ class SolarPacketInfo(
                 when(packet.packetType){
                     DevicePacketType.DEVICE_CPU_TEMPERATURE -> {
                         packet as CpuTemperaturePacket
-                        if(fragmentedPacketGroup != null){
-                            deviceCpuTemperatureMap[fragmentedPacketGroup.getFragmentId(packet)] = packet.cpuTemperatureCelsius
-                        }
+                        deviceCpuTemperatureMap[packetGroup.getFragmentId(packet)] = packet.cpuTemperatureCelsius
                     }
                     null -> throw NullPointerException()
                     else -> System.err.println("Unimplemented device packet type: ${packet.packetType}")

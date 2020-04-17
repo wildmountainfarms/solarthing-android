@@ -20,6 +20,7 @@ class TemperatureNotifyHandler(
     private val solarProfileProvider: ProfileProvider<SolarProfile>,
     private val miscProfileProvider: ProfileProvider<MiscProfile>
 ) {
+    // TODO update this to use IdentifierFragments
     private val lastBatteryOverNotify = HashMap<Identifier, NotifyInfo>()
     private val lastBatteryUnderNotify = HashMap<Identifier, NotifyInfo>()
     private val lastControllerOverNotify = HashMap<Identifier, NotifyInfo>()
@@ -74,7 +75,6 @@ class TemperatureNotifyHandler(
     }
     fun checkDeviceCpuTemperature(dateMillis: Long, fragmentId: Int?, temperatureCelsius: Float) {
         for(node in temperatureNodes){
-            println("id: $fragmentId ids: ${node.deviceCpuIds}")
             if(node.deviceCpu && (fragmentId in node.deviceCpuIds || node.deviceCpuIds.isEmpty())){
                 val temperatureName = "Device CPU Temperature"
                 val deviceName = "Device #${fragmentId ?: "Default"}"

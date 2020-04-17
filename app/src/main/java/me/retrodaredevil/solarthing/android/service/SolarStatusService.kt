@@ -27,6 +27,7 @@ import kotlin.math.max
 
 object SolarPacketCollectionBroadcast {
     const val ACTION = "me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"
+    @Deprecated("Not used anymore")
     const val JSON = "json"
 }
 
@@ -34,7 +35,8 @@ class SolarStatusService(
     private val service: Service,
     private val solarProfileProvider: ProfileProvider<SolarProfile>,
     private val miscProfileProvider: ProfileProvider<MiscProfile>,
-    private val solarEventData: SolarEventData
+    private val solarStatusData: PacketGroupData,
+    private val solarEventData: PacketGroupData
 ) : DataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
@@ -122,12 +124,10 @@ class SolarStatusService(
                 }
             }
 
-
+            solarStatusData.onAllPacketReceive(packetGroups.toList())
             if(packetInfoCollection.isNotEmpty()) {
                 val intent = Intent(service, WidgetHandler::class.java)
                 intent.action = SolarPacketCollectionBroadcast.ACTION
-                val latest = packetInfoCollection.last()
-                intent.putExtra(SolarPacketCollectionBroadcast.JSON, MAPPER.writeValueAsString(latest.packetGroup))
                 service.sendBroadcast(intent)
             }
         } else {
@@ -225,7 +225,7 @@ class SolarStatusService(
             for(dailyChargeController in currentInfo.dailyChargeControllerMap.values){
                 if(dailyChargeController !is Identifiable) error("dailyChargeControllerMap must be identifiable!")
                 if(dailyChargeController.dailyKWH == 0f){
-                    val lastDailyChargeController = lastPacketInfo.dailyChargeControllerMap[dailyChargeController.identifier] ?: continue
+                    val lastDailyChargeController = lastPacketInfo.dailyChargeControllerMap[dailyChargeController.identifier] ?: continue if we use this again, we'll have to use a FragmentIdentifier
                     val dailyKWH = lastDailyChargeController.dailyKWH
                     if(dailyKWH != 0f){
                         val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyChargeController, currentInfo.dateMillis)
@@ -242,8 +242,8 @@ class SolarStatusService(
             }
              */
             // region Device Connection/Disconnection section
-            for(device in currentInfo.deviceMap.values){
-                val presentInLast = device.identifier in lastPacketInfo.deviceMap
+            for((identifierFragment, device) in currentInfo.deviceMap.entries){
+                val presentInLast = identifierFragment in lastPacketInfo.deviceMap
                 if(!presentInLast){ // device just connected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentInfo.dateMillis)
                     service.getManager().apply {
@@ -258,8 +258,8 @@ class SolarStatusService(
                     }
                 }
             }
-            for(device in lastPacketInfo.deviceMap.values){
-                val presentNow = device.identifier in currentInfo.deviceMap
+            for((identifierFragment, device) in lastPacketInfo.deviceMap.entries){
+                val presentNow = identifierFragment in currentInfo.deviceMap
                 if(!presentNow){ // device just disconnected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentInfo.dateMillis)
                     service.getManager().apply {
@@ -356,9 +356,7 @@ class SolarStatusService(
             temperatureNotifyHandler.checkBatteryTemperature(currentInfo.dateMillis, rover, batteryTemperature.toFloat())
             temperatureNotifyHandler.checkControllerTemperature(currentInfo.dateMillis, rover, controllerTemperature.toFloat())
         }
-        println("Going to do thing")
         for((fragmentId, temperatureCelsius) in currentInfo.deviceCpuTemperatureMap) {
-            println("Heyyyyyy $fragmentId $temperatureCelsius")
             temperatureNotifyHandler.checkDeviceCpuTemperature(currentInfo.dateMillis, fragmentId, temperatureCelsius)
         }
         // endregion

@@ -21,7 +21,6 @@ class WidgetHandler : BroadcastReceiver() {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, AppWidgetManager.getInstance(context).getAppWidgetIds(
                 ComponentName(context, BatteryVoltageWidget::class.java)
             ))
-            putExtra(SolarPacketCollectionBroadcast.JSON, intent.getStringExtra(SolarPacketCollectionBroadcast.JSON)!!)
         })
     }
 
