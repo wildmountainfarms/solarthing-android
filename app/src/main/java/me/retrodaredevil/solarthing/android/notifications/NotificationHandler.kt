@@ -378,11 +378,22 @@ object NotificationHandler {
             "FX: Discharge: <strong>${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)}</strong> kWh | " +
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
+        val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
+            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
+                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n"
+        } else {
+            "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
+                    "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
+        }
+        val dailyChargeControllerString = if(info.dailyChargeControllerMap.size > 1) {
+            "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n"
+        } else {
+            "Daily kWh: <strong>${info.dailyKWHoursString}</strong>\n"
+        }
 
         val text = "" +
-                "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
-                "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n" +
-                "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n" +
+                basicChargeControllerString +
+                dailyChargeControllerString +
                 dailyFXLine +
                 "$devicesString$batteryTemperatureString$acModeString\n" +
                 (if(info.fxMap.values.any { it.errorModeValue != 0 }) "FX Errors: $fxErrorsString\n" else "") +
@@ -390,7 +401,7 @@ object NotificationHandler {
                 (if(info.roverMap.values.any { it.errorModes.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(info.fxMap.values.any { it.warningModeValue != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 "Mode: $modesString\n" +
-                "Batt: $batteryVoltagesString\n" +
+                (if(info.batteryMap.size > 1) "Batt: $batteryVoltagesString\n" else "") +
                 "Aux: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
@@ -403,7 +414,7 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Batt: ${info.batteryVoltageString} V Load: ${wattsToKilowattsString(info.load)} kW")
+            .setContentTitle("Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
             .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} kWh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)

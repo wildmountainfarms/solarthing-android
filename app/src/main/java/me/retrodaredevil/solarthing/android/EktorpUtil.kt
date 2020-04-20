@@ -17,6 +17,7 @@ fun createHttpClient(properties: CouchProperties): HttpClient {
             .username(properties.username)
             .password(properties.password)
             .proxy(properties.proxyHost)
+            .compression(true)
 
         if(connectionTimeout != null){
             builder.connectionTimeout(connectionTimeout)
