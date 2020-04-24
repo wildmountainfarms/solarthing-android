@@ -1,7 +1,9 @@
-# solarthing-android
+# SolarThing Android
 The android application to display solarthing data as a notification
 
 NOTE: More up to date documentation can be found here: https://github.com/wildmountainfarms/solarthing
+
+SolarThing can be used to monitor systems with FX inverters and MX or Rover Charge Controllers.
 
 ---
 
@@ -11,6 +13,12 @@ Available at https://play.google.com/store/apps/details?id=me.retrodaredevil.sol
 For use with https://github.com/wildmountainfarms/solarthing
 
 This works best with Android 8+, but will still work down to Android 4.4.
+
+## Features
+* Adds a persistent notification that is updated constantly
+* See the battery voltage, load, pv power, daily kWh
+* Separate notification when generator is running
+* Daily notification for connected devices that informs you of previous day's statistics
 
 Known Bugs:
 * When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)
@@ -23,12 +31,13 @@ Known Bugs:
 * A packet that the MATE pi uploads that communicates available commands to display
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
-  * Also remove load information when there are only charge controller packets
 * Clearable notifications for errors
-* **Low/High temperature notifications**
 * Multiple configurable voltage timers
 * OTG Cable Outback MATE Serial display
 * Use Ektorp's ChangeFeed class to make sure we get ALL of the packets since the last time we queried
+  * Don't request all events each time
+* Add a notification for when the connection has failed for a long time
+* Add a notification for when the data is wayy out of date
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's

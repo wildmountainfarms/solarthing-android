@@ -390,6 +390,9 @@ object NotificationHandler {
         } else {
             "Daily kWh: <strong>${info.dailyKWHoursString}</strong>\n"
         }
+        val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else "CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
+            (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation + "\n"
+        }.joinToString(SEPARATOR)
 
         val text = "" +
                 basicChargeControllerString +
@@ -402,6 +405,7 @@ object NotificationHandler {
                 (if(info.fxMap.values.any { it.warningModeValue != 0 }) "FX Warn: $fxWarningsString\n" else "") +
                 "Mode: $modesString\n" +
                 (if(info.batteryMap.size > 1) "Batt: $batteryVoltagesString\n" else "") +
+                deviceCpuTemperatureString +
                 "Aux: $auxModesString"
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
