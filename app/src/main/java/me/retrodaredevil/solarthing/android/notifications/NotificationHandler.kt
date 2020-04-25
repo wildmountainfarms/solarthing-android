@@ -292,7 +292,7 @@ object NotificationHandler {
 
         val batteryTemperatureString = when {
             info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(info.roverMap.values.first().batteryTemperature.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
+            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(info.roverMap.values.first().batteryTemperatureCelsius.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
         }
         var auxCount = 0
         val auxModesString = run {
@@ -391,8 +391,8 @@ object NotificationHandler {
             "Daily kWh: <strong>${info.dailyKWHoursString}</strong>\n"
         }
         val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else "CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
-            (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation + "\n"
-        }.joinToString(SEPARATOR)
+            (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
+        }.joinToString(SEPARATOR) + "\n"
 
         val text = "" +
                 basicChargeControllerString +
@@ -628,13 +628,13 @@ object NotificationHandler {
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
                 val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
-                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperature}C | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
+                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperatureCelsius}C | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
                         "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
                         createChargeControllerMoreInfo(device) +
                         "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
                         "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorModeValue)}\n" +
-                        "Temperature: Controller: ${device.controllerTemperature}C | Battery: ${device.batteryTemperature}C\n" +
+                        "Temperature: Controller: ${device.controllerTemperatureCelsius}C | Battery: ${device.batteryTemperatureCelsius}C\n" +
                         "Day: ${device.operatingDaysCount} | kWh: ${device.dailyKWH} | Ah: ${device.dailyAH} | " +
                         "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
                         "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W"

@@ -351,8 +351,8 @@ class SolarStatusService(
         // endregion
         // region Temperature Alert Notifications
         for(rover in currentInfo.roverMap.values){
-            val batteryTemperature = rover.batteryTemperature
-            val controllerTemperature = rover.controllerTemperature
+            val batteryTemperature = rover.batteryTemperatureCelsius
+            val controllerTemperature = rover.controllerTemperatureCelsius
             temperatureNotifyHandler.checkBatteryTemperature(currentInfo.dateMillis, rover, batteryTemperature.toFloat())
             temperatureNotifyHandler.checkControllerTemperature(currentInfo.dateMillis, rover, controllerTemperature.toFloat())
         }

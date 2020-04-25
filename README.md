@@ -38,6 +38,7 @@ Known Bugs:
   * Don't request all events each time
 * Add a notification for when the connection has failed for a long time
 * Add a notification for when the data is wayy out of date
+* Add "turbo" mode for reloading data
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
