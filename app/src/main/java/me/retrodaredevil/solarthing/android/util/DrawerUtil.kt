@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.util
 
 import android.app.Activity
 import android.content.Intent
@@ -8,6 +8,10 @@ import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
+import me.retrodaredevil.solarthing.android.activity.CommandActivity
+import me.retrodaredevil.solarthing.android.activity.EventDisplayActivity
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.activity.SettingsActivity
 
 /*
 Thanks https://android.jlelse.eu/android-using-navigation-drawer-across-multiple-activities-the-easiest-way-b011f152aebd

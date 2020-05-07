@@ -3,7 +3,7 @@ package me.retrodaredevil.solarthing.android.request
 import com.fasterxml.jackson.databind.node.ObjectNode
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
-import me.retrodaredevil.solarthing.android.createHttpClient
+import me.retrodaredevil.solarthing.android.util.createHttpClient
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParseException
@@ -57,10 +57,8 @@ class CouchDbDataRequester(
             for (row in result.rows) {
                 val objectNode = row.valueAsNode as ObjectNode
                 try {
-                    val packetGroup = packetGroupParser.parse(objectNode)
-                    if(packetGroup != null){
-                        list.add(packetGroup)
-                    }
+                    val packetGroup = packetGroupParser.parse(objectNode)!!
+                    list.add(packetGroup)
                 } catch(ex: PacketParseException){
                     exception = ex
                 }

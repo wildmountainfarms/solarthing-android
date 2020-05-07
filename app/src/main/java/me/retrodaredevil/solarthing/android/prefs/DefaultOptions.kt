@@ -1,6 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs
 
-import me.retrodaredevil.solarthing.android.util.TemperatureUnit
+import me.retrodaredevil.solarthing.android.data.TemperatureUnit
 
 object DefaultOptions {
     object CouchDb {

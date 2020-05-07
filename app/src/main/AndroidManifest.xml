@@ -24,11 +24,11 @@
         tools:ignore="GoogleAppIndexingWarning"
         tools:targetApi="m">
         <activity
-                android:name=".EventDisplayActivity"
+                android:name=".activity.EventDisplayActivity"
                 android:label="@string/title_activity_event_display"
                 android:theme="@style/AppTheme.NoActionBar" />
 
-        <receiver android:name=".BatteryVoltageWidget">
+        <receiver android:name=".widget.BatteryVoltageWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="me.retrodaredevil.solarthing.android.service.solar-packet-collection" />
@@ -39,7 +39,7 @@
                 android:resource="@xml/battery_voltage_widget_info" />
         </receiver>
         <receiver
-            android:name=".WidgetHandler"
+            android:name=".widget.WidgetHandler"
             android:permission=""
             tools:ignore="ExportedReceiver">
             <intent-filter>
@@ -47,11 +47,11 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".CommandActivity"></activity>
+        <activity android:name=".activity.CommandActivity" />
 
-        <uses-library
-            android:name="org.apache.http.legacy"
-            android:required="false" /> <!-- TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware -->
+<!--        <uses-library android:name="org.apache.http.legacy" android:required="false" /> -->
+
+        <!-- TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware -->
         <receiver
             android:name=".BootReceiver"
             android:directBootAware="true"
@@ -62,7 +62,7 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".SettingsActivity">
+        <activity android:name=".activity.SettingsActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

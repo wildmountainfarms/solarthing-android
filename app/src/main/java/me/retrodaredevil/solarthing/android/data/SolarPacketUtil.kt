@@ -1,6 +1,5 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.data
 
-import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
@@ -52,7 +51,9 @@ fun getOrderedIdentifiers(identifiers: Collection<IdentifierFragment>): List<Ide
 }
 fun <T> getOrderedValues(map: Map<IdentifierFragment, T>): List<T> {
     val r = mutableListOf<T>()
-    for(identifierFragment in getOrderedIdentifiers(map.keys)){
+    for(identifierFragment in getOrderedIdentifiers(
+        map.keys
+    )){
         r.add(map[identifierFragment] ?: error("getOrderedIdentifiers just changes the order, it doesn't remove keys!!"))
     }
     return r

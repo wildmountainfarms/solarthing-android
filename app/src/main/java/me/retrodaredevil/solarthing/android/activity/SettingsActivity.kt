@@ -1,26 +1,26 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.activity
 
 import android.Manifest
 import android.app.*
-import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannelGroups
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
-import me.retrodaredevil.solarthing.android.util.TemperatureUnit
+import me.retrodaredevil.solarthing.android.data.TemperatureUnit
+import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import java.util.*
 
 class SettingsActivity : AppCompatActivity() {

@@ -10,9 +10,9 @@ import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.*
-import me.retrodaredevil.solarthing.android.util.TemperatureUnit
-import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsiusTo
-import me.retrodaredevil.solarthing.android.util.shortRepresentation
+import me.retrodaredevil.solarthing.android.data.*
+import me.retrodaredevil.solarthing.android.util.Formatting
+import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
@@ -281,7 +281,9 @@ object NotificationHandler {
      * @param summary The sub text (or summary) of the notification.
      */
     fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String, extraInfoPendingIntent: PendingIntent?, temperatureUnit: TemperatureUnit): Notification {
-        val devicesString = getOrderedValues(info.deviceMap).joinToString("") {
+        val devicesString = getOrderedValues(
+            info.deviceMap
+        ).joinToString("") {
             when (it) {
                 is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
                 is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]")

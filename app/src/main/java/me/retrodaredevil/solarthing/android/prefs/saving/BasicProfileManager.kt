@@ -1,7 +1,7 @@
 package me.retrodaredevil.solarthing.android.prefs.saving
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import me.retrodaredevil.solarthing.android.createDefaultObjectMapper
+import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
 import me.retrodaredevil.solarthing.android.prefs.ProfileHolder
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import java.util.*

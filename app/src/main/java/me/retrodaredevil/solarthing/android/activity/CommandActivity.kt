@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.activity
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -14,9 +14,13 @@ import android.widget.Toast
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.couchdb.DocumentWrapper
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
+import me.retrodaredevil.solarthing.android.util.createHttpClient
+import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.packets.collection.PacketCollection
 import me.retrodaredevil.solarthing.packets.collection.PacketCollectionIdGenerator
 import me.retrodaredevil.solarthing.packets.collection.PacketCollections

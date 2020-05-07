@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.activity
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import me.retrodaredevil.solarthing.DataSource
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.SolarThingApplication
+import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket

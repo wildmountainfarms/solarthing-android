@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android.util
+package me.retrodaredevil.solarthing.android.data
 
 enum class TemperatureUnit {
     FAHRENHEIT,

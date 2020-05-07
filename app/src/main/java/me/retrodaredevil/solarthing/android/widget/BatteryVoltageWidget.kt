@@ -1,20 +1,16 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import com.fasterxml.jackson.databind.node.ObjectNode
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.SolarThingApplication
+import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
-import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
+import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
-import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
-import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParseException
-import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
-import me.retrodaredevil.solarthing.packets.collection.parsing.SimplePacketGroupParser
-import me.retrodaredevil.solarthing.solar.SolarStatusPacket
-import me.retrodaredevil.solarthing.util.JacksonUtil
 
 /**
  * Implementation of App Widget functionality.
@@ -46,9 +42,11 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                         onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, SolarPacketInfo(sorted.values.first().last(), BatteryVoltageType.FIRST_PACKET))
                     } else {
                         System.err.println("So we got an event to update, but the data is null? Weird...")
+                        onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, null)
                     }
                 } else {
                     System.err.println("BAD!! What kind of Android version are we running here? Now we can't update this widget!")
+                    onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, null)
                 }
             }
         } else {
@@ -58,10 +56,6 @@ class BatteryVoltageWidget : AppWidgetProvider() {
 
 
     companion object {
-        private val MAPPER = createDefaultObjectMapper()
-        private val PARSER = SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-            ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java)
-        ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
 
         internal fun updateAppWidget(
             context: Context, appWidgetManager: AppWidgetManager,

@@ -17,6 +17,11 @@ import me.retrodaredevil.solarthing.android.prefs.MiscProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
+import me.retrodaredevil.solarthing.android.data.getOrderedValues
+import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
+import me.retrodaredevil.solarthing.android.widget.WidgetHandler
+import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
@@ -41,7 +46,7 @@ class SolarStatusService(
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
-        private val MAPPER = createDefaultObjectMapper()
+//        private val MAPPER = createDefaultObjectMapper()
         private const val MORE_INFO_ACTION = "me.retrodaredevil.solarthing.android.MORE_SOLAR_INFO"
         private const val MORE_INFO_ROVER_ACTION = "me.retrodaredevil.solarthing.android.MORE_ROVER_INFO"
     }
@@ -111,11 +116,14 @@ class SolarStatusService(
 
 
             val maxTimeDistance = (miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000).toLong()
-            val sortedPackets = PacketGroups.sortPackets(packetGroups, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
+            val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
             if(sortedPackets.isNotEmpty()) {
                 packetInfoCollection = sortedPackets.values.first().mapNotNull {// TODO allow multiple instance sources instead of just one
                     try {
-                        SolarPacketInfo(it, solarProfileProvider.activeProfile.profile.batteryVoltageType)
+                        SolarPacketInfo(
+                            it,
+                            solarProfileProvider.activeProfile.profile.batteryVoltageType
+                        )
                     } catch (ex: IllegalArgumentException) {
                         ex.printStackTrace()
                         println("${it.dateMillis} is a packet collection without packets")
@@ -404,7 +412,9 @@ class SolarStatusService(
         val manager = service.getManager()
         var summary: Notification? = null
 
-        for(device in getOrderedValues(packetInfo.deviceMap)){
+        for(device in getOrderedValues(
+            packetInfo.deviceMap
+        )){
             val id = getMoreSolarInfoId(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis

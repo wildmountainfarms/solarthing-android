@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver

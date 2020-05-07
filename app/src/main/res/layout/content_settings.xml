@@ -5,7 +5,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:context=".SettingsActivity"
+        tools:context=".activity.SettingsActivity"
         tools:showIn="@layout/activity_settings"
         android:id="@+id/settings_root_view">
 

@@ -2,7 +2,6 @@ package me.retrodaredevil.solarthing.android
 
 import android.app.Dialog
 import android.content.Context
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,10 +13,11 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import me.retrodaredevil.solarthing.android.prefs.TemperatureNode
-import me.retrodaredevil.solarthing.android.util.TemperatureUnit
-import me.retrodaredevil.solarthing.android.util.convertTemperatureCelsiusTo
-import me.retrodaredevil.solarthing.android.util.convertToCelsius
-import me.retrodaredevil.solarthing.android.util.shortRepresentation
+import me.retrodaredevil.solarthing.android.data.TemperatureUnit
+import me.retrodaredevil.solarthing.android.data.convertTemperatureCelsiusTo
+import me.retrodaredevil.solarthing.android.data.convertToCelsius
+import me.retrodaredevil.solarthing.android.data.shortRepresentation
+import me.retrodaredevil.solarthing.android.util.Formatting
 import java.util.*
 
 private class TemperatureViewHolder(

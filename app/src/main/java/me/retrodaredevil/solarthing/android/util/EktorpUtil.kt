@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.util
 
 import me.retrodaredevil.couchdb.CouchProperties
 import org.ektorp.android.http.AndroidHttpClient

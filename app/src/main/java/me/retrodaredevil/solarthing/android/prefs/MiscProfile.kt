@@ -1,7 +1,7 @@
 package me.retrodaredevil.solarthing.android.prefs
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import me.retrodaredevil.solarthing.android.util.TemperatureUnit
+import me.retrodaredevil.solarthing.android.data.TemperatureUnit
 
 data class MiscProfile(
     @JsonProperty(SaveKeys.maxFragmentTimeMinutes, required = true)

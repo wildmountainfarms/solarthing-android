@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.util
 
 import android.content.Context
 import android.content.SharedPreferences

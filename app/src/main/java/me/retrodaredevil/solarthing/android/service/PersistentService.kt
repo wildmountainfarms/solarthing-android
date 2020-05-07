@@ -15,6 +15,7 @@ import android.widget.Toast
 import com.fasterxml.jackson.databind.DeserializationFeature
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
+import me.retrodaredevil.solarthing.android.activity.SettingsActivity
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
@@ -23,6 +24,10 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
+import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
+import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
+import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
+import me.retrodaredevil.solarthing.android.util.getSSID
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
@@ -84,7 +89,8 @@ private class ServiceObject(
 
 class PersistentService : Service(), Runnable{
     companion object {
-        private val MAPPER = createDefaultObjectMapper().apply {
+        private val MAPPER = createDefaultObjectMapper()
+            .apply {
             deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // we will update SolarThing and add new features
         }
     }

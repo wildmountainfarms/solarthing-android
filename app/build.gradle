@@ -78,12 +78,12 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    def solarthingVersion = "v3.6.0"
+    def solarthingVersion = "3.7.0"
     // sometimes you have to include the 'v' and sometimes you don't...
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 
-    def jacksonVersion = "2.10.3"
+    def jacksonVersion = "2.11.0"
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"

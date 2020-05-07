@@ -1,5 +1,6 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.data
 
+import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.misc.device.CpuTemperaturePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
@@ -7,7 +8,6 @@ import me.retrodaredevil.solarthing.misc.device.DevicePacketType
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
-import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType

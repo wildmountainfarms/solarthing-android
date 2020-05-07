@@ -1,13 +1,17 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.activity
 
 import android.app.AlertDialog
 import android.content.Context
 import android.text.InputType
 import android.view.View
 import android.widget.*
+import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import java.util.*
 
+/**
+ * Code for the "profile header". This is used in the settings activity.
+ */
 class ProfileHeaderHandler(
     private val context: Context,
     view: View,

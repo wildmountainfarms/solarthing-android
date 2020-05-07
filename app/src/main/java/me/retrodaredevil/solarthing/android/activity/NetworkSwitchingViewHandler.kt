@@ -1,4 +1,4 @@
-package me.retrodaredevil.solarthing.android
+package me.retrodaredevil.solarthing.android.activity
 
 import android.content.Context
 import android.view.View
@@ -6,7 +6,11 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.TextView
 import android.widget.Toast
+import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.prefs.NetworkSwitchingProfile
+import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
+import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
+import me.retrodaredevil.solarthing.android.util.getSSID
 
 class NetworkSwitchingViewHandler(
     private val context: Context,
