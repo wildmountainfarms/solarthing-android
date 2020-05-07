@@ -49,8 +49,6 @@
 
         <activity android:name=".activity.CommandActivity" />
 
-<!--        <uses-library android:name="org.apache.http.legacy" android:required="false" /> -->
-
         <!-- TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware -->
         <receiver
             android:name=".BootReceiver"

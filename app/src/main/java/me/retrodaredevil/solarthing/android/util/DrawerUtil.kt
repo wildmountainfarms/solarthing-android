@@ -32,12 +32,7 @@ fun initializeDrawer(
     val drawerItemCommands: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(3)
         .withName(R.string.commands_select)
 
-
-
-//    val drawerItemAbout: SecondaryDrawerItem = SecondaryDrawerItem().withIdentifier(4)
-//        .withName(R.string.about).withIcon(R.drawable.ic_info_black_24px)
-
-    val result = DrawerBuilder()
+    DrawerBuilder()
         .withActivity(activity)
         .withToolbar(toolbar)
         .withActionBarDrawerToggle(true)

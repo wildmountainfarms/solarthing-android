@@ -2,7 +2,8 @@
 
 buildscript {
     ext.kotlin_version = '1.3.72'
-    ext.lastestMaterialDrawerRelease = '7.0.0'
+//    ext.materialDrawerVersion = '8.0.1' // we'll eventually have to migrate: https://github.com/mikepenz/MaterialDrawer/blob/develop/MIGRATION.md
+    ext.materialDrawerVersion = '7.0.0'
     repositories {
         google()
         jcenter()
@@ -25,4 +26,8 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+wrapper {
+    gradleVersion = '6.4'
+    distributionType = Wrapper.DistributionType.ALL
 }

@@ -6,13 +6,6 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
     sourceSets.main.java.filter.exclude 'META-INF/**/*'
-    lintOptions {
-        // I have to do this for the CouchDB library that is being used. It requires an old version of httpclient which conflicts with new classes or something...
-        checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        abortOnError false
-    }
     compileSdkVersion 29
     defaultConfig {
         multiDexEnabled true
@@ -60,7 +53,7 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:multidex:2.0.1'
-    implementation "com.mikepenz:materialdrawer:${lastestMaterialDrawerRelease}"
+    implementation "com.mikepenz:materialdrawer:$materialDrawerVersion"
 
     implementation "androidx.recyclerview:recyclerview:1.1.0"
 

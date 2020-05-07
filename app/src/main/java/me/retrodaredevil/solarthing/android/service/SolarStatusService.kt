@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.service
 
+import android.R.attr.timeZone
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -10,16 +11,16 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
-import me.retrodaredevil.solarthing.android.*
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.data.CreationException
+import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
+import me.retrodaredevil.solarthing.android.data.getOrderedValues
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.MiscProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
-import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
-import me.retrodaredevil.solarthing.android.data.getOrderedValues
-import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
@@ -29,6 +30,7 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 import kotlin.math.max
+
 
 object SolarPacketCollectionBroadcast {
     const val ACTION = "me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"
@@ -110,7 +112,7 @@ class SolarStatusService(
             println("[123]Got successful data request")
             val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
             packetGroups.limitSize(100_000, 90_000)
-            packetGroups.removeIfBefore(System.currentTimeMillis() - 11 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
+            packetGroups.removeIfBefore(System.currentTimeMillis() - 24 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
 
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
@@ -124,9 +126,9 @@ class SolarStatusService(
                             it,
                             solarProfileProvider.activeProfile.profile.batteryVoltageType
                         )
-                    } catch (ex: IllegalArgumentException) {
+                    } catch (ex: CreationException) {
                         ex.printStackTrace()
-                        println("${it.dateMillis} is a packet collection without packets")
+                        println("${it.dateMillis} is a packet collection with something wrong!")
                         null
                     }
                 }
@@ -457,9 +459,13 @@ class SolarStatusService(
             UpdatePeriodType.SMALL_DATA
 
     override val startKey: Long
-        get() = if(packetInfoCollection.isEmpty())
-            System.currentTimeMillis() - 2 * 60 * 60 * 1000 // 2 hours in the past
-        else
+        get() = if(packetInfoCollection.isEmpty()) {
+            val calendar: Calendar = Calendar.getInstance()
+            calendar[Calendar.HOUR_OF_DAY] = 0
+            calendar[Calendar.MINUTE] = 0
+            calendar[Calendar.MILLISECOND] = 0
+            calendar.timeInMillis
+        } else
             packetInfoCollection.last().dateMillis
 
     override val shouldUpdate: Boolean

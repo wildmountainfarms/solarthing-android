@@ -1,7 +1,7 @@
 package me.retrodaredevil.solarthing.android.data
 
-import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
+import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.misc.device.CpuTemperaturePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacketType
@@ -29,17 +29,12 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import kotlin.math.round
 
-class DailyFXInfo(
-    val inverterKWH: Float,
-    val buyKWH: Float,
-    val chargerKWH: Float,
-    val sellKWH: Float
-)
-
 /**
  * A class that deals with making a [PacketGroup] with solar data easier to retrieve values from
  */
-class SolarPacketInfo(
+class SolarPacketInfo
+@Throws(CreationException::class)
+constructor(
     val packetGroup: FragmentedPacketGroup,
     batteryVoltageType: BatteryVoltageType
 ) {
@@ -54,12 +49,12 @@ class SolarPacketInfo(
 
     val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
     val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
-    val rawDailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
+    private val rawDailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController> // unused so far
     val dailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
     val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
     val dailyFXMap: Map<IdentifierFragment, DailyFXPacket>
-    val dailyMXMap: Map<IdentifierFragment, DailyMXPacket>
+    private val dailyMXMap: Map<IdentifierFragment, DailyMXPacket> // unused so far
 
     val masterFXStatusPacket: FXStatusPacket?
     val fxChargingPacket: FXChargingPacket?
@@ -83,6 +78,7 @@ class SolarPacketInfo(
     /** The total power from the generator */
     val generatorTotalWattage: Int
 
+    @Deprecated("Use SolarDailyInfo")
     val dailyFXInfo: DailyFXInfo?
 
     /**
@@ -91,6 +87,7 @@ class SolarPacketInfo(
     val acMode: ACMode
     val generatorChargingBatteries: Boolean
 
+    @Deprecated("You should not use this")
     val dailyKWHours: Float
 
     val warningsCount: Int
@@ -100,6 +97,9 @@ class SolarPacketInfo(
     val deviceCpuTemperatureMap: Map<Int?, Float>
 
     init {
+        if (packetGroup.packets.isEmpty()) {
+            throw CreationException("The PacketGroup cannot be empty!")
+        }
         fxMap = LinkedHashMap()
         mxMap = LinkedHashMap()
         roverMap = LinkedHashMap()
@@ -176,17 +176,17 @@ class SolarPacketInfo(
         this.fxChargingPacket = fxChargingPacket
         batteryVoltage = when(batteryVoltageType){
             BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
-            BatteryVoltageType.FIRST_PACKET -> batteryMap.values.first().batteryVoltage
+            BatteryVoltageType.FIRST_PACKET -> null
             BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxBy { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.firstOrNull { it is OutbackData }?.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.firstOrNull()?.batteryVoltage
-        } ?: batteryMap.values.first().batteryVoltage
+        } ?: batteryMap.values.firstOrNull()?.batteryVoltage ?: throw CreationException("There must be battery voltage packets!")
         batteryVoltageString = Formatting.TENTHS.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
-        acMode = if(fxMap.isNotEmpty()) fxMap.values.first().acMode else ACMode.NO_AC
+        acMode = fxMap.values.firstOrNull()?.acMode ?: ACMode.NO_AC
         generatorChargingBatteries = if(masterFXStatusPacket == null) false else masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
         load = fxMap.values.sumBy { it.inverterWattage }
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
@@ -213,6 +213,7 @@ class SolarPacketInfo(
                 RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
     }
 
+    @Deprecated("You should not use this")
     val dailyKWHoursString: String by lazy { Formatting.FORMAT.format(dailyKWHours) }
 
     fun isBatteryVoltageAboveSetpoint(setpointVoltage: Float): Boolean {

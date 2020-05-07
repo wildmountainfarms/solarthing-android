@@ -38,7 +38,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                 if (applicationContext is SolarThingApplication) {
                     val solarStatusData = applicationContext.solarStatusData
                     if (solarStatusData != null) {
-                        val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, 10 * 60 * 1000)
+                        val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000)
                         onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, SolarPacketInfo(sorted.values.first().last(), BatteryVoltageType.FIRST_PACKET))
                     } else {
                         System.err.println("So we got an event to update, but the data is null? Weird...")
