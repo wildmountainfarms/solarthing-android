@@ -9,6 +9,7 @@ import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
+import me.retrodaredevil.solarthing.packets.identification.KnownIdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
@@ -17,6 +18,7 @@ import me.retrodaredevil.solarthing.solar.common.DailyChargeController
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
+import me.retrodaredevil.solarthing.solar.outback.OutbackIdentifier
 import me.retrodaredevil.solarthing.solar.outback.OutbackUtil
 import me.retrodaredevil.solarthing.solar.outback.fx.*
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
@@ -42,10 +44,10 @@ constructor(
 
 
     /** A map of the port number to the FX status packet associated with that device*/
-    val fxMap: Map<IdentifierFragment, FXStatusPacket>
+    val fxMap: Map<KnownIdentifierFragment<OutbackIdentifier>, FXStatusPacket>
     /** A map of the port number to the MX/FM status packet associated with device*/
-    val mxMap: Map<IdentifierFragment, MXStatusPacket>
-    val roverMap: Map<RoverIdentifier, RoverStatusPacket> // TODO change key to IdentifierFragment
+    val mxMap: Map<KnownIdentifierFragment<OutbackIdentifier>, MXStatusPacket>
+    val roverMap: Map<KnownIdentifierFragment<RoverIdentifier>, RoverStatusPacket>
 
     val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
     val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
@@ -53,8 +55,8 @@ constructor(
     val dailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
     val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
-    val dailyFXMap: Map<IdentifierFragment, DailyFXPacket>
-    private val dailyMXMap: Map<IdentifierFragment, DailyMXPacket> // unused so far
+    val dailyFXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyFXPacket>
+    private val dailyMXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyMXPacket> // unused so far
 
     val masterFXStatusPacket: FXStatusPacket?
     val fxChargingPacket: FXChargingPacket?
@@ -114,17 +116,17 @@ constructor(
         var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
             if(packet is SolarStatusPacket){
-                val identifierFragment = IdentifierFragment(packetGroup.getFragmentId(packet), packet.identifier)
+                val identifierFragment = IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)
                 deviceMap[identifierFragment] = packet
                 when(packet.packetType){
                     SolarStatusPacketType.FX_STATUS -> {
                         val fx = packet as FXStatusPacket
-                        fxMap[identifierFragment] = fx
+                        fxMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = fx
                         batteryMap[identifierFragment] = fx
                     }
                     SolarStatusPacketType.MXFM_STATUS -> {
                         val mx = packet as MXStatusPacket
-                        mxMap[identifierFragment] = mx
+                        mxMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = mx
                         batteryMap[identifierFragment] = mx
                         basicChargeControllerMap[identifierFragment] = mx
                         rawDailyChargeControllerMap[identifierFragment] = mx
@@ -133,7 +135,7 @@ constructor(
                     SolarStatusPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarStatusPacketType.RENOGY_ROVER_STATUS -> {
                         val rover = packet as RoverStatusPacket
-                        roverMap[rover.identifier] = rover
+                        roverMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = rover
                         batteryMap[identifierFragment] = rover
                         basicChargeControllerMap[identifierFragment] = rover
                         rawDailyChargeControllerMap[identifierFragment] = rover
@@ -147,12 +149,12 @@ constructor(
                 when(packet.packetType){
                     SolarExtraPacketType.FX_DAILY -> {
                         packet as DailyFXPacket
-                        dailyFXMap[IdentifierFragment(fragmentId, packet.identifier.supplementaryTo)] = packet
+                        dailyFXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet // TODO remove cast after updating SolarThing
                     }
                     SolarExtraPacketType.MXFM_DAILY -> {
                         packet as DailyMXPacket
-                        dailyMXMap[IdentifierFragment(fragmentId, packet.identifier)] = packet
-                        dailyChargeControllerMap[IdentifierFragment(fragmentId, packet.identifier.supplementaryTo)] = packet
+                        dailyMXMap[IdentifierFragment.create(fragmentId, packet.identifier as OutbackIdentifier)] = packet
+                        dailyChargeControllerMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.FX_CHARGING -> {
                         packet as FXChargingPacket

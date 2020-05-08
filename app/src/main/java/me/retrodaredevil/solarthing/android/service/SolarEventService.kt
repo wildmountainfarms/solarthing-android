@@ -157,9 +157,11 @@ class SolarEventService(
     }
 
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA // it should always be small data
+
+    // TODO, by doing it this way, we risk missing events that are uploaded
     override val startKey: Long
-        get() = System.currentTimeMillis() - (18 * 60 * 60 * 1000) // we want to make sure we always have all the data
-//        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
+        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
+//        get() = System.currentTimeMillis() - (18 * 60 * 60 * 1000) // we want to make sure we always have all the data
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service) || NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)

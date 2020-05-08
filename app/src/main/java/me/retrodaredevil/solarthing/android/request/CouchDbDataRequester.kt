@@ -57,7 +57,7 @@ class CouchDbDataRequester(
             for (row in result.rows) {
                 val objectNode = row.valueAsNode as ObjectNode
                 try {
-                    val packetGroup = packetGroupParser.parse(objectNode)!!
+                    val packetGroup = packetGroupParser.parse(objectNode)
                     list.add(packetGroup)
                 } catch(ex: PacketParseException){
                     exception = ex

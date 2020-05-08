@@ -7,6 +7,9 @@ apply plugin: 'kotlin-android-extensions'
 android {
     sourceSets.main.java.filter.exclude 'META-INF/**/*'
     compileSdkVersion 29
+    lintOptions {
+        abortOnError false
+    }
     defaultConfig {
         multiDexEnabled true
         applicationId "me.retrodaredevil.solarthing.android"
@@ -72,7 +75,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    def solarthingVersion = "3.7.1"
+    def solarthingVersion = "3.7.2"
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 

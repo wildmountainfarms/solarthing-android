@@ -35,7 +35,7 @@ Known Bugs:
 * Multiple configurable voltage timers
 * OTG Cable Outback MATE Serial display
 * Use Ektorp's ChangeFeed class to make sure we get ALL of the packets since the last time we queried
-  * Don't request all events each time
+  * ~Don't request all events each time~
 * Add a notification for when the connection has failed for a long time
 * Add a notification for when the data is wayy out of date
 * Add "turbo" mode for reloading data

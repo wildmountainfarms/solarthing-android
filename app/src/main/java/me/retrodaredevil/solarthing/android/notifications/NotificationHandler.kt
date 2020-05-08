@@ -136,7 +136,6 @@ object NotificationHandler {
      * @param lastACDropInfo The last packet where the ac mode is [ACMode.AC_DROP]. This is normally the same as [lastACDropInfo] but may be a more recent packet
      * @param acUseInfo The first packet where the ac mode is [ACMode.AC_USE]. If [beginningACDropInfo] is not null, this should be right after it.
      * @param voltageTimerStartedInfo The packet where the voltage timer was started
-     * @param voltageTimerTimeMillis The amount of time in milliseconds for the voltage timer
      * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
      */
     fun createPersistentGenerator(
@@ -280,7 +279,7 @@ object NotificationHandler {
      * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
      * @param summary The sub text (or summary) of the notification.
      */
-    fun createStatusNotification(context: Context, info: SolarPacketInfo, summary: String, extraInfoPendingIntent: PendingIntent?, temperatureUnit: TemperatureUnit): Notification {
+    fun createStatusNotification(context: Context, info: SolarPacketInfo, dailyInfo: SolarDailyInfo, summary: String, extraInfoPendingIntent: PendingIntent?, temperatureUnit: TemperatureUnit): Notification {
         val devicesString = getOrderedValues(
             info.deviceMap
         ).joinToString("") {
@@ -375,7 +374,7 @@ object NotificationHandler {
         }
         val acModeString = if(info.fxMap.isNotEmpty()) { "$SEPARATOR$fxACModesString" } else ""
 
-        val dailyFXInfo = info.dailyFXInfo
+        val dailyFXInfo = dailyInfo.dailyFXInfo
         val dailyFXLine = if(dailyFXInfo == null) "" else {
             "FX: Discharge: <strong>${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)}</strong> kWh | " +
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
@@ -388,9 +387,9 @@ object NotificationHandler {
                     "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
         }
         val dailyChargeControllerString = if(info.dailyChargeControllerMap.size > 1) {
-            "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${info.dailyKWHoursString}</strong>") + "\n"
+            "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
         } else {
-            "Daily kWh: <strong>${info.dailyKWHoursString}</strong>\n"
+            "Daily kWh: <strong>${dailyInfo.dailyKWHString}</strong>\n"
         }
         val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else "CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
             (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
@@ -415,13 +414,14 @@ object NotificationHandler {
 
         val style = Notification.BigTextStyle().bigText(fromHtml(text))
 
+        val isOld = System.currentTimeMillis() - info.dateMillis > 7 * 60 * 1000 // more than 7 minutes old
         val builder = createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle("Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
-            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} kWh:${info.dailyKWHoursString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
+            .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
+            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} kWh:${dailyInfo.dailyKWHString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
@@ -586,7 +586,7 @@ object NotificationHandler {
                 when(device.packetType){
                     SolarStatusPacketType.FX_STATUS -> {
                         device as FXStatusPacket
-                        val dailyFX = packetInfo.dailyFXMap[IdentifierFragment(fragmentId, device.identifier)]
+                        val dailyFX = packetInfo.dailyFXMap[IdentifierFragment.create(fragmentId, device.identifier)]
                         builder.setContentTitle("FX on port ${device.address}")
                         val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
                         builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | Inv: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)}A | ${getTimeString(dateMillis)}")
