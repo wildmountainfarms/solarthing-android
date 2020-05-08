@@ -52,6 +52,7 @@ constructor(
     val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
     val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
     private val rawDailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController> // unused so far
+    @Deprecated("Use SolarDailyInfo")
     val dailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
     val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
@@ -80,17 +81,11 @@ constructor(
     /** The total power from the generator */
     val generatorTotalWattage: Int
 
-    @Deprecated("Use SolarDailyInfo")
-    val dailyFXInfo: DailyFXInfo?
-
     /**
      * The AC Mode which can be used to determine the state of the generator
      */
     val acMode: ACMode
     val generatorChargingBatteries: Boolean
-
-    @Deprecated("You should not use this")
-    val dailyKWHours: Float
 
     val warningsCount: Int
     val hasWarnings: Boolean
@@ -153,7 +148,7 @@ constructor(
                     }
                     SolarExtraPacketType.MXFM_DAILY -> {
                         packet as DailyMXPacket
-                        dailyMXMap[IdentifierFragment.create(fragmentId, packet.identifier as OutbackIdentifier)] = packet
+                        dailyMXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet
                         dailyChargeControllerMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.FX_CHARGING -> {
@@ -196,17 +191,6 @@ constructor(
 
         pvWattage = basicChargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
         pvChargerWattage = basicChargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
-        dailyKWHours = dailyChargeControllerMap.values.map { it.dailyKWH }.sum()
-
-        dailyFXInfo = if(dailyFXMap.isEmpty()){
-            null
-        } else {
-            DailyFXInfo(dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat(),
-                    dailyFXMap.values.sumByDouble { it.buyKWH.toDouble() }.toFloat(),
-                    dailyFXMap.values.sumByDouble { it.chargerKWH.toDouble() }.toFloat(),
-                    dailyFXMap.values.sumByDouble { it.inverterKWH.toDouble() }.toFloat()
-            )
-        }
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningModeValue) } }
         hasWarnings = fxMap.isNotEmpty()
@@ -214,9 +198,6 @@ constructor(
                 MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorModeValue) } } +
                 RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
     }
-
-    @Deprecated("You should not use this")
-    val dailyKWHoursString: String by lazy { Formatting.FORMAT.format(dailyKWHours) }
 
     fun isBatteryVoltageAboveSetpoint(setpointVoltage: Float): Boolean {
         return batteryVoltage >= setpointVoltage

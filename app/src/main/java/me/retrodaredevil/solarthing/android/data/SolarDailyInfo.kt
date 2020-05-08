@@ -10,15 +10,18 @@ import me.retrodaredevil.solarthing.solar.daily.DailyConfig
 import me.retrodaredevil.solarthing.solar.daily.DailyPair
 import me.retrodaredevil.solarthing.solar.daily.DailyUtil
 import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
+import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 
 
 fun createSolarDailyInfo(dayStartTimeMillis: Long, packetGroups: List<FragmentedPacketGroup>): SolarDailyInfo {
     val dailyConfig = DailyConfig(dayStartTimeMillis + 3 * 60 * 60 * 1000, dayStartTimeMillis + 10 * 60 * 60 * 1000)
 
-    val chargeControllerMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(DailyChargeController::class.java, packetGroups), dailyConfig)
+    val mxMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(MXStatusPacket::class.java, packetGroups), dailyConfig)
+    val roverMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(RoverStatusPacket::class.java, packetGroups), dailyConfig)
     val dailyFXMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(DailyFXPacket::class.java, packetGroups), dailyConfig)
     return SolarDailyInfo(
-        chargeControllerMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) },
+        mxMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) } + roverMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) },
         dailyFXMap.mapValues { getDailyFXTotal(it.value, ::DailyFXInfo) }
     )
 }

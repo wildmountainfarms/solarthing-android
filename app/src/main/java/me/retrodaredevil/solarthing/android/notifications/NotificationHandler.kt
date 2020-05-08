@@ -180,8 +180,8 @@ object NotificationHandler {
                 "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
                 "Pass Thru: ${wattsToKilowattsString(passThru)} kW\n" +
                 "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.inputVoltage} + "\n" +
-                "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.chargerCurrent } + "\n" +
-                "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.buyCurrent }
+                "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + Formatting.OPTIONAL_TENTHS.format(it.chargerCurrent) } + "\n" +
+                "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + Formatting.OPTIONAL_TENTHS.format(it.buyCurrent) }
 
         val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_PERSISTENT.id, GENERATOR_PERSISTENT_ID)
             .setSmallIcon(R.drawable.solar_panel)
@@ -344,8 +344,11 @@ object NotificationHandler {
         } else {
             info.acMode.modeName
         }
-        val dailyKWHString = getOrderedValues(info.dailyChargeControllerMap).joinToString(SEPARATOR) {
-            getDeviceString(info, it as DocumentedPacket<*>) + Formatting.FORMAT.format(it.dailyKWH)
+
+        val dailyKWHString = getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).joinToString(SEPARATOR) {
+            val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
+            val device = info.deviceMap[it] ?: error("No device in device map for ${it.fragmentId} ${it.identifier.representation}")
+            getDeviceString(info, device as DocumentedPacket<*>) + Formatting.FORMAT.format(dailyKWH)
         }
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
@@ -386,14 +389,18 @@ object NotificationHandler {
             "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
                     "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
         }
-        val dailyChargeControllerString = if(info.dailyChargeControllerMap.size > 1) {
-            "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
-        } else {
-            "Daily kWh: <strong>${dailyInfo.dailyKWHString}</strong>\n"
+        val dailyChargeControllerString = when(dailyInfo.dailyKWHMap.size) {
+            0 -> ""
+            1 -> {
+                "Daily kWh: <strong>${dailyInfo.dailyKWHString}</strong>\n"
+            }
+            else -> {
+                "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
+            }
         }
-        val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else "CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
+        val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else ("CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
             (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
-        }.joinToString(SEPARATOR) + "\n"
+        }.joinToString(SEPARATOR) + "\n")
 
         val text = "" +
                 basicChargeControllerString +
@@ -665,8 +672,8 @@ object NotificationHandler {
     private fun createChargeControllerMoreInfo(device: BasicChargeController): String{
         return "Charging: Current: ${Formatting.TENTHS.format(device.chargingCurrent)}A | " +
                 "Power: ${Formatting.TENTHS.format(device.chargingPower)}W\n" +
-                "PV: ${Formatting.TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.TENTHS.format(device.inputVoltage)}V = " +
-                "${Formatting.TENTHS.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
+                "PV: ${Formatting.OPTIONAL_TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.OPTIONAL_TENTHS.format(device.inputVoltage)}V = " +
+                "${Formatting.OPTIONAL_TENTHS.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
     }
     fun createMoreRoverInfoNotification(context: Context, device: RoverStatusPacket, dateMillis: Long): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
