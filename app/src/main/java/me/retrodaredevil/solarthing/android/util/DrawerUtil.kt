@@ -2,16 +2,23 @@ package me.retrodaredevil.solarthing.android.util
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.view.View
 import androidx.appcompat.widget.Toolbar
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
+import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
+import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.activity.CommandActivity
 import me.retrodaredevil.solarthing.android.activity.EventDisplayActivity
-import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.activity.SettingsActivity
+import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
+
 
 /*
 Thanks https://android.jlelse.eu/android-using-navigation-drawer-across-multiple-activities-the-easiest-way-b011f152aebd
@@ -32,6 +39,11 @@ fun initializeDrawer(
     val drawerItemCommands: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(3)
         .withName(R.string.commands_select)
 
+    val drawerNotificationSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(100)
+        .withName(R.string.notification_settings_select)
+    val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(101)
+        .withName(R.string.grafana_select)
+
     DrawerBuilder()
         .withActivity(activity)
         .withToolbar(toolbar)
@@ -48,8 +60,10 @@ fun initializeDrawer(
             drawerEmptyItem,
             drawerItemSettings,
             drawerItemEventDisplay,
-            drawerItemCommands
-//            DividerDrawerItem(),
+            drawerItemCommands,
+            DividerDrawerItem(),
+            drawerNotificationSettings,
+            drawerGrafana
         )
         .withOnDrawerItemClickListener(object : Drawer.OnDrawerItemClickListener {
             override fun onItemClick(view: View?, position: Int, drawerItem: IDrawerItem<*>): Boolean {
@@ -58,6 +72,32 @@ fun initializeDrawer(
                     1L -> launchActivity<SettingsActivity>(view, activity, onActivityIntentRequest)
                     2L -> launchActivity<EventDisplayActivity>(view, activity, onActivityIntentRequest)
                     3L -> launchActivity<CommandActivity>(view, activity, onActivityIntentRequest)
+                    100L -> {
+                        // credit here: https://stackoverflow.com/a/45192258/5434860
+                        val intent = Intent()
+                        when {
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                                intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                intent.putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+                            }
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
+                                intent.action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                                intent.putExtra("app_package", activity.packageName)
+                                intent.putExtra("app_uid", activity.applicationInfo.uid)
+                            }
+                            else -> {
+                                intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                intent.addCategory(Intent.CATEGORY_DEFAULT)
+                                intent.data = Uri.parse("package:" + activity.packageName)
+                            }
+                        }
+                        activity.startActivity(intent)
+                    }
+                    101L -> {
+                        val profile = createConnectionProfileManager(activity).activeProfile.profile
+                        val couchDb = profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile
+                        activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://${couchDb.host}/grafana")))
+                    }
                 }
                 return true
             }

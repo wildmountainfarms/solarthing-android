@@ -451,61 +451,6 @@ object NotificationHandler {
         return builder.build()
     }
 
-    @Deprecated("Use SolarDailyInfo")
-    fun createMXDayEnd(context: Context, packet: MXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setContentTitle("MX on port ${packet.address} end of day")
-            .setContentText("Got ${Formatting.FORMAT.format(packet.dailyKWH)} kWh")
-        val summary = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(END_OF_DAY_GROUP)
-            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(MX_COLOR)
-            builder.setCategory(Notification.CATEGORY_STATUS)
-            summary.setColor(MX_COLOR)
-            summary.setCategory(Notification.CATEGORY_STATUS)
-        }
-
-
-        return Pair(builder.build(), summary.build())
-    }
-    @Deprecated("Use SolarDailyInfo")
-    fun createFXDayEnd(context: Context, packet: FXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setContentTitle("FX on port ${packet.address} end of day")
-            .setContentText("(kWh): Discharged: ${Formatting.TENTHS.format(packet.inverterKWH)} | Charged: ${Formatting.TENTHS.format(packet.chargerKWH)} | Bought: ${Formatting.TENTHS.format(packet.buyKWH)} ")
-        val summary = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(END_OF_DAY_GROUP)
-            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(MX_COLOR)
-            builder.setCategory(Notification.CATEGORY_STATUS)
-            summary.setColor(MX_COLOR)
-            summary.setCategory(Notification.CATEGORY_STATUS)
-        }
-
-
-        return Pair(builder.build(), summary.build())
-    }
-
     fun createDayEnd(context: Context, packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): Notification {
         val dailyFXString = (dailyInfo.dailyFXInfo?.let {
             listOfNotNull(

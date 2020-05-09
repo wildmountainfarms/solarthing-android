@@ -112,37 +112,6 @@ class SolarEventService(
         }
     }
 
-    @Deprecated("Use SolarDailyInfo")
-    private fun doMXDayEnd(packet: MXDayEndPacket, dateMillis: Long){
-        if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
-            return // We got a packet from a long time ago. We don't need to display it
-        }
-        val notificationAndSummary = NotificationHandler.createMXDayEnd(service, packet, dateMillis)
-        service.getManager().notify(
-            getOutbackEndOfDayInfoId(packet),
-            notificationAndSummary.first
-        )
-        service.getManager().notify(
-            END_OF_DAY_SUMMARY_ID,
-            notificationAndSummary.second
-        )
-    }
-    @Deprecated("Use SolarDailyInfo")
-    private fun doFXDayEnd(packet: FXDayEndPacket, dateMillis: Long){
-        if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
-            return // We got a packet from a long time ago. We don't need to display it
-        }
-        val notificationAndSummary = NotificationHandler.createFXDayEnd(service, packet, dateMillis)
-        service.getManager().notify(
-            getOutbackEndOfDayInfoId(packet),
-            notificationAndSummary.first
-        )
-        service.getManager().notify(
-            END_OF_DAY_SUMMARY_ID,
-            notificationAndSummary.second
-        )
-    }
-
     @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
         Notification.Builder(service.applicationContext, NotificationChannels.COMMAND_FEEDBACK.id)

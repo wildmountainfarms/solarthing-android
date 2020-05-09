@@ -3,6 +3,8 @@
     <string name="settings_select">Settings</string>
     <string name="event_display_select">Event Display</string>
     <string name="commands_select">Commands</string>
+    <string name="notification_settings_select">Notifications</string>
+    <string name="grafana_select">Grafana</string>
 
     <string name="generator_done_notification">Generator Done Alert</string>
     <string name="generator_done_notification_description">Sends an alert when the generator stopped charging the batteries</string>

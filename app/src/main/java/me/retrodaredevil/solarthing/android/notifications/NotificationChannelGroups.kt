@@ -9,7 +9,8 @@ enum class NotificationChannelGroups(
     private val descriptionResId: Int
 ) {
     SOLAR("solar", R.string.solar_group, R.string.solar_group_description),
-    OUTHOUSE("outhouse", R.string.outhouse_group, R.string.outhouse_group_description);
+//    OUTHOUSE("outhouse", R.string.outhouse_group, R.string.outhouse_group_description)
+    ;
 
     fun getName(context: Context): String {
         return context.getString(nameResId)

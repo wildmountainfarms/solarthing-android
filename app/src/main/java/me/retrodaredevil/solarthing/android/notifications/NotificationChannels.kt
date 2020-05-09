@@ -39,22 +39,19 @@ enum class NotificationChannels(
         R.string.more_solar_info,
         R.string.more_solar_info_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
+    /*
     OUTHOUSE_STATUS_WHILE_VACANT("outhouse_status_vacant",
         R.string.outhouse_status_vacant,
         R.string.outhouse_status_vacant_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
     OUTHOUSE_STATUS_WHILE_OCCUPIED("outhouse_status_occupied",
         R.string.outhouse_status_occupied,
         R.string.outhouse_status_occupied_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE),
+     */
 
     GENERATOR_DONE_NOTIFICATION("generator_done_notification_v2",
         R.string.generator_done_notification,
         R.string.generator_done_notification_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.CYAN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
-    @Deprecated("Use END_OF_DAY")
-    MX_END_OF_DAY("mx_end_of_day",
-        R.string.mx_end_of_day,
-        R.string.mx_end_of_day_description, NotificationManager.IMPORTANCE_LOW,
-        showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
     END_OF_DAY("end_of_day",
         R.string.end_of_day,
         R.string.end_of_day_description, NotificationManager.IMPORTANCE_LOW,
@@ -73,15 +70,21 @@ enum class NotificationChannels(
         R.string.temperature_alert_description, NotificationManager.IMPORTANCE_HIGH,
         enableLights = true, lightColor = Color.RED, showBadge = true, notificationChannelGroups = NotificationChannelGroups.SOLAR),
 
+    /*
     VACANT_NOTIFICATION("vacant_notification_v2",
         R.string.vacant_notification,
         R.string.vacant_notification_status, NotificationManager.IMPORTANCE_HIGH, enableLights = true, lightColor = Color.GREEN, showBadge = true, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE, sound=R.raw.toilet),
     SILENT_VACANT_NOTIFICATION("silent_vacant_notification",
         R.string.silent_vacant_notification,
         R.string.silent_vacant_notification_status, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE)
+     */
     ;
     companion object {
-        val OLD_CHANNELS = listOf("generator_done_notification", "generator_float_notification", "generator_persistent", "battery_notification", "vacant_notification")
+        val OLD_CHANNELS = listOf(
+            "generator_done_notification", "generator_float_notification", "generator_persistent",
+            "battery_notification", "vacant_notification", "mx_end_of_day",
+            "vacant_notification_v2", "silent_vacant_notification", "outhouse_status_vacant", "outhouse_status_occupied"
+        )
     }
 
 
