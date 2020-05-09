@@ -14,6 +14,10 @@ import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 
 
+/**
+ * @param dayStartTimeMillis The date in millis representing the beginning of the day
+ * @param packetGroups The packet groups where each packet group is on or after the day start
+ */
 fun createSolarDailyInfo(dayStartTimeMillis: Long, packetGroups: List<FragmentedPacketGroup>): SolarDailyInfo {
     val dailyConfig = DailyConfig(dayStartTimeMillis + 3 * 60 * 60 * 1000, dayStartTimeMillis + 10 * 60 * 60 * 1000)
 
@@ -21,12 +25,14 @@ fun createSolarDailyInfo(dayStartTimeMillis: Long, packetGroups: List<Fragmented
     val roverMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(RoverStatusPacket::class.java, packetGroups), dailyConfig)
     val dailyFXMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(DailyFXPacket::class.java, packetGroups), dailyConfig)
     return SolarDailyInfo(
+        dayStartTimeMillis,
         mxMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) } + roverMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) },
         dailyFXMap.mapValues { getDailyFXTotal(it.value, ::DailyFXInfo) }
     )
 }
 
 class SolarDailyInfo(
+    val dayStartTimeMillis: Long,
     val dailyKWHMap: Map<IdentifierFragment, Float>,
     val fxMap: Map<IdentifierFragment, DailyFXInfo>
 ) {

@@ -19,6 +19,8 @@
     <string name="mx_end_of_day_description">Sends information on each charge controller device after daily kWh is reset back to 0
         indicating a new day
     </string>
+    <string name="end_of_day">End of Day</string>
+    <string name="end_of_day_description">At midnight, this notification is sent that tells you about your system that day.</string>
 
     <string name="connection_status">Connection Status</string>
     <string name="connection_status_description">Sends updates when a device has been connected or disconnected</string>

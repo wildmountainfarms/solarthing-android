@@ -53,12 +53,8 @@ class SolarEventService(
                     }
                 } else if(packet is SolarEventPacket){
                     when(val packetType = packet.packetType){
-                        SolarEventPacketType.MXFM_DAILY_DAY_END -> {
-                            doMXDayEnd(packet as MXDayEndPacket, dateMillis)
-                        }
-                        SolarEventPacketType.FX_DAILY_DAY_END -> {
-                            doFXDayEnd(packet as FXDayEndPacket, dateMillis)
-                        }
+                        SolarEventPacketType.MXFM_DAILY_DAY_END -> { }
+                        SolarEventPacketType.FX_DAILY_DAY_END -> { }
                         SolarEventPacketType.FX_AC_MODE_CHANGE -> {
                             println("We will eventually implement a notification for generator turning on and off")
                         }
@@ -116,6 +112,7 @@ class SolarEventService(
         }
     }
 
+    @Deprecated("Use SolarDailyInfo")
     private fun doMXDayEnd(packet: MXDayEndPacket, dateMillis: Long){
         if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
             return // We got a packet from a long time ago. We don't need to display it
@@ -130,6 +127,7 @@ class SolarEventService(
             notificationAndSummary.second
         )
     }
+    @Deprecated("Use SolarDailyInfo")
     private fun doFXDayEnd(packet: FXDayEndPacket, dateMillis: Long){
         if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
             return // We got a packet from a long time ago. We don't need to display it

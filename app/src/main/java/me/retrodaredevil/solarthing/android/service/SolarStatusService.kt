@@ -1,6 +1,5 @@
 package me.retrodaredevil.solarthing.android.service
 
-import android.R.attr.timeZone
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -56,7 +55,7 @@ class SolarStatusService(
     private val temperatureNotifyHandler = TemperatureNotifyHandler(service, solarProfileProvider, miscProfileProvider)
     private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
     private var solarInfoCollection: Collection<SolarInfo> = emptySet()
-    private var lastPacketInfo: SolarPacketInfo? = null
+    private var lastSolarInfo: SolarInfo? = null
     private var lastVoltageTimerNotification: Long? = null
     private var lastDoneGeneratorNotification: Long? = null
     private var lastLowBatteryNotification: Long? = null
@@ -110,6 +109,7 @@ class SolarStatusService(
         calendar.timeInMillis = dateMillis
         calendar[Calendar.HOUR_OF_DAY] = 0
         calendar[Calendar.MINUTE] = 0
+        calendar[Calendar.SECOND] = 0
         calendar[Calendar.MILLISECOND] = 0
         return calendar.timeInMillis
     }
@@ -145,8 +145,7 @@ class SolarStatusService(
         if(dataRequest.successful) {
             println("[123]Got successful data request")
             val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
-            packetGroups.limitSize(100_000, 90_000)
-            packetGroups.removeIfBefore(System.currentTimeMillis() - 24 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 11 hours old
+            packetGroups.removeIfBefore(System.currentTimeMillis() - 24 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 24 hours old
 
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
@@ -242,44 +241,35 @@ class SolarStatusService(
             moreInfoIntent,
             miscProfileProvider.activeProfile.profile.temperatureUnit
         ))
+//        service.getManager().notify(
+//            END_OF_DAY_NOTIFICATION_ID,
+//            NotificationHandler.createDayEnd(service.applicationContext, currentSolarInfo.solarPacketInfo, currentSolarInfo.solarDailyInfo)
+//        )
         if(beginningACDropInfo != null || acUseInfo != null){
             service.getManager().notify(
                 GENERATOR_PERSISTENT_ID,
                 NotificationHandler.createPersistentGenerator(
                     service, currentSolarInfo.solarPacketInfo,
                     beginningACDropInfo, lastACDropInfo, acUseInfo,
-                    /*voltageTimerActivatedInfo*/ null, uncertainGeneratorStartInfo
+                    uncertainGeneratorStartInfo
                 )
             )
         } else {
             service.getManager().cancel(GENERATOR_PERSISTENT_ID)
         }
-        val lastPacketInfo = this.lastPacketInfo
-        if(lastPacketInfo != null){
-            // end of day for loop
-            /*
-            for(dailyChargeController in currentInfo.dailyChargeControllerMap.values){
-                if(dailyChargeController !is Identifiable) error("dailyChargeControllerMap must be identifiable!")
-                if(dailyChargeController.dailyKWH == 0f){
-                    val lastDailyChargeController = lastPacketInfo.dailyChargeControllerMap[dailyChargeController.identifier] ?: continue if we use this again, we'll have to use a FragmentIdentifier
-                    val dailyKWH = lastDailyChargeController.dailyKWH
-                    if(dailyKWH != 0f){
-                        val notificationAndSummary = NotificationHandler.createEndOfDay(service, currentInfo, lastDailyChargeController, currentInfo.dateMillis)
-                        service.getManager().notify(
-                            getEndOfDayInfoId(lastDailyChargeController),
-                            notificationAndSummary.first
-                        )
-                        service.getManager().notify(
-                            END_OF_DAY_SUMMARY_ID,
-                            notificationAndSummary.second
-                        )
-                    }
-                }
+        val lastSolarInfo = this.lastSolarInfo
+        this.lastSolarInfo = currentSolarInfo
+        if(lastSolarInfo != null){
+            if (currentSolarInfo.solarDailyInfo.dayStartTimeMillis - lastSolarInfo.solarDailyInfo.dayStartTimeMillis > 2 * 60 * 60 * 1000) {
+                println("End of day ${lastSolarInfo.solarDailyInfo.dayStartTimeMillis} new: ${currentSolarInfo.solarDailyInfo.dayStartTimeMillis}")
+                service.getManager().notify(
+                    END_OF_DAY_NOTIFICATION_ID,
+                    NotificationHandler.createDayEnd(service, lastSolarInfo.solarPacketInfo, lastSolarInfo.solarDailyInfo)
+                )
             }
-             */
             // region Device Connection/Disconnection section
             for((identifierFragment, device) in currentSolarInfo.solarPacketInfo.deviceMap.entries){
-                val presentInLast = identifierFragment in lastPacketInfo.deviceMap
+                val presentInLast = identifierFragment in lastSolarInfo.solarPacketInfo.deviceMap
                 if(!presentInLast){ // device just connected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentSolarInfo.solarPacketInfo.dateMillis)
                     service.getManager().apply {
@@ -294,7 +284,7 @@ class SolarStatusService(
                     }
                 }
             }
-            for((identifierFragment, device) in lastPacketInfo.deviceMap.entries){
+            for((identifierFragment, device) in lastSolarInfo.solarPacketInfo.deviceMap.entries){
                 val presentNow = identifierFragment in currentSolarInfo.solarPacketInfo.deviceMap
                 if(!presentNow){ // device just disconnected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentSolarInfo.solarPacketInfo.dateMillis)
@@ -312,7 +302,6 @@ class SolarStatusService(
             }
             // endregion
         }
-        this.lastPacketInfo = currentSolarInfo.solarPacketInfo
 
 
         // region Voltage Timer notification
@@ -415,7 +404,7 @@ class SolarStatusService(
             context!!; intent!!
             when(intent.action){
                 MORE_INFO_ACTION -> {
-                    val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
+                    val packetInfo = lastSolarInfo?.solarPacketInfo ?: run { System.err.println("lastSolarInfo is null when more info is requested!"); return }
                     notifyMoreInfo(packetInfo)
                 }
                 MORE_INFO_ROVER_ACTION -> {
@@ -425,7 +414,7 @@ class SolarStatusService(
                             fragmentId = null
                         }
                     }
-                    val packetInfo = lastPacketInfo ?: run { System.err.println("lastPacketInfo is null when more info is requested!"); return }
+                    val packetInfo = lastSolarInfo?.solarPacketInfo ?: run { System.err.println("lastSolarInfo is null when more info is requested!"); return }
                     val identifierFragment = IdentifierFragment.create(fragmentId, RoverIdentifier.getDefaultIdentifier())
                     val rover = packetInfo.roverMap[identifierFragment] ?: run { System.err.println("no rover with fragment $fragmentId"); return}
                     notifyMoreRoverInfo(packetInfo, rover)

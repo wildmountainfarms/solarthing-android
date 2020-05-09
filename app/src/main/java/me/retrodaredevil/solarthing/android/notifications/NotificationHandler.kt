@@ -9,7 +9,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.text.Html
 import android.text.Spanned
-import me.retrodaredevil.solarthing.android.*
+import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
@@ -20,7 +20,6 @@ import me.retrodaredevil.solarthing.packets.support.Support
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
-import me.retrodaredevil.solarthing.solar.common.DailyChargeController
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
@@ -135,14 +134,12 @@ object NotificationHandler {
      * @param beginningACDropInfo The packet where the ac mode is [ACMode.AC_DROP] but packets before this packet the ac mode was [ACMode.NO_AC]
      * @param lastACDropInfo The last packet where the ac mode is [ACMode.AC_DROP]. This is normally the same as [lastACDropInfo] but may be a more recent packet
      * @param acUseInfo The first packet where the ac mode is [ACMode.AC_USE]. If [beginningACDropInfo] is not null, this should be right after it.
-     * @param voltageTimerStartedInfo The packet where the voltage timer was started
      * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
      */
     fun createPersistentGenerator(
             context: Context, info: SolarPacketInfo,
             beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
             acUseInfo: SolarPacketInfo?,
-            voltageTimerStartedInfo: SolarPacketInfo?,
             uncertainGeneratorStartInfo: Boolean
     ): Notification{
         val acMode = info.acMode
@@ -161,21 +158,12 @@ object NotificationHandler {
             "Last AC Drop at $time\n"
         } else ""
 
-        val voltageTimerStartedText = if(voltageTimerStartedInfo != null){
-            val timeTurnedOnString = DateFormat.getTimeInstance(DateFormat.SHORT).format(
-                GregorianCalendar().apply { timeInMillis = voltageTimerStartedInfo.dateMillis }.time
-            )
-            "Voltage timer start at $timeTurnedOnString\n"
-        } else {
-            ""
-        }
         val passThru = info.generatorTotalWattage - info.generatorToBatteryWattage
 
         val text = "" +
                 acDropStartString +
                 acUseStartString +
                 lastACDropString +
-                voltageTimerStartedText +
                 "Charger: ${wattsToKilowattsString(info.generatorToBatteryWattage)} kW\n" +
                 "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
                 "Pass Thru: ${wattsToKilowattsString(passThru)} kW\n" +
@@ -274,6 +262,14 @@ object NotificationHandler {
         }
     }
 
+    private fun getDailyKWHString(packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): String {
+        return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).joinToString(SEPARATOR) {
+            val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
+            val device = packetInfo.deviceMap[it] ?: error("No device in device map for ${it.fragmentId} ${it.identifier.representation}")
+            getDeviceString(packetInfo, device as DocumentedPacket<*>) + Formatting.FORMAT.format(dailyKWH)
+        }
+    }
+
     /**
      *
      * @param info The SolarPacketInfo representing a simpler view of a PacketCollection
@@ -345,11 +341,7 @@ object NotificationHandler {
             info.acMode.modeName
         }
 
-        val dailyKWHString = getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).joinToString(SEPARATOR) {
-            val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
-            val device = info.deviceMap[it] ?: error("No device in device map for ${it.fragmentId} ${it.identifier.representation}")
-            getDeviceString(info, device as DocumentedPacket<*>) + Formatting.FORMAT.format(dailyKWH)
-        }
+        val dailyKWHString = getDailyKWHString(info, dailyInfo)
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
@@ -428,7 +420,13 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
             .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
-            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} kWh:${dailyInfo.dailyKWHString} err:${info.errorsCount}" + (if(info.hasWarnings) " warn:${info.warningsCount}" else "") +  (if(auxCount > 0) " aux:$auxCount" else "") + " generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off")
+            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} " +
+                    "kWh:${dailyInfo.dailyKWHString} " +
+                    "err:${info.errorsCount}" + (if(info.hasWarnings) " " +
+                    "warn:${info.warningsCount}" else "") +
+                    (if(auxCount > 0) " aux:$auxCount" else "") + " " +
+                    "generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off"
+            )
             .setStyle(style)
             .setOnlyAlertOnce(true)
             .setWhen(info.dateMillis)
@@ -452,46 +450,16 @@ object NotificationHandler {
 
         return builder.build()
     }
-    @Deprecated("Use createMXDayEnd()")
-    fun createEndOfDay(context: Context, currentInfo: SolarPacketInfo, dailyChargeController: DailyChargeController, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setContentTitle(when(dailyChargeController){
-                is MXStatusPacket -> "MX on port ${dailyChargeController.address} end of day"
-                is RoverStatusPacket -> "Rover ${currentInfo.getRoverId(dailyChargeController)} ${dailyChargeController.productSerialNumber} end of day"
-                else -> error("dailyChargeController: $dailyChargeController is not supported!")
-            })
-            .setContentText("Got ${Formatting.FORMAT.format(dailyChargeController.dailyKWH)} kWh")
-        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(END_OF_DAY_GROUP)
-            summary.setGroup(END_OF_DAY_GROUP).setGroupSummary(true)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(MX_COLOR)
-            builder.setCategory(Notification.CATEGORY_STATUS)
-            summary.setColor(MX_COLOR)
-            summary.setCategory(Notification.CATEGORY_STATUS)
-        }
-
-
-        return Pair(builder.build(), summary.build())
-    }
-
+    @Deprecated("Use SolarDailyInfo")
     fun createMXDayEnd(context: Context, packet: MXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+        val builder = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
             .setContentTitle("MX on port ${packet.address} end of day")
             .setContentText("Got ${Formatting.FORMAT.format(packet.dailyKWH)} kWh")
-        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+        val summary = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
@@ -510,14 +478,15 @@ object NotificationHandler {
 
         return Pair(builder.build(), summary.build())
     }
+    @Deprecated("Use SolarDailyInfo")
     fun createFXDayEnd(context: Context, packet: FXDayEndPacket, dateMillis: Long): Pair<Notification, Notification> {
-        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+        val builder = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
             .setContentTitle("FX on port ${packet.address} end of day")
             .setContentText("(kWh): Discharged: ${Formatting.TENTHS.format(packet.inverterKWH)} | Charged: ${Formatting.TENTHS.format(packet.chargerKWH)} | Bought: ${Formatting.TENTHS.format(packet.buyKWH)} ")
-        val summary = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+        val summary = createNotificationBuilder(context, NotificationChannels.MX_END_OF_DAY.id, null)
             .setSmallIcon(R.drawable.solar_panel)
             .setWhen(dateMillis)
             .setShowWhen(true)
@@ -536,6 +505,45 @@ object NotificationHandler {
 
         return Pair(builder.build(), summary.build())
     }
+
+    fun createDayEnd(context: Context, packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): Notification {
+        val dailyFXString = (dailyInfo.dailyFXInfo?.let {
+            listOfNotNull(
+                if (it.inverterKWH > 0) "Inv: ${Formatting.TENTHS.format(it.inverterKWH)}" else null,
+                if (it.buyKWH > 0) "Buy: ${Formatting.TENTHS.format(it.buyKWH)}" else null,
+                if (it.chargerKWH > 0) "Chrg: ${Formatting.TENTHS.format(it.chargerKWH)}" else null,
+                if (it.sellKWH > 0) "Sell: ${Formatting.TENTHS.format(it.sellKWH)}" else null
+            ).joinToString(" | ")
+        } ?: "").let { if (it.isEmpty()) null else it }
+        val dailyKWHLine = "Daily kWh: " + getDailyKWHString(packetInfo, dailyInfo)
+        val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
+            .setSmallIcon(R.drawable.solar_panel)
+            .setWhen(packetInfo.dateMillis)
+            .setShowWhen(true)
+            .setContentTitle("Day End" + (if (dailyInfo.dailyKWHMap.isEmpty()) "" else " | PV kWh: ${dailyInfo.dailyKWHString}"))
+            .setContentText(fromHtml(dailyFXString ?: dailyKWHLine))
+
+        val text = "" +
+                if (dailyFXString == null) "" else (dailyFXString + "\n") +
+                dailyKWHLine
+
+        /*
+        This is preferred to BigTextStyle because Android 10 itself has a bug that won't show the
+        content text if BigStyleText is used. Plus we don't need the extra lines that BigTextStyle allow
+        info: https://issuetracker.google.com/issues/141403558 and https://issuetracker.google.com/issues/142089748s
+         */
+        builder.style = Notification.InboxStyle().apply {
+            for (line in text.split("\n")) {
+                addLine(fromHtml(line))
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setCategory(Notification.CATEGORY_STATUS)
+        }
+        return builder.build()
+    }
+
     /**
      * @param context The context
      * @param device The most recent status packet representing a device that has been connected or disconnected

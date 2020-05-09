@@ -7,6 +7,11 @@ fun <T> createComparator (dateMillisGetter: (T) -> Long): Comparator<T>{
     return Comparator {o1, o2 -> (dateMillisGetter(o1) - dateMillisGetter(o2)).toInt() }
 }
 
+/**
+ * This removes elements from this collection if the date in millis is before [time]. Note:
+ * the elements must be in ascending order
+ * @param time The time in millis
+ */
 fun <T> MutableCollection<T>.removeIfBefore(time: Long, dateMillisGetter: (T) -> Long){
 //    removeIf { dateMillisGetter(it) < time }
     val iterator = iterator()
@@ -14,6 +19,8 @@ fun <T> MutableCollection<T>.removeIfBefore(time: Long, dateMillisGetter: (T) ->
         val element = iterator.next()
         if(dateMillisGetter(element) < time){
             iterator.remove()
+        } else {
+            break
         }
     }
 }
