@@ -35,19 +35,29 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                 val appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS)
                 appWidgetIds ?: return
                 val applicationContext = context.applicationContext
-                if (applicationContext is SolarThingApplication) {
+                val latestInfo = if (applicationContext is SolarThingApplication) {
                     val solarStatusData = applicationContext.solarStatusData
                     if (solarStatusData != null) {
                         val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000)
-                        onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, SolarPacketInfo(sorted.values.first().last(), BatteryVoltageType.FIRST_PACKET))
+                        if (sorted.isEmpty()) {
+                            System.err.println("Sorted is empty!")
+                            null
+                        } else {
+                            val firstSourceValue = sorted.values.first()
+                            if (firstSourceValue.isEmpty()) {
+                                throw AssertionError("One of the values of sortPackets() should never be empty!")
+                            }
+                            SolarPacketInfo(firstSourceValue.last(), BatteryVoltageType.FIRST_PACKET) // the most recent info
+                        }
                     } else {
                         System.err.println("So we got an event to update, but the data is null? Weird...")
-                        onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, null)
+                        null
                     }
                 } else {
                     System.err.println("BAD!! What kind of Android version are we running here? Now we can't update this widget!")
-                    onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, null)
+                    null
                 }
+                onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, latestInfo)
             }
         } else {
             super.onReceive(context, intent)
