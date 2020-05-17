@@ -7,6 +7,7 @@ import android.content.Intent
 import android.widget.RemoteViews
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
+import me.retrodaredevil.solarthing.android.data.CreationException
 import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
 import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
@@ -47,7 +48,12 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                             if (firstSourceValue.isEmpty()) {
                                 throw AssertionError("One of the values of sortPackets() should never be empty!")
                             }
-                            SolarPacketInfo(firstSourceValue.last(), BatteryVoltageType.FIRST_PACKET) // the most recent info
+                            try {
+                                SolarPacketInfo(firstSourceValue.last(), BatteryVoltageType.FIRST_PACKET) // the most recent info
+                            } catch (ex: CreationException) {
+                                ex.printStackTrace()
+                                null
+                            }
                         }
                     } else {
                         System.err.println("So we got an event to update, but the data is null? Weird...")
