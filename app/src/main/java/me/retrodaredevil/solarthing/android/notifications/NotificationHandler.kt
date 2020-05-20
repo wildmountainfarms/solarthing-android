@@ -263,11 +263,11 @@ object NotificationHandler {
     }
 
     private fun getDailyKWHString(packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): String {
-        return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).joinToString(SEPARATOR) {
+        return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).mapNotNull {
             val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
-            val device = packetInfo.deviceMap[it] ?: error("No device in device map for ${it.fragmentId} ${it.identifier.representation}")
+            val device = packetInfo.deviceMap[it] ?: return@mapNotNull null // if this is the case, then this isn't in the current packet
             getDeviceString(packetInfo, device as DocumentedPacket<*>) + Formatting.FORMAT.format(dailyKWH)
-        }
+        }.joinToString(SEPARATOR)
     }
 
     /**

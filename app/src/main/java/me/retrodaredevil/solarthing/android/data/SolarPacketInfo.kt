@@ -52,8 +52,6 @@ constructor(
     val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
     val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
     private val rawDailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController> // unused so far
-    @Deprecated("Use SolarDailyInfo")
-    val dailyChargeControllerMap: Map<IdentifierFragment, DailyChargeController>
     val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
     val dailyFXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyFXPacket>
@@ -103,7 +101,6 @@ constructor(
         deviceMap = LinkedHashMap()
         basicChargeControllerMap = LinkedHashMap()
         rawDailyChargeControllerMap = LinkedHashMap()
-        dailyChargeControllerMap = LinkedHashMap()
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
         dailyMXMap = LinkedHashMap()
@@ -125,7 +122,6 @@ constructor(
                         batteryMap[identifierFragment] = mx
                         basicChargeControllerMap[identifierFragment] = mx
                         rawDailyChargeControllerMap[identifierFragment] = mx
-                        (dailyChargeControllerMap as MutableMap).getOrPut(identifierFragment) { mx }
                     }
                     SolarStatusPacketType.FLEXNET_DC_STATUS -> System.err.println("Not set up for FLEXNet packets!")
                     SolarStatusPacketType.RENOGY_ROVER_STATUS -> {
@@ -134,7 +130,6 @@ constructor(
                         batteryMap[identifierFragment] = rover
                         basicChargeControllerMap[identifierFragment] = rover
                         rawDailyChargeControllerMap[identifierFragment] = rover
-                        dailyChargeControllerMap[identifierFragment] = rover
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
@@ -149,7 +144,6 @@ constructor(
                     SolarExtraPacketType.MXFM_DAILY -> {
                         packet as DailyMXPacket
                         dailyMXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet
-                        dailyChargeControllerMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.FX_CHARGING -> {
                         packet as FXChargingPacket
@@ -171,20 +165,23 @@ constructor(
         }
         masterFXStatusPacket = OutbackUtil.getMasterFX(fxMap.values) // TODO there may be a better way to indicate the master in the main solarthing codebase
         this.fxChargingPacket = fxChargingPacket
+        if (batteryMap.isEmpty()) {
+            throw CreationException("The must be battery voltage packets!")
+        }
         batteryVoltage = when(batteryVoltageType){
             BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
             BatteryVoltageType.FIRST_PACKET -> null
             BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxBy { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.firstOrNull { it is OutbackData }?.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.firstOrNull()?.batteryVoltage
-        } ?: batteryMap.values.firstOrNull()?.batteryVoltage ?: throw CreationException("There must be battery voltage packets!")
+        } ?: batteryMap.values.first().batteryVoltage
         batteryVoltageString = Formatting.TENTHS.format(batteryVoltage)
 
         estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = fxMap.values.firstOrNull()?.acMode ?: ACMode.NO_AC
-        generatorChargingBatteries = if(masterFXStatusPacket == null) false else masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
+        generatorChargingBatteries = masterFXStatusPacket != null && masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
         load = fxMap.values.sumBy { it.inverterWattage }
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
         generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
