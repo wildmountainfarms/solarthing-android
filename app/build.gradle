@@ -5,11 +5,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    signingConfigs {
-        debug {
-            storeFile file('/home/josh/.android/debug.keystore')
-        }
-    }
     sourceSets.main.java.filter.exclude 'META-INF/**/*'
     compileSdkVersion 29
     lintOptions {
@@ -56,6 +51,7 @@ repositories {
 }
 
 dependencies {
+    api project(':common')
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:multidex:2.0.1'
     //noinspection GradleDependency
