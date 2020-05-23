@@ -22,7 +22,10 @@ class DataListener : WearableListenerService() {
         }
     }
     private fun requestUpdate() {
-        val requester = ProviderUpdateRequester(this, ComponentName(this, javaClass))
+        val requester = ProviderUpdateRequester(
+            this,
+            ComponentName(BatteryVoltageComplicationProviderService::class.java.`package`!!.name, BatteryVoltageComplicationProviderService::class.java.name)
+        )
         requester.requestUpdateAll()
     }
 }
