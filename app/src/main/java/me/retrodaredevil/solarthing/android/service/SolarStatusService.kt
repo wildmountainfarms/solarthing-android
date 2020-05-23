@@ -10,6 +10,10 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.PutDataRequest
+import com.google.android.gms.wearable.Wearable
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.notifications.*
@@ -70,6 +74,8 @@ class SolarStatusService(
         )
     }
 
+    private lateinit var dataClient: DataClient
+
     override fun onInit() {
         notify(
             getBuilder()
@@ -78,6 +84,7 @@ class SolarStatusService(
                 .build()
         )
         service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) })
+        dataClient = Wearable.getDataClient(service)
     }
     override fun onCancel() {
         service.getManager().apply {
@@ -161,6 +168,17 @@ class SolarStatusService(
                 val intent = Intent(service, WidgetHandler::class.java)
                 intent.action = SolarPacketCollectionBroadcast.ACTION
                 service.sendBroadcast(intent)
+
+                val solarInfo = solarInfoCollection.last()
+                val request = PutDataMapRequest.create("/battery").run {
+                    dataMap.putFloat("batteryVoltage", solarInfo.solarPacketInfo.batteryVoltage)
+                    asPutDataRequest().setUrgent()
+                }
+                println(dataClient.api.clientKey)
+                println(dataClient.api.name)
+                dataClient.putDataItem(request).addOnCompleteListener {
+                    println("Completed")
+                } // done asynchronously
             }
         } else {
             println("[123]Got unsuccessful data request")

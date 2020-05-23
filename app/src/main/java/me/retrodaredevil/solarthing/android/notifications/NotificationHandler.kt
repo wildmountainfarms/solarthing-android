@@ -425,7 +425,7 @@ object NotificationHandler {
                     "err:${info.errorsCount}" + (if(info.hasWarnings) " " +
                     "warn:${info.warningsCount}" else "") +
                     (if(auxCount > 0) " aux:$auxCount" else "") + " " +
-                    "generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off"
+                    "generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off" // TODO only if we have FXs
             )
             .setStyle(style)
             .setOnlyAlertOnce(true)

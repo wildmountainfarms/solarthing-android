@@ -12,7 +12,7 @@ class JacksonProfileHolder<T : Any>(
 ) : ProfileHolder<T> {
     override var profile: T
         get() {
-            val string = stringValueSaver.stringValue ?: return defaultProfileCreator()
+            val string = stringValueSaver.stringValue ?: return defaultProfileCreator().apply { stringValueSaver.stringValue = objectMapper.writeValueAsString(this) }
             return objectMapper.readValue(string, javaType)
         }
         set(value) {

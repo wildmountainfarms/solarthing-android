@@ -1,0 +1,15 @@
+package me.retrodaredevil.solarthing.android
+
+import android.os.Bundle
+import android.support.wearable.activity.WearableActivity
+
+class WearDisplayActivity : WearableActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_wear_display)
+
+        // Enables Always-on
+        setAmbientEnabled()
+    }
+}

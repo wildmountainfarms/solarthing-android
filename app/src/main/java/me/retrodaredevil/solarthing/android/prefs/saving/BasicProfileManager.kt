@@ -7,7 +7,7 @@ import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import java.util.*
 import kotlin.NoSuchElementException
 
-class ProfileData<T>(
+data class ProfileData<T>(
     val name: String,
     val uuid: UUID,
     val profile: T
@@ -20,7 +20,7 @@ data class ProfileManagerData<T>(
     @JsonIgnore
     fun getActiveProfileData(): ProfileData<T> = getProfileData(active)
     fun getProfileData(uuid: UUID): ProfileData<T> {
-        return profiles.firstOrNull { it.uuid == uuid } ?: throw NoSuchElementException("No profile with uuid=$uuid. This never should happen! No active profiles!")
+        return profiles.firstOrNull { it.uuid == uuid } ?: throw NoSuchElementException("No profile with uuid=$uuid. profiles: $profiles")
     }
 }
 
