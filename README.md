@@ -39,7 +39,6 @@ Known Bugs:
 * Add a notification for when the connection has failed for a long time
 * Add a notification for when the data is wayy out of date
 * Add "turbo" mode for reloading data
-* Revamp daily notifications
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
@@ -49,10 +48,11 @@ information that dynamically appears if we are selling
 * On the current system I test with, amp hours is not supported, this would be a useful feature to have if the system supports it.
 * I am unable to test 230V FX setups. I believe the implementation is correct, but it is mostly untested
 
-### Future changes to make
+### To do
 * Add option to rename generator to something like "Power Grid" for systems that use
 the power grid as backup power instead of a generator that can be turned on and off
 * Modularize parts of the program different modules (ex: solar, outhouse, etc) can be enabled or disabled easily
+* Make celsius and fahrenheit use special degrees character
 
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:

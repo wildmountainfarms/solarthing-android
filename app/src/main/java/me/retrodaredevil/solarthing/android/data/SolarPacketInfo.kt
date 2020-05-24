@@ -25,7 +25,6 @@ import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.extra.DailyMXPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
@@ -55,7 +54,6 @@ constructor(
     val batteryMap: Map<IdentifierFragment, BatteryVoltage>
 
     val dailyFXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyFXPacket>
-    private val dailyMXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyMXPacket> // unused so far
 
     val masterFXStatusPacket: FXStatusPacket?
     val fxChargingPacket: FXChargingPacket?
@@ -65,7 +63,7 @@ constructor(
     /** The battery voltage as a string (in base 10)*/
     val batteryVoltageString: String
 
-    val estimatedBatteryVoltage: Float
+    private val estimatedBatteryVoltage: Float
     val estimatedBatteryVoltageString: String
 
     /** The PV Wattage (Power from the solar panels)*/
@@ -83,6 +81,7 @@ constructor(
      * The AC Mode which can be used to determine the state of the generator
      */
     val acMode: ACMode
+    val acModeNullable: ACMode?
     val generatorChargingBatteries: Boolean
 
     val warningsCount: Int
@@ -90,6 +89,8 @@ constructor(
     val errorsCount: Int
 
     val deviceCpuTemperatureMap: Map<Int?, Float>
+
+    val batteryTemperatureCelsius: Int?
 
     init {
         if (packetGroup.packets.isEmpty()) {
@@ -103,7 +104,6 @@ constructor(
         rawDailyChargeControllerMap = LinkedHashMap()
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
-        dailyMXMap = LinkedHashMap()
         deviceCpuTemperatureMap = LinkedHashMap()
         var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
@@ -141,10 +141,7 @@ constructor(
                         packet as DailyFXPacket
                         dailyFXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet // TODO remove cast after updating SolarThing
                     }
-                    SolarExtraPacketType.MXFM_DAILY -> {
-                        packet as DailyMXPacket
-                        dailyMXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet
-                    }
+                    SolarExtraPacketType.MXFM_DAILY -> { }
                     SolarExtraPacketType.FX_CHARGING -> {
                         packet as FXChargingPacket
                         fxChargingPacket = packet
@@ -181,6 +178,7 @@ constructor(
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = fxMap.values.firstOrNull()?.acMode ?: ACMode.NO_AC
+        acModeNullable = fxMap.values.firstOrNull()?.acMode ?: null
         generatorChargingBatteries = masterFXStatusPacket != null && masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
         load = fxMap.values.sumBy { it.inverterWattage }
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
@@ -194,10 +192,18 @@ constructor(
         errorsCount = FXErrorMode.values().count { fxErrorMode -> fxMap.values.any { fxErrorMode.isActive(it.errorModeValue) } } +
                 MXErrorMode.values().count { mxErrorMode -> mxMap.values.any { mxErrorMode.isActive(it.errorModeValue) } } +
                 RoverErrorMode.values().count { roverErrorMode -> roverMap.values.any { roverErrorMode.isActive(it.errorModeValue)}}
+
+        batteryTemperatureCelsius = roverMap.values.firstOrNull()?.batteryTemperatureCelsius
     }
 
     fun isBatteryVoltageAboveSetpoint(setpointVoltage: Float): Boolean {
         return batteryVoltage >= setpointVoltage
+    }
+    fun getBatteryTemperatureString(temperatureUnit: TemperatureUnit): String? {
+        if (batteryTemperatureCelsius == null) {
+            return null
+        }
+        return Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(batteryTemperatureCelsius.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
     }
 
     override fun equals(other: Any?): Boolean {

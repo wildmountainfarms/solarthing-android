@@ -14,6 +14,7 @@ import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
+import me.retrodaredevil.solarthing.android.BasicSolarData
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.notifications.*
@@ -29,6 +30,8 @@ import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
+import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
@@ -170,15 +173,21 @@ class SolarStatusService(
                 service.sendBroadcast(intent)
 
                 val solarInfo = solarInfoCollection.last()
-                val request = PutDataMapRequest.create("/battery").run {
-                    dataMap.putFloat("batteryVoltage", solarInfo.solarPacketInfo.batteryVoltage)
-                    asPutDataRequest().setUrgent()
+                val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
+                val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
+                    BasicSolarData(
+                        solarInfo.solarPacketInfo.dateMillis,
+                        solarInfo.solarPacketInfo.batteryVoltage,
+                        solarInfo.solarPacketInfo.acModeNullable?.valueCode,
+                        solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
+                        solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
+                        solarInfo.solarDailyInfo.dailyKWH,
+                        solarInfo.solarPacketInfo.pvWattage / 1000.0f,
+                        solarInfo.solarPacketInfo.load / 1000.0f
+                    ).applyTo(dataMap)
+                    asPutDataRequest()
                 }
-                println(dataClient.api.clientKey)
-                println(dataClient.api.name)
-                dataClient.putDataItem(request).addOnCompleteListener {
-                    println("Completed")
-                } // done asynchronously
+                dataClient.putDataItem(request) // done asynchronously
             }
         } else {
             println("[123]Got unsuccessful data request")

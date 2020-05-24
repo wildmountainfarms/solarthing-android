@@ -27,10 +27,8 @@ import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.MiscMode
 import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingMode
-import me.retrodaredevil.solarthing.solar.outback.fx.event.FXDayEndPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
@@ -164,9 +162,15 @@ object NotificationHandler {
                 acDropStartString +
                 acUseStartString +
                 lastACDropString +
-                "Charger: ${wattsToKilowattsString(info.generatorToBatteryWattage)} kW\n" +
-                "Total: ${wattsToKilowattsString(info.generatorTotalWattage)} kW\n" +
-                "Pass Thru: ${wattsToKilowattsString(passThru)} kW\n" +
+                "Charger: ${wattsToKilowattsString(
+                    info.generatorToBatteryWattage
+                )} kW\n" +
+                "Total: ${wattsToKilowattsString(
+                    info.generatorTotalWattage
+                )} kW\n" +
+                "Pass Thru: ${wattsToKilowattsString(
+                    passThru
+                )} kW\n" +
                 "AC Input Voltage: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + it.inputVoltage} + "\n" +
                 "Charger Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + Formatting.OPTIONAL_TENTHS.format(it.chargerCurrent) } + "\n" +
                 "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + Formatting.OPTIONAL_TENTHS.format(it.buyCurrent) }
@@ -175,7 +179,13 @@ object NotificationHandler {
             .setSmallIcon(R.drawable.solar_panel)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
-            .setContentText("charger:${wattsToKilowattsString(info.generatorToBatteryWattage)} total:${wattsToKilowattsString(info.generatorTotalWattage)} pass thru:${wattsToKilowattsString(passThru)}")
+            .setContentText("charger:${wattsToKilowattsString(
+                info.generatorToBatteryWattage
+            )} total:${wattsToKilowattsString(
+                info.generatorTotalWattage
+            )} pass thru:${wattsToKilowattsString(
+                passThru
+            )}")
             .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
             .setShowWhen(true)
 
@@ -287,10 +297,8 @@ object NotificationHandler {
             }
         }
 
-        val batteryTemperatureString = when {
-            info.roverMap.isEmpty() -> ""
-            else -> SEPARATOR + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(info.roverMap.values.first().batteryTemperatureCelsius.toFloat(), temperatureUnit)) + temperatureUnit.shortRepresentation
-        }
+        val batteryTemperatureString = info.getBatteryTemperatureString(temperatureUnit)?.let { SEPARATOR + it } ?: ""
+
         var auxCount = 0
         val auxModesString = run {
             val list = mutableListOf<String>()
@@ -345,10 +353,14 @@ object NotificationHandler {
         val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.pvCurrent.toDouble() * it.inputVoltage.toDouble())}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(
+                it.pvCurrent.toDouble() * it.inputVoltage.toDouble()
+            )}"
         }
         val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.chargingPower)}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(
+                it.chargingPower
+            )}"
         }
 
         val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.warningsString}" }
@@ -375,11 +387,19 @@ object NotificationHandler {
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
         val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
-            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
-                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n"
+            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(
+                info.pvWattage
+            )}</strong> kW\n" +
+                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(
+                info.pvChargerWattage
+            )}</strong> kW") + "\n"
         } else {
-            "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
-                    "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
+            "PV: <strong>${wattsToKilowattsString(
+                info.pvWattage
+            )}</strong> kW | " +
+                    "Charger: <strong>${wattsToKilowattsString(
+                        info.pvChargerWattage
+                    )}</strong> kW\n"
         }
         val dailyChargeControllerString = when(dailyInfo.dailyKWHMap.size) {
             0 -> ""
@@ -419,8 +439,12 @@ object NotificationHandler {
             .setOnlyAlertOnce(true)
             .setSmallIcon(R.drawable.solar_panel)
             .setSubText(summary)
-            .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
-            .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} " +
+            .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(
+                info.load
+            )} kW" else ""))
+            .setContentText("pv:${wattsToKilowattsString(
+                info.pvWattage
+            )} " +
                     "kWh:${dailyInfo.dailyKWHString} " +
                     "err:${info.errorsCount}" + (if(info.hasWarnings) " " +
                     "warn:${info.warningsCount}" else "") +

@@ -86,5 +86,4 @@ dependencies {
     // https://mvnrepository.com/artifact/org.ektorp/org.ektorp.android
     implementation group: 'org.ektorp', name: 'org.ektorp.android', version: '1.5.0'
 
-    implementation 'com.google.android.gms:play-services-wearable:17.0.0'
 }

@@ -11,11 +11,10 @@ class DataListener : WearableListenerService() {
     override fun onDataChanged(dataEvent: DataEventBuffer) {
         for (event in dataEvent) {
             val item = event.dataItem!!
-            if (item.uri.path!!.compareTo("/battery") == 0) {
-                val batteryVoltage = DataMapItem.fromDataItem(item).dataMap.getFloat("batteryVoltage")
-                println("Battery voltage is now: $batteryVoltage")
+            if (item.uri.path == BasicSolarData.PATH) {
+                println("Got basic solar data")
                 val application = application as SolarThingWearApplication
-                application.batteryVoltage = batteryVoltage
+                application.basicSolarDataMap = DataMapItem.fromDataItem(item).dataMap
                 requestUpdate()
                 return
             }

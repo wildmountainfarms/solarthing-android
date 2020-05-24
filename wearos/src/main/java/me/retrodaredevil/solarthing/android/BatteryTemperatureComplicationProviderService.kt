@@ -5,11 +5,8 @@ import android.support.wearable.complications.ComplicationData
 import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
-import me.retrodaredevil.solarthing.android.util.Formatting
 
-
-class BatteryVoltageComplicationProviderService : ComplicationProviderService() {
-
+class BatteryTemperatureComplicationProviderService : ComplicationProviderService() {
     override fun onComplicationUpdate(complicationId: Int, type: Int, manager: ComplicationManager) {
         check(type == ComplicationData.TYPE_SHORT_TEXT) { "(Currently) Unsupported type: $type "}
 
@@ -17,29 +14,26 @@ class BatteryVoltageComplicationProviderService : ComplicationProviderService() 
 
         val dataMap = application.basicSolarDataMap
         val data = dataMap?.let { BasicSolarData.fromDataMap(it) }
-        if (data == null || data.isOld()) {
-            println("null or old! data: $data")
+        val batteryTemperatureString = data?.batteryTemperatureString
+        if (data == null || data.isOld() || batteryTemperatureString == null) {
+            println("null or old! data: $data batteryTemperatureString: $batteryTemperatureString")
             manager.updateComplicationData(
                 complicationId,
                 ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                    .setShortText(ComplicationText.plainText("??.?V"))
+                    .setIcon(Icon.createWithResource(this, R.drawable.battery))
+                    .setShortText(ComplicationText.plainText("??"))
                     .build()
             )
             return
         }
-        val iconResource = when {
-            data.acMode == 2 -> R.drawable.plug
-            data.anyChargeControllerOn -> R.drawable.charging
-            else -> R.drawable.moon
-        }
-
-        println("Battery Voltage is: ${data.batteryVoltage}")
+        println("Battery temperature is: $batteryTemperatureString")
         manager.updateComplicationData(
             complicationId,
             ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                .setIcon(Icon.createWithResource(this, iconResource))
-                .setShortText(ComplicationText.plainText("${Formatting.TENTHS.format(data.batteryVoltage)}V"))
+                .setIcon(Icon.createWithResource(this, R.drawable.battery))
+                .setShortText(ComplicationText.plainText(batteryTemperatureString))
                 .build()
         )
     }
+
 }
