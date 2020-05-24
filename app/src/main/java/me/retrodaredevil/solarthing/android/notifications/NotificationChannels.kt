@@ -11,17 +11,17 @@ import me.retrodaredevil.solarthing.android.R
 
 @TargetApi(Build.VERSION_CODES.N)
 enum class NotificationChannels(
-    val id: String,
-    private val nameResId: Int,
-    private val descriptionResId: Int,
-    val importance: Int,
-    val enableLights: Boolean = false,
-    val lightColor: Int? = null,
-    val enableVibration: Boolean = false,
-    val vibrationPattern: LongArray? = null,
-    val showBadge: Boolean = false,
-    val notificationChannelGroups: NotificationChannelGroups? = null,
-    val sound: Int? = null
+        val id: String,
+        private val nameResId: Int,
+        private val descriptionResId: Int,
+        val importance: Int,
+        val enableLights: Boolean = false,
+        val lightColor: Int? = null,
+        val enableVibration: Boolean = false,
+        val vibrationPattern: LongArray? = null,
+        val showBadge: Boolean = false,
+        val notificationChannelGroups: NotificationChannelGroups? = null,
+        val sound: Int? = null
 ) {
     PERSISTENT("persistent",
         R.string.persistent,
@@ -81,9 +81,9 @@ enum class NotificationChannels(
     ;
     companion object {
         val OLD_CHANNELS = listOf(
-            "generator_done_notification", "generator_float_notification", "generator_persistent",
-            "battery_notification", "vacant_notification", "mx_end_of_day",
-            "vacant_notification_v2", "silent_vacant_notification", "outhouse_status_vacant", "outhouse_status_occupied"
+                "generator_done_notification", "generator_float_notification", "generator_persistent",
+                "battery_notification", "vacant_notification", "mx_end_of_day",
+                "vacant_notification_v2", "silent_vacant_notification", "outhouse_status_vacant", "outhouse_status_occupied"
         )
     }
 

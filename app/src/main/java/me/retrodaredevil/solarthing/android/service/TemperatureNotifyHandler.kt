@@ -11,14 +11,14 @@ import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 
 private class NotifyInfo(
-    val timeMillis: Long,
-    val wasCritical: Boolean
+        val timeMillis: Long,
+        val wasCritical: Boolean
 )
 
 class TemperatureNotifyHandler(
-    private val service: Service,
-    private val solarProfileProvider: ProfileProvider<SolarProfile>,
-    private val miscProfileProvider: ProfileProvider<MiscProfile>
+        private val service: Service,
+        private val solarProfileProvider: ProfileProvider<SolarProfile>,
+        private val miscProfileProvider: ProfileProvider<MiscProfile>
 ) {
     // TODO update this to use IdentifierFragments
     private val lastBatteryOverNotify = HashMap<Identifier, NotifyInfo>()

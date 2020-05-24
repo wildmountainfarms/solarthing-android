@@ -93,10 +93,10 @@ object NotificationHandler {
     fun createBatteryNotification(context: Context, currentInfo: SolarPacketInfo, critical: Boolean): Notification {
         val voltageString = currentInfo.batteryVoltageString
         val builder = createNotificationBuilder(context, NotificationChannels.BATTERY_NOTIFICATION.id, BATTERY_NOTIFICATION_ID)
-            .setSmallIcon(R.drawable.power_button)
-            .setContentText("The battery voltage is low! $voltageString!!!")
-            .setWhen(currentInfo.dateMillis)
-            .setShowWhen(true)
+                .setSmallIcon(R.drawable.power_button)
+                .setContentText("The battery voltage is low! $voltageString!!!")
+                .setWhen(currentInfo.dateMillis)
+                .setShowWhen(true)
         if(critical) {
             builder.setContentTitle("CRITICAL BATTERY $voltageString V")
         } else {
@@ -176,18 +176,18 @@ object NotificationHandler {
                 "Buy Current: " + info.fxMap.values.joinToString(SEPARATOR) { getDeviceString(info, it) + Formatting.OPTIONAL_TENTHS.format(it.buyCurrent) }
 
         val builder = createNotificationBuilder(context, NotificationChannels.GENERATOR_PERSISTENT.id, GENERATOR_PERSISTENT_ID)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true)
-            .setContentText("charger:${wattsToKilowattsString(
-                info.generatorToBatteryWattage
-            )} total:${wattsToKilowattsString(
-                info.generatorTotalWattage
-            )} pass thru:${wattsToKilowattsString(
-                passThru
-            )}")
-            .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
-            .setShowWhen(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setContentText("charger:${wattsToKilowattsString(
+                    info.generatorToBatteryWattage
+                )} total:${wattsToKilowattsString(
+                    info.generatorTotalWattage
+                )} pass thru:${wattsToKilowattsString(
+                    passThru
+                )}")
+                .setStyle(Notification.BigTextStyle().bigText(fromHtml(text)))
+                .setShowWhen(true)
 
         val title = if(acUseInfo == null){
             builder.setWhen(beginningACDropInfo!!.dateMillis)
@@ -435,26 +435,23 @@ object NotificationHandler {
 
         val isOld = System.currentTimeMillis() - info.dateMillis > 7 * 60 * 1000 // more than 7 minutes old
         val builder = createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setSubText(summary)
-            .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" + (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(
-                info.load
-            )} kW" else ""))
-            .setContentText("pv:${wattsToKilowattsString(
-                info.pvWattage
-            )} " +
-                    "kWh:${dailyInfo.dailyKWHString} " +
-                    "err:${info.errorsCount}" + (if(info.hasWarnings) " " +
-                    "warn:${info.warningsCount}" else "") +
-                    (if(auxCount > 0) " aux:$auxCount" else "") + " " +
-                    "generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off" // TODO only if we have FXs
-            )
-            .setStyle(style)
-            .setOnlyAlertOnce(true)
-            .setWhen(info.dateMillis)
-            .setShowWhen(true)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setSubText(summary)
+                .setContentTitle((if(isOld) "!" else "") + "Batt: ${info.batteryVoltageString} V" +
+                        (if(info.fxMap.isNotEmpty()) " Load: ${wattsToKilowattsString(info.load)} kW" else ""))
+                .setContentText("pv:${wattsToKilowattsString(info.pvWattage)} " +
+                        "kWh:${dailyInfo.dailyKWHString} " +
+                        "err:${info.errorsCount}" + (if(info.hasWarnings) " " +
+                        "warn:${info.warningsCount}" else "") +
+                        (if(auxCount > 0) " aux:$auxCount" else "") + " " +
+                        "generator:" + if(info.acMode != ACMode.NO_AC) "ON" else "off" // TODO only if we have FXs
+                )
+                .setStyle(style)
+                .setOnlyAlertOnce(true)
+                .setWhen(info.dateMillis)
+                .setShowWhen(true)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder.setColor(Color.YELLOW)
@@ -478,19 +475,19 @@ object NotificationHandler {
     fun createDayEnd(context: Context, packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): Notification {
         val dailyFXString = (dailyInfo.dailyFXInfo?.let {
             listOfNotNull(
-                if (it.inverterKWH > 0) "Inv: ${Formatting.TENTHS.format(it.inverterKWH)}" else null,
-                if (it.buyKWH > 0) "Buy: ${Formatting.TENTHS.format(it.buyKWH)}" else null,
-                if (it.chargerKWH > 0) "Chrg: ${Formatting.TENTHS.format(it.chargerKWH)}" else null,
-                if (it.sellKWH > 0) "Sell: ${Formatting.TENTHS.format(it.sellKWH)}" else null
+                    if (it.inverterKWH > 0) "Inv: ${Formatting.TENTHS.format(it.inverterKWH)}" else null,
+                    if (it.buyKWH > 0) "Buy: ${Formatting.TENTHS.format(it.buyKWH)}" else null,
+                    if (it.chargerKWH > 0) "Chrg: ${Formatting.TENTHS.format(it.chargerKWH)}" else null,
+                    if (it.sellKWH > 0) "Sell: ${Formatting.TENTHS.format(it.sellKWH)}" else null
             ).joinToString(" | ")
         } ?: "").let { if (it.isEmpty()) null else it }
         val dailyKWHLine = "Daily kWh: " + getDailyKWHString(packetInfo, dailyInfo)
         val builder = createNotificationBuilder(context, NotificationChannels.END_OF_DAY.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(packetInfo.dateMillis)
-            .setShowWhen(true)
-            .setContentTitle("Day End" + (if (dailyInfo.dailyKWHMap.isEmpty()) "" else " | PV kWh: ${dailyInfo.dailyKWHString}"))
-            .setContentText(fromHtml(dailyFXString ?: dailyKWHLine))
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(packetInfo.dateMillis)
+                .setShowWhen(true)
+                .setContentTitle("Day End" + (if (dailyInfo.dailyKWHMap.isEmpty()) "" else " | PV kWh: ${dailyInfo.dailyKWHString}"))
+                .setContentText(fromHtml(dailyFXString ?: dailyKWHLine))
 
         val text = "" +
                 if (dailyFXString == null) "" else (dailyFXString + "\n") +
@@ -531,15 +528,15 @@ object NotificationHandler {
             else -> name
         }
         val builder = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
-            .setContentTitle(deviceName + " " + (if(justConnected) "connected" else "disconnected"))
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(dateMillis)
+                .setShowWhen(true)
+                .setContentTitle(deviceName + " " + (if(justConnected) "connected" else "disconnected"))
 
         val summary = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
-            .setSmallIcon(R.drawable.solar_panel)
-            .setWhen(dateMillis)
-            .setShowWhen(true)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(dateMillis)
+                .setShowWhen(true)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(DEVICE_CONNECTION_STATUS_GROUP)
             summary.setGroup(DEVICE_CONNECTION_STATUS_GROUP).setGroupSummary(true)
@@ -697,9 +694,9 @@ object NotificationHandler {
     }
     fun createTemperatureNotification(context: Context, dateMillis: Long, temperatureName: String, deviceName: String, temperatureCelsius: Float, over: Boolean, critical: Boolean, temperatureUnit: TemperatureUnit): Notification {
         val builder = createNotificationBuilder(context, NotificationChannels.TEMPERATURE_NOTIFICATION.id, null)
-            .setSmallIcon(R.drawable.power_button)
-            .setShowWhen(true)
-            .setWhen(dateMillis)
+                .setSmallIcon(R.drawable.power_button)
+                .setShowWhen(true)
+                .setWhen(dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if(critical){
                 builder.setColorized(true)

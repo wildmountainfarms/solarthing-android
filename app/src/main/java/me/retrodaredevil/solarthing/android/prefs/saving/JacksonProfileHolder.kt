@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import me.retrodaredevil.solarthing.android.prefs.ProfileHolder
 
 class JacksonProfileHolder<T : Any>(
-    private val stringValueSaver: StringValueSaver,
-    private val javaType: JavaType,
-    private val objectMapper: ObjectMapper,
-    private val defaultProfileCreator: () -> T
+        private val stringValueSaver: StringValueSaver,
+        private val javaType: JavaType,
+        private val objectMapper: ObjectMapper,
+        private val defaultProfileCreator: () -> T
 ) : ProfileHolder<T> {
     override var profile: T
         get() {

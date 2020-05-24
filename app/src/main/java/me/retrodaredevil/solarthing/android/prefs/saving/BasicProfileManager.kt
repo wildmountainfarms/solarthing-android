@@ -8,14 +8,14 @@ import java.util.*
 import kotlin.NoSuchElementException
 
 data class ProfileData<T>(
-    val name: String,
-    val uuid: UUID,
-    val profile: T
+        val name: String,
+        val uuid: UUID,
+        val profile: T
 )
 
 data class ProfileManagerData<T>(
-    val profiles: List<ProfileData<T>>,
-    val active: UUID
+        val profiles: List<ProfileData<T>>,
+        val active: UUID
 ) {
     @JsonIgnore
     fun getActiveProfileData(): ProfileData<T> = getProfileData(active)
@@ -26,8 +26,8 @@ data class ProfileManagerData<T>(
 
 class BasicProfileManager<T>
 constructor(
-    private val profileHolder: ProfileHolder<ProfileManagerData<T>>,
-    private val defaultProfileCreator: () -> T
+        private val profileHolder: ProfileHolder<ProfileManagerData<T>>,
+        private val defaultProfileCreator: () -> T
 ) : ProfileManager<T> {
     companion object {
         inline fun <reified T>createJacksonProfileManager(stringValueSaver: StringValueSaver, crossinline defaultProfileCreator: () -> T): BasicProfileManager<T> {
@@ -85,10 +85,10 @@ constructor(
     override fun setProfileName(uuid: UUID, name: String) {
         val old = profileHolder.profile
         profileHolder.profile = ProfileManagerData(
-            old.profiles.map {
-                ProfileData(if(it.uuid == uuid) name else it.name, it.uuid, it.profile)
-            },
-            old.active
+                old.profiles.map {
+                    ProfileData(if(it.uuid == uuid) name else it.name, it.uuid, it.profile)
+                },
+                old.active
         )
     }
 
@@ -97,22 +97,22 @@ constructor(
     }
 
     private inner class BasicProfileHolder(
-        private val uuid: UUID
+            private val uuid: UUID
     ) : ProfileHolder<T> {
         override var profile: T
             get() = profileHolder.profile.getProfileData(uuid).profile
             set(value) {
                 val old = profileHolder.profile
                 profileHolder.profile = ProfileManagerData(
-                    old.profiles.map {
-                        val profile = if(it.uuid == uuid){
-                            value
-                        } else {
-                            it.profile
-                        }
-                        ProfileData(it.name, it.uuid, profile)
-                    },
-                    old.active
+                        old.profiles.map {
+                            val profile = if(it.uuid == uuid){
+                                value
+                            } else {
+                                it.profile
+                            }
+                            ProfileData(it.name, it.uuid, profile)
+                        },
+                        old.active
                 )
             }
 

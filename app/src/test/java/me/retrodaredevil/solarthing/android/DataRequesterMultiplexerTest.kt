@@ -63,7 +63,7 @@ class DataRequesterMultiplexerTest {
     }
 }
 private class DummyDataRequester(
-    private val id: Int
+        private val id: Int
 ) : DataRequester {
     override val currentlyUpdating = false
     var timesRequested = 0

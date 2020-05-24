@@ -86,21 +86,21 @@ class SolarEventService(
         val id = Objects.hash(dateMillis, packet.command, source)
         var groupBuilder: Notification.Builder? = null
         val builder = getBuilder()
-            .setSmallIcon(R.drawable.solar_panel)
-            .setContentTitle("Command executed! ${packet.command.commandName}")
-            .setWhen(dateMillis)
-            .setShowWhen(false)
-            .setContentText("From: '${dataSource.sender}' at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time))
-            .setSubText(dataSource.data + " requested at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis}.time))
+                .setSmallIcon(R.drawable.solar_panel)
+                .setContentTitle("Command executed! ${packet.command.commandName}")
+                .setWhen(dateMillis)
+                .setShowWhen(false)
+                .setContentText("From: '${dataSource.sender}' at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time))
+                .setSubText(dataSource.data + " requested at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis}.time))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             val group = "command-feedback-$source"
             groupBuilder = getBuilder()
-                .setGroup(group)
-                .setGroupSummary(true)
-                .setWhen(dataSource.dateMillis)
-                .setShowWhen(true)
-                .setSmallIcon(R.drawable.solar_panel)
+                    .setGroup(group)
+                    .setGroupSummary(true)
+                    .setWhen(dataSource.dateMillis)
+                    .setShowWhen(true)
+                    .setSmallIcon(R.drawable.solar_panel)
 
             builder.setGroup(group)
         }

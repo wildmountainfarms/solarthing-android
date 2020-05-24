@@ -75,22 +75,19 @@ private const val RELOAD_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.
 private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.restart_service"
 
 private class ServiceObject(
-    val dataService: DataService,
-    val databaseName: String,
-    val packetGroupParser: PacketGroupParser
+        val dataService: DataService,
+        val databaseName: String,
+        val packetGroupParser: PacketGroupParser
 ){
     var task: AsyncTask<*, *, *>? = null
 
     var dataRequesters = emptyList<DataRequester>()
-    val dataRequester = DataRequesterMultiplexer(
-        this::dataRequesters
-    )
+    val dataRequester = DataRequesterMultiplexer(this::dataRequesters)
 }
 
 class PersistentService : Service(), Runnable{
     companion object {
-        private val MAPPER = createDefaultObjectMapper()
-            .apply {
+        private val MAPPER = createDefaultObjectMapper().apply {
             deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // we will update SolarThing and add new features
         }
     }
@@ -118,20 +115,20 @@ class PersistentService : Service(), Runnable{
         application.solarStatusData = solarStatusData
         application.solarEventData = solarEventData
         services = listOf(
-            ServiceObject(
-                SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
-                SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-                    ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
-                    ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
-                    ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
-                    ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java)
-                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
-            ),
-            ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-                ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java),
-                ObjectMapperPacketConverter(MAPPER, SolarEventPacket::class.java),
-                ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
-            ), PacketParserMultiplexer.LenientType.FULLY_LENIENT)))
+                ServiceObject(
+                        SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
+                        SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+                                ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
+                                ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
+                                ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
+                                ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java)
+                        ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
+                ),
+                ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(
+                        ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java),
+                        ObjectMapperPacketConverter(MAPPER, SolarEventPacket::class.java),
+                        ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
+                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT)))
         )
         for(service in services){
             service.dataService.onInit()
@@ -147,14 +144,14 @@ class PersistentService : Service(), Runnable{
         // unanswered question with problem we're having here: https://stackoverflow.com/questions/47703216/android-clicking-grouped-notifications-restarts-app
         val mainActivityIntent = Intent(this, SettingsActivity::class.java)
         val builder = getBuilder()
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSmallIcon(R.drawable.sun)
-            .setContentTitle("SolarThing service is running")
-            .setContentText("${services.count { it.dataService.shouldUpdate }} service(s) are running")
-            .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
-            .setWhen(1) // make it the lowest priority
-            .setShowWhen(false)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.sun)
+                .setContentTitle("SolarThing service is running")
+                .setContentText("${services.count { it.dataService.shouldUpdate }} service(s) are running")
+                .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
+                .setWhen(1) // make it the lowest priority
+                .setShowWhen(false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
             builder.setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
         }
@@ -171,38 +168,37 @@ class PersistentService : Service(), Runnable{
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // buttons
             builder.addAction(
-                Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.sun),
-                    "Stop",
-                    PendingIntent.getBroadcast(
-                        this, 0,
-                        Intent(STOP_SERVICE_ACTION),
-                        PendingIntent.FLAG_CANCEL_CURRENT
-                    )
-                ).build()
+                    Notification.Action.Builder(
+                            Icon.createWithResource(this, R.drawable.sun),
+                             "Stop",
+                            PendingIntent.getBroadcast(
+                                     this, 0,
+                                    Intent(STOP_SERVICE_ACTION),
+                                    PendingIntent.FLAG_CANCEL_CURRENT
+                            )
+                    ).build()
             )
             builder.addAction(
-                Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.sun),
-                    "Reload",
-                    PendingIntent.getBroadcast(
-                        this, 0,
-                        Intent(RELOAD_SERVICE_ACTION),
-                        PendingIntent.FLAG_CANCEL_CURRENT
-                    )
-                ).build()
+                    Notification.Action.Builder(
+                            Icon.createWithResource(this, R.drawable.sun),
+                            "Reload",
+                            PendingIntent.getBroadcast(
+                                    this, 0,
+                                    Intent(RELOAD_SERVICE_ACTION),
+                                    PendingIntent.FLAG_CANCEL_CURRENT
+                            )
+                    ).build()
             )
             builder.addAction(
-                Notification.Action.Builder(
-                    Icon.createWithResource(this, R.drawable.sun),
-                    "Restart",
-                    PendingIntent.getBroadcast(
-                        this, 0,
-                        Intent(RESTART_SERVICE_ACTION),
-                        PendingIntent.FLAG_CANCEL_CURRENT
-                    )
-
-                ).build()
+                    Notification.Action.Builder(
+                        Icon.createWithResource(this, R.drawable.sun),
+                        "Restart",
+                        PendingIntent.getBroadcast(
+                                this, 0,
+                                Intent(RESTART_SERVICE_ACTION),
+                                PendingIntent.FLAG_CANCEL_CURRENT
+                        )
+                    ).build()
             )
             val intentFilter = IntentFilter()
             intentFilter.addAction(STOP_SERVICE_ACTION)
@@ -281,12 +277,12 @@ class PersistentService : Service(), Runnable{
             val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
             val properties = couchDbDatabaseConnectionProfile.createCouchProperties()
             service.dataRequesters = listOf(
-                CouchDbDataRequester(
-                    { properties }, // this can be constant because we change this frequently enough for it to alwasy be accurate
-                    service.databaseName,
-                    service.packetGroupParser,
-                    service.dataService::startKey
-                )
+                    CouchDbDataRequester(
+                            { properties }, // this can be constant because we change this frequently enough for it to alwasy be accurate
+                            service.databaseName,
+                            service.packetGroupParser,
+                            service.dataService::startKey
+                    )
             )
             if(service.dataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
                 needsLargeData = true
@@ -334,8 +330,8 @@ class PersistentService : Service(), Runnable{
     }
 }
 private class DataUpdaterTask(
-    private val dataRequester: DataRequester,
-    private val updateNotification: (dataRequest: DataRequest) -> Unit
+        private val dataRequester: DataRequester,
+        private val updateNotification: (dataRequest: DataRequest) -> Unit
 ) : AsyncTask<Void, Void, DataRequest>() {
     override fun doInBackground(vararg params: Void?): DataRequest {
         return dataRequester.requestData()

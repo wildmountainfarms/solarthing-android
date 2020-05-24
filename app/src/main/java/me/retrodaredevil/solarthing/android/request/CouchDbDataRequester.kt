@@ -44,9 +44,9 @@ class CouchDbDataRequester(
         try {
             couchProperties = connectionPropertiesCreator()
             val httpClient = createHttpClient(CouchPropertiesBuilder(couchProperties)
-                .setConnectionTimeoutMillis(10_000)
-                .setSocketTimeoutMillis(Int.MAX_VALUE)
-                .build())
+                    .setConnectionTimeoutMillis(10_000)
+                    .setSocketTimeoutMillis(Int.MAX_VALUE)
+                    .build())
             val client = StdCouchDbConnector(databaseName, StdCouchDbInstance(httpClient))
 
             val query = ViewQuery().designDocId("_design/packets").viewName("millis").startKey(startKeyGetter())

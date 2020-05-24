@@ -13,9 +13,9 @@ import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
 import me.retrodaredevil.solarthing.android.util.getSSID
 
 class NetworkSwitchingViewHandler(
-    private val context: Context,
-    view: View,
-    requestFineLocation: () -> Unit
+        private val context: Context,
+        view: View,
+        requestFineLocation: () -> Unit
 ) {
     private val isEnabledCheckBox: CheckBox = view.findViewById(R.id.is_enabled)
     private val isBackupCheckBox: CheckBox = view.findViewById(R.id.is_backup)

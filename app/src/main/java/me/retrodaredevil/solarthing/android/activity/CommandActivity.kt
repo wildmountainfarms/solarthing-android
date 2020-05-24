@@ -92,13 +92,13 @@ class CommandActivity : AppCompatActivity() {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Delete key?")
-            .setNegativeButton("Cancel") { _, _ -> }
-            .setPositiveButton("Yes") { _, _ ->
-                setKeyPair(null)
-                Toast.makeText(this, "Deleted key pair!", Toast.LENGTH_SHORT).show()
-            }
-            .create().show()
+                .setTitle("Delete key?")
+                .setNegativeButton("Cancel") { _, _ -> }
+                .setPositiveButton("Yes") { _, _ ->
+                    setKeyPair(null)
+                    Toast.makeText(this, "Deleted key pair!", Toast.LENGTH_SHORT).show()
+                }
+                .create().show()
     }
     @Suppress("UNUSED_PARAMETER")
     fun sendAuthRequest(view: View){

@@ -12,20 +12,20 @@ private const val SINGLE_SHARED_PREFERENCES = "single_preferences"
 fun createConnectionProfileManager(context: Context): ProfileManager<ConnectionProfile> {
 
     return BasicProfileManager.createJacksonProfileManager(
-        SharedPreferencesStringValueSaver(context.getDeviceProtectedStorageSharedPreferences(PROFILE_SHARED_PREFERENCES, 0), "connection_properties")
+            SharedPreferencesStringValueSaver(context.getDeviceProtectedStorageSharedPreferences(PROFILE_SHARED_PREFERENCES, 0), "connection_properties")
     ) { ConnectionProfile() }
 }
 fun createSolarProfileManager(context: Context): ProfileManager<SolarProfile> {
     return BasicProfileManager.createJacksonProfileManager(
-        SharedPreferencesStringValueSaver(context.getDeviceProtectedStorageSharedPreferences(PROFILE_SHARED_PREFERENCES, 0), "solar_properties")
+            SharedPreferencesStringValueSaver(context.getDeviceProtectedStorageSharedPreferences(PROFILE_SHARED_PREFERENCES, 0), "solar_properties")
     ) {
         SolarProfile()
     }
 }
 fun createMiscProfileProvider(context: Context): ProfileProvider<MiscProfile> {
     val legacyProfile = PreferencesMiscProfileHolder(
-        context.getDeviceProtectedStorageSharedPreferences("misc_settings", 0),
-        context
+            context.getDeviceProtectedStorageSharedPreferences("misc_settings", 0),
+            context
     )
 
     val mapper = createDefaultObjectMapper()

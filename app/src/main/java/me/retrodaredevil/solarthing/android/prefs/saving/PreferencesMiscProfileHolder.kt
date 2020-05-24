@@ -16,8 +16,8 @@ class PreferencesMiscProfileHolder
  * @param context The context used to check if fine location is accessible or null to prevent that check
  */
 constructor(
-    private val settings: SharedPreferences,
-    private val context: Context?
+        private val settings: SharedPreferences,
+        private val context: Context?
 ) : ProfileHolder<MiscProfile> {
     override var profile: MiscProfile
         get() {
@@ -26,16 +26,16 @@ constructor(
                 else settings.getBoolean(SaveKeys.networkSwitchingEnabled, DefaultOptions.networkSwitchingEnabled)
 
             return MiscProfile(
-                settings.getFloat(
-                    SaveKeys.maxFragmentTimeMinutes,
-                    DefaultOptions.maxFragmentTimeMinutes
-                ),
-                settings.getBoolean(
-                    SaveKeys.startOnBoot,
-                    DefaultOptions.startOnBoot
-                ),
-                networkSwitchingEnabled,
-                DefaultOptions.temperatureUnit
+                    settings.getFloat(
+                            SaveKeys.maxFragmentTimeMinutes,
+                            DefaultOptions.maxFragmentTimeMinutes
+                    ),
+                    settings.getBoolean(
+                            SaveKeys.startOnBoot,
+                            DefaultOptions.startOnBoot
+                    ),
+                    networkSwitchingEnabled,
+                    DefaultOptions.temperatureUnit
             )
         }
         set(value) {

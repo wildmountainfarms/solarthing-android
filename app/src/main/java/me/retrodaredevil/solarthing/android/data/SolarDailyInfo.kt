@@ -25,16 +25,16 @@ fun createSolarDailyInfo(dayStartTimeMillis: Long, packetGroups: List<Fragmented
     val roverMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(RoverStatusPacket::class.java, packetGroups), dailyConfig)
     val dailyFXMap = DailyUtil.getDailyPairs(DailyUtil.mapPackets(DailyFXPacket::class.java, packetGroups), dailyConfig)
     return SolarDailyInfo(
-        dayStartTimeMillis,
-        mxMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) } + roverMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) },
-        dailyFXMap.mapValues { getDailyFXTotal(it.value, ::DailyFXInfo) }
+            dayStartTimeMillis,
+            mxMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) } + roverMap.mapValues { DailyCalc.getTotal(it.value, DailyChargeController::getDailyKWH) },
+            dailyFXMap.mapValues { getDailyFXTotal(it.value, ::DailyFXInfo) }
     )
 }
 
 class SolarDailyInfo(
-    val dayStartTimeMillis: Long,
-    val dailyKWHMap: Map<IdentifierFragment, Float>,
-    val fxMap: Map<IdentifierFragment, DailyFXInfo>
+        val dayStartTimeMillis: Long,
+        val dailyKWHMap: Map<IdentifierFragment, Float>,
+        val fxMap: Map<IdentifierFragment, DailyFXInfo>
 ) {
     val dailyFXInfo: DailyFXInfo? = if (fxMap.isEmpty()) null else fxMap.values.reduce { sum, element -> sum + element }
 
@@ -43,8 +43,8 @@ class SolarDailyInfo(
 }
 
 fun <T> getDailyFXTotal(
-    dailyPairs: List<DailyPair<T>>,
-    totalGetter: (T) -> DailyFXInfo
+        dailyPairs: List<DailyPair<T>>,
+        totalGetter: (T) -> DailyFXInfo
 ): DailyFXInfo where T : DailyData {
     var total = DailyFXInfo(0.0f, 0.0f, 0.0f, 0.0f)
     for (dailyPair in dailyPairs) {

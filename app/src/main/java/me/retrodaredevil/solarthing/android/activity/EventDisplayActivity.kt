@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.activity
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -35,7 +36,7 @@ https://developer.android.com/jetpack/androidx/releases/recyclerview
  */
 
 private class MyViewHolder(
-    view: View
+        view: View
 ) : RecyclerView.ViewHolder(view) {
     val nameText: TextView = view.findViewById(R.id.event_display_name)
     val titleText: TextView = view.findViewById(R.id.event_display_title)
@@ -43,14 +44,14 @@ private class MyViewHolder(
     val timeText: TextView = view.findViewById(R.id.event_display_time)
 }
 private class ViewData(
-    val name: String,
-    val title: String,
-    val text: String,
-    val dateMillis: Long
+        val name: String,
+        val title: String,
+        val text: String,
+        val dateMillis: Long
 )
 
 private class MyViewAdapter(
-    packetGroups: List<PacketGroup>
+        packetGroups: List<PacketGroup>
 ) : RecyclerView.Adapter<MyViewHolder>() {
     private val data = mutableListOf<ViewData>()
     init {
@@ -187,7 +188,7 @@ private class MyViewAdapter(
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         val viewData = data[data.size - 1 - position]
         val timeString = DateFormat.getTimeInstance(DateFormat.MEDIUM)
-            .format(GregorianCalendar().apply { timeInMillis = viewData.dateMillis }.time)
+                .format(GregorianCalendar().apply { timeInMillis = viewData.dateMillis }.time)
         holder.nameText.text = viewData.name
         holder.titleText.text = viewData.title
         holder.textText.text = viewData.text
@@ -211,9 +212,10 @@ class EventDisplayActivity : AppCompatActivity() {
         lastUpdatedTextView = findViewById(R.id.events_display_last_updated_text)
         update()
     }
-    fun onRefreshClick(view: View) {
+    fun onRefreshClick(@Suppress("UNUSED_PARAMETER") view: View) {
         update()
     }
+    @SuppressLint("SetTextI18n")
     private fun update(){
         val application = application as SolarThingApplication
         val (packetGroups, updateTime) = application.solarEventData?.getLatestPacketGroups() ?: Pair(emptyList(), null)
@@ -222,7 +224,7 @@ class EventDisplayActivity : AppCompatActivity() {
             return
         }
         val timeString = DateFormat.getTimeInstance(DateFormat.MEDIUM)
-            .format(GregorianCalendar().apply { timeInMillis = updateTime }.time)
+                .format(GregorianCalendar().apply { timeInMillis = updateTime }.time)
         lastUpdatedTextView.text = "Data from $timeString"
         recyclerView.adapter = MyViewAdapter(packetGroups)
     }

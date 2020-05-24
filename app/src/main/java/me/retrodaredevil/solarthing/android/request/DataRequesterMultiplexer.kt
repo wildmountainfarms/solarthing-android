@@ -8,7 +8,7 @@ private class RequesterState(val index: Int){
 
 
 class DataRequesterMultiplexer (
-    private val requesterListSupplier: () -> List<DataRequester>
+        private val requesterListSupplier: () -> List<DataRequester>
 ) : DataRequester {
 
     private var requesterStateList: List<RequesterState>? = null

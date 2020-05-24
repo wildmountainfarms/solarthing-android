@@ -74,9 +74,9 @@ class BatteryVoltageWidget : AppWidgetProvider() {
     companion object {
 
         internal fun updateAppWidget(
-            context: Context, appWidgetManager: AppWidgetManager,
-            appWidgetId: Int,
-            latestInfo: SolarPacketInfo?
+                context: Context, appWidgetManager: AppWidgetManager,
+                appWidgetId: Int,
+                latestInfo: SolarPacketInfo?
         ) {
 
             val widgetText = latestInfo?.batteryVoltageString ?: "??.?"

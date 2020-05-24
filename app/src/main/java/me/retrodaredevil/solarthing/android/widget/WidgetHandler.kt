@@ -19,7 +19,7 @@ class WidgetHandler : BroadcastReceiver() {
         context.sendBroadcast(Intent(context, BatteryVoltageWidget::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, AppWidgetManager.getInstance(context).getAppWidgetIds(
-                ComponentName(context, BatteryVoltageWidget::class.java)
+                    ComponentName(context, BatteryVoltageWidget::class.java)
             ))
         })
     }

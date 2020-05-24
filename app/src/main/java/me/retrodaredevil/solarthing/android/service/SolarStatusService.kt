@@ -45,11 +45,11 @@ object SolarPacketCollectionBroadcast {
 }
 
 class SolarStatusService(
-    private val service: Service,
-    private val solarProfileProvider: ProfileProvider<SolarProfile>,
-    private val miscProfileProvider: ProfileProvider<MiscProfile>,
-    private val solarStatusData: PacketGroupData,
-    private val solarEventData: PacketGroupData
+        private val service: Service,
+        private val solarProfileProvider: ProfileProvider<SolarProfile>,
+        private val miscProfileProvider: ProfileProvider<MiscProfile>,
+        private val solarStatusData: PacketGroupData,
+        private val solarEventData: PacketGroupData
 ) : DataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
@@ -70,22 +70,20 @@ class SolarStatusService(
 
     private val moreInfoIntent: PendingIntent by lazy {
         PendingIntent.getBroadcast(
-            service,
-            0,
-            Intent(MORE_INFO_ACTION),
-            PendingIntent.FLAG_CANCEL_CURRENT
+                service,
+                0,
+                Intent(MORE_INFO_ACTION),
+                PendingIntent.FLAG_CANCEL_CURRENT
         )
     }
 
     private lateinit var dataClient: DataClient
 
     override fun onInit() {
-        notify(
-            getBuilder()
+        notify(getBuilder()
                 .loadingNotification()
                 .setSmallIcon(R.drawable.solar_panel)
-                .build()
-        )
+                .build())
         service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) })
         dataClient = Wearable.getDataClient(service)
     }
@@ -105,12 +103,10 @@ class SolarStatusService(
 
     override fun onTimeout() {
         if(!doNotify(getTimedOutSummary(null))){
-            notify(
-                getBuilder()
+            notify(getBuilder()
                     .timedOutNotification()
                     .setSmallIcon(R.drawable.solar_panel)
-                    .build()
-            )
+                    .build())
         }
     }
 
@@ -131,8 +127,8 @@ class SolarStatusService(
             val dateMillis = fragmentedPacketGroup.dateMillis
             val solarPacketInfo = try {
                 SolarPacketInfo(
-                    fragmentedPacketGroup,
-                    solarProfileProvider.activeProfile.profile.batteryVoltageType
+                        fragmentedPacketGroup,
+                        solarProfileProvider.activeProfile.profile.batteryVoltageType
                 )
             } catch (ex: CreationException) {
                 ex.printStackTrace()
@@ -176,14 +172,14 @@ class SolarStatusService(
                 val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
                 val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
                     BasicSolarData(
-                        solarInfo.solarPacketInfo.dateMillis,
-                        solarInfo.solarPacketInfo.batteryVoltage,
-                        solarInfo.solarPacketInfo.acModeNullable?.valueCode,
-                        solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
-                        solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
-                        solarInfo.solarDailyInfo.dailyKWH,
-                        solarInfo.solarPacketInfo.pvWattage / 1000.0f,
-                        solarInfo.solarPacketInfo.load / 1000.0f
+                            solarInfo.solarPacketInfo.dateMillis,
+                            solarInfo.solarPacketInfo.batteryVoltage,
+                            solarInfo.solarPacketInfo.acModeNullable?.valueCode,
+                            solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
+                            solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
+                            solarInfo.solarDailyInfo.dailyKWH,
+                            solarInfo.solarPacketInfo.pvWattage / 1000.0f,
+                            solarInfo.solarPacketInfo.load / 1000.0f
                     ).applyTo(dataMap)
                     asPutDataRequest()
                 }
@@ -195,19 +191,15 @@ class SolarStatusService(
         }
         if(!doNotify(summary)){
             if(dataRequest.successful){
-                notify(
-                    getBuilder()
+                notify(getBuilder()
                         .noDataNotification(dataRequest)
                         .setSmallIcon(R.drawable.solar_panel)
-                        .build()
-                )
+                        .build())
             } else {
-                notify(
-                    getBuilder()
+                notify(getBuilder()
                         .failedNotification(dataRequest)
                         .setSmallIcon(R.drawable.solar_panel)
-                        .build()
-                )
+                        .build())
             }
         }
 
@@ -261,12 +253,12 @@ class SolarStatusService(
         }
 
         notify(NotificationHandler.createStatusNotification(
-            service.applicationContext,
-            currentSolarInfo.solarPacketInfo,
-            currentSolarInfo.solarDailyInfo,
-            summary,
-            moreInfoIntent,
-            miscProfileProvider.activeProfile.profile.temperatureUnit
+                service.applicationContext,
+                currentSolarInfo.solarPacketInfo,
+                currentSolarInfo.solarDailyInfo,
+                summary,
+                moreInfoIntent,
+                miscProfileProvider.activeProfile.profile.temperatureUnit
         ))
 //        service.getManager().notify(
 //            END_OF_DAY_NOTIFICATION_ID,
@@ -274,12 +266,12 @@ class SolarStatusService(
 //        )
         if(beginningACDropInfo != null || acUseInfo != null){
             service.getManager().notify(
-                GENERATOR_PERSISTENT_ID,
-                NotificationHandler.createPersistentGenerator(
-                    service, currentSolarInfo.solarPacketInfo,
-                    beginningACDropInfo, lastACDropInfo, acUseInfo,
-                    uncertainGeneratorStartInfo
-                )
+                    GENERATOR_PERSISTENT_ID,
+                    NotificationHandler.createPersistentGenerator(
+                            service, currentSolarInfo.solarPacketInfo,
+                            beginningACDropInfo, lastACDropInfo, acUseInfo,
+                            uncertainGeneratorStartInfo
+                    )
             )
         } else {
             service.getManager().cancel(GENERATOR_PERSISTENT_ID)
@@ -290,8 +282,8 @@ class SolarStatusService(
             if (currentSolarInfo.solarDailyInfo.dayStartTimeMillis - lastSolarInfo.solarDailyInfo.dayStartTimeMillis > 2 * 60 * 60 * 1000) {
                 println("End of day ${lastSolarInfo.solarDailyInfo.dayStartTimeMillis} new: ${currentSolarInfo.solarDailyInfo.dayStartTimeMillis}")
                 service.getManager().notify(
-                    END_OF_DAY_NOTIFICATION_ID,
-                    NotificationHandler.createDayEnd(service, lastSolarInfo.solarPacketInfo, lastSolarInfo.solarDailyInfo)
+                        END_OF_DAY_NOTIFICATION_ID,
+                        NotificationHandler.createDayEnd(service, lastSolarInfo.solarPacketInfo, lastSolarInfo.solarDailyInfo)
                 )
             }
             // region Device Connection/Disconnection section
@@ -301,12 +293,12 @@ class SolarStatusService(
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentSolarInfo.solarPacketInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusId(device),
-                            notificationAndSummary.first
+                                getDeviceConnectionStatusId(device),
+                                notificationAndSummary.first
                         )
                         notify(
-                            DEVICE_CONNECTION_STATUS_SUMMARY_ID,
-                            notificationAndSummary.second
+                                DEVICE_CONNECTION_STATUS_SUMMARY_ID,
+                                notificationAndSummary.second
                         )
                     }
                 }
@@ -317,12 +309,12 @@ class SolarStatusService(
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, false, currentSolarInfo.solarPacketInfo.dateMillis)
                     service.getManager().apply {
                         notify(
-                            getDeviceConnectionStatusId(device),
-                            notificationAndSummary.first
+                                getDeviceConnectionStatusId(device),
+                                notificationAndSummary.first
                         )
                         notify(
-                            DEVICE_CONNECTION_STATUS_SUMMARY_ID,
-                            notificationAndSummary.second
+                                DEVICE_CONNECTION_STATUS_SUMMARY_ID,
+                                notificationAndSummary.second
                         )
                     }
                 }
@@ -365,8 +357,8 @@ class SolarStatusService(
             val last = lastDoneGeneratorNotification
             if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                 service.getManager().notify(
-                    GENERATOR_DONE_NOTIFICATION_ID,
-                    NotificationHandler.createDoneGeneratorAlert(service.applicationContext, doneChargingActivatedInfo)
+                        GENERATOR_DONE_NOTIFICATION_ID,
+                        NotificationHandler.createDoneGeneratorAlert(service.applicationContext, doneChargingActivatedInfo)
                 )
                 lastDoneGeneratorNotification = now
             }
@@ -383,8 +375,8 @@ class SolarStatusService(
             val last = lastCriticalBatteryNotification
             if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                 service.getManager().notify(
-                    BATTERY_NOTIFICATION_ID,
-                    NotificationHandler.createBatteryNotification(service, currentSolarInfo.solarPacketInfo, true)
+                        BATTERY_NOTIFICATION_ID,
+                        NotificationHandler.createBatteryNotification(service, currentSolarInfo.solarPacketInfo, true)
                 )
                 lastCriticalBatteryNotification = now
                 lastLowBatteryNotification = now
@@ -394,8 +386,8 @@ class SolarStatusService(
             val last = lastLowBatteryNotification
             if(last == null || last + DefaultOptions.importantAlertIntervalMillis < now) {
                 service.getManager().notify(
-                    BATTERY_NOTIFICATION_ID,
-                    NotificationHandler.createBatteryNotification(service, currentSolarInfo.solarPacketInfo, false)
+                        BATTERY_NOTIFICATION_ID,
+                        NotificationHandler.createBatteryNotification(service, currentSolarInfo.solarPacketInfo, false)
                 )
                 lastLowBatteryNotification = now
             }
@@ -457,9 +449,7 @@ class SolarStatusService(
         val manager = service.getManager()
         var summary: Notification? = null
 
-        for(device in getOrderedValues(
-            packetInfo.deviceMap
-        )){
+        for(device in getOrderedValues(packetInfo.deviceMap)){
             val id = getMoreSolarInfoId(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis

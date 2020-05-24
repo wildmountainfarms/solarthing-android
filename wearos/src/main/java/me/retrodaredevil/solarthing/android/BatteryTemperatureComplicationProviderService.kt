@@ -18,21 +18,21 @@ class BatteryTemperatureComplicationProviderService : ComplicationProviderServic
         if (data == null || data.isOld() || batteryTemperatureString == null) {
             println("null or old! data: $data batteryTemperatureString: $batteryTemperatureString")
             manager.updateComplicationData(
-                complicationId,
-                ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                    .setIcon(Icon.createWithResource(this, R.drawable.battery))
-                    .setShortText(ComplicationText.plainText("??"))
-                    .build()
+                    complicationId,
+                    ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                            .setIcon(Icon.createWithResource(this, R.drawable.battery))
+                            .setShortText(ComplicationText.plainText("??"))
+                            .build()
             )
             return
         }
         println("Battery temperature is: $batteryTemperatureString")
         manager.updateComplicationData(
-            complicationId,
-            ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                .setIcon(Icon.createWithResource(this, R.drawable.battery))
-                .setShortText(ComplicationText.plainText(batteryTemperatureString))
-                .build()
+                complicationId,
+                ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                        .setIcon(Icon.createWithResource(this, R.drawable.battery))
+                        .setShortText(ComplicationText.plainText(batteryTemperatureString))
+                        .build()
         )
     }
 

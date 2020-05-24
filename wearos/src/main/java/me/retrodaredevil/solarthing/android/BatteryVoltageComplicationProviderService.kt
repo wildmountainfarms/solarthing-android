@@ -20,10 +20,10 @@ class BatteryVoltageComplicationProviderService : ComplicationProviderService() 
         if (data == null || data.isOld()) {
             println("null or old! data: $data")
             manager.updateComplicationData(
-                complicationId,
-                ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                    .setShortText(ComplicationText.plainText("??.?V"))
-                    .build()
+                    complicationId,
+                    ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                            .setShortText(ComplicationText.plainText("??.?V"))
+                            .build()
             )
             return
         }
@@ -35,11 +35,11 @@ class BatteryVoltageComplicationProviderService : ComplicationProviderService() 
 
         println("Battery Voltage is: ${data.batteryVoltage}")
         manager.updateComplicationData(
-            complicationId,
-            ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                .setIcon(Icon.createWithResource(this, iconResource))
-                .setShortText(ComplicationText.plainText("${Formatting.TENTHS.format(data.batteryVoltage)}V"))
-                .build()
+                complicationId,
+                ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                        .setIcon(Icon.createWithResource(this, iconResource))
+                        .setShortText(ComplicationText.plainText("${Formatting.TENTHS.format(data.batteryVoltage)}V"))
+                        .build()
         )
     }
 }

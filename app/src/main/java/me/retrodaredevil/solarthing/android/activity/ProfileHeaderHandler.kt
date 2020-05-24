@@ -13,11 +13,11 @@ import java.util.*
  * Code for the "profile header". This is used in the settings activity.
  */
 class ProfileHeaderHandler(
-    private val context: Context,
-    view: View,
-    private val profileManager: ProfileManager<*>,
-    private val doSave: (() -> Unit),
-    private val doLoad: ((UUID) -> Unit)
+        private val context: Context,
+        view: View,
+        private val profileManager: ProfileManager<*>,
+        private val doSave: (() -> Unit),
+        private val doLoad: ((UUID) -> Unit)
 )  {
 
 

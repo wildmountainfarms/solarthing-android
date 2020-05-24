@@ -69,20 +69,20 @@ class SettingsActivity : AppCompatActivity() {
 
         connectionProfileManager = createConnectionProfileManager(this)
         connectionProfileHeader = ProfileHeaderHandler(
-            this,
-            findViewById(R.id.connection_profile_header_layout),
-            connectionProfileManager,
-            this::saveConnectionSettings,
-            this::loadConnectionSettings
+                this,
+                findViewById(R.id.connection_profile_header_layout),
+                connectionProfileManager,
+                this::saveConnectionSettings,
+                this::loadConnectionSettings
         )
 
         solarProfileManager = createSolarProfileManager(this)
         solarProfileHeader = ProfileHeaderHandler(
-            this,
-            findViewById(R.id.solar_profile_header_layout),
-            solarProfileManager,
-            this::saveSolarSettings,
-            this::loadSolarSettings
+                this,
+                findViewById(R.id.solar_profile_header_layout),
+                solarProfileManager,
+                this::saveSolarSettings,
+                this::loadSolarSettings
         )
 
         miscProfileProvider = createMiscProfileProvider(this)
@@ -147,7 +147,7 @@ class SettingsActivity : AppCompatActivity() {
 
             for(channelGroup in NotificationChannelGroups.values()){
                 notificationManager.createNotificationChannelGroup(NotificationChannelGroup(
-                    channelGroup.id, channelGroup.getName(this)
+                        channelGroup.id, channelGroup.getName(this)
                 ).apply {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         description = channelGroup.getDescription(this@SettingsActivity)
@@ -156,9 +156,9 @@ class SettingsActivity : AppCompatActivity() {
             }
             for(notificationChannel in NotificationChannels.values()){
                 notificationManager.createNotificationChannel(NotificationChannel(
-                    notificationChannel.id,
-                    notificationChannel.getName(this),
-                    notificationChannel.importance
+                        notificationChannel.id,
+                        notificationChannel.getName(this),
+                        notificationChannel.importance
                 ).apply {
                     description = notificationChannel.getDescription(this@SettingsActivity)
                     enableLights(notificationChannel.enableLights)
@@ -177,8 +177,8 @@ class SettingsActivity : AppCompatActivity() {
                         val soundId = notificationChannel.sound
                         val uri = Uri.parse("android.resource://$packageName/raw/$soundId")
                         setSound(
-                            uri,
-                            AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT).build()
+                                uri,
+                                AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT).build()
                         )
                     }
                 })
@@ -239,17 +239,17 @@ class SettingsActivity : AppCompatActivity() {
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
     private fun getConnectionProfile() = ConnectionProfile(
-        CouchDbDatabaseConnectionProfile(
-            protocol.text.toString(),
-            host.text.toString(),
-            port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
-            username.text.toString(),
-            password.text.toString(),
-            useAuth.isChecked
-        ),
-        connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
-        initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
-        subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+            CouchDbDatabaseConnectionProfile(
+                    protocol.text.toString(),
+                    host.text.toString(),
+                     port.text.toString().toIntOrNull() ?: DefaultOptions.CouchDb.port,
+                    username.text.toString(),
+                    password.text.toString(),
+                    useAuth.isChecked
+            ),
+            connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
+            initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
+            subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
     )
     private fun getSolarProfile(): SolarProfile {
         val position = batteryVoltageTypeSpinner.selectedItemPosition
@@ -259,20 +259,20 @@ class SettingsActivity : AppCompatActivity() {
             DefaultOptions.batteryVoltageType
         }
         return SolarProfile(
-            emptyList(), temperatureNotifyHandler.getTemperatureNodesToSave(),
-            lowBatteryVoltage.text.toString().toFloatOrNull(),
-            criticalBatteryVoltage.text.toString().toFloatOrNull(),
-            batteryVoltageType
+                emptyList(), temperatureNotifyHandler.getTemperatureNodesToSave(),
+                lowBatteryVoltage.text.toString().toFloatOrNull(),
+                criticalBatteryVoltage.text.toString().toFloatOrNull(),
+                batteryVoltageType
         )
     }
     private fun getMiscProfile(): MiscProfile {
         val position = temperatureUnitSpinner.selectedItemPosition
         val temperatureUnit = if(position != AdapterView.INVALID_POSITION) TemperatureUnit.values()[position] else DefaultOptions.temperatureUnit
         return MiscProfile(
-            maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
-            startOnBoot.isChecked,
-            networkSwitchingEnabledCheckBox.isChecked,
-            temperatureUnit
+                maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
+                startOnBoot.isChecked,
+                networkSwitchingEnabledCheckBox.isChecked,
+                temperatureUnit
         )
     }
     private fun isConnectionProfileNotSaved() = getConnectionProfile() != connectionProfileManager.getProfile(connectionProfileHeader.editUUID).profile

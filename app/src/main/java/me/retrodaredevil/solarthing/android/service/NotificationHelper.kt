@@ -38,29 +38,29 @@ fun Notification.Builder.failedNotification(request: DataRequest): Notification.
     bigText += "Stack trace:\n${request.stackTrace}"
 
     return setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setContentTitle("Failed to load data. Will try again.")
-        .setContentText(request.simpleStatus)
-        .setSubText(getFailedSummary(request.host))
-        .setStyle(Notification.BigTextStyle().bigText(bigText))
+            .setOnlyAlertOnce(true)
+            .setContentTitle("Failed to load data. Will try again.")
+            .setContentText(request.simpleStatus)
+            .setSubText(getFailedSummary(request.host))
+            .setStyle(Notification.BigTextStyle().bigText(bigText))
 }
 fun Notification.Builder.noDataNotification(request: DataRequest): Notification.Builder {
     return setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setContentText("Connection successful, but no data.")
-        .setSubText(getConnectedSummary(request.host))
+            .setOnlyAlertOnce(true)
+            .setContentText("Connection successful, but no data.")
+            .setSubText(getConnectedSummary(request.host))
 }
 fun Notification.Builder.timedOutNotification(): Notification.Builder {
     return setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setContentText("Last request timed out. Will try again.")
-        .setSubText(getTimedOutSummary(null))
+            .setOnlyAlertOnce(true)
+            .setContentText("Last request timed out. Will try again.")
+            .setSubText(getTimedOutSummary(null))
 }
 fun Notification.Builder.loadingNotification(): Notification.Builder {
     return setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setContentText("Loading Data")
-        .setSubText("started loading at ${getTimeString()}")
-        .setProgress(2, 1, true)
+            .setOnlyAlertOnce(true)
+            .setContentText("Loading Data")
+            .setSubText("started loading at ${getTimeString()}")
+            .setProgress(2, 1, true)
 }
 fun Context.getManager() = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

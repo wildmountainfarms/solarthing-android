@@ -36,8 +36,8 @@ import kotlin.math.round
 class SolarPacketInfo
 @Throws(CreationException::class)
 constructor(
-    val packetGroup: FragmentedPacketGroup,
-    batteryVoltageType: BatteryVoltageType
+        val packetGroup: FragmentedPacketGroup,
+        batteryVoltageType: BatteryVoltageType
 ) {
     val dateMillis = packetGroup.dateMillis
 
@@ -178,7 +178,7 @@ constructor(
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = fxMap.values.firstOrNull()?.acMode ?: ACMode.NO_AC
-        acModeNullable = fxMap.values.firstOrNull()?.acMode ?: null
+        acModeNullable = fxMap.values.firstOrNull()?.acMode
         generatorChargingBatteries = masterFXStatusPacket != null && masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
         load = fxMap.values.sumBy { it.inverterWattage }
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }

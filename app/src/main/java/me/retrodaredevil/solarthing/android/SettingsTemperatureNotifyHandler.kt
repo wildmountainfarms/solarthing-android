@@ -21,7 +21,7 @@ import me.retrodaredevil.solarthing.android.util.Formatting
 import java.util.*
 
 private class TemperatureViewHolder(
-    val view: View
+        val view: View
 ) : RecyclerView.ViewHolder(view) {
     val typesName: TextView = view.findViewById(R.id.temperature_popup_types_name)
     val highTemperature: TextView = view.findViewById(R.id.temperature_popup_high_temperature)
@@ -29,9 +29,9 @@ private class TemperatureViewHolder(
 }
 
 private class TemperatureViewAdapter(
-    private val data: List<TemperatureNodeData>,
-    private val temperatureUnit: TemperatureUnit,
-    private val onClick: (TemperatureNodeData) -> Unit
+        private val data: List<TemperatureNodeData>,
+        private val temperatureUnit: TemperatureUnit,
+        private val onClick: (TemperatureNodeData) -> Unit
 ) : RecyclerView.Adapter<TemperatureViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TemperatureViewHolder {
@@ -64,11 +64,11 @@ private class TemperatureViewAdapter(
     }
 }
 private class TemperatureNodeData(
-    val uuid: UUID,
-    var temperatureNode: TemperatureNode
+        val uuid: UUID,
+        var temperatureNode: TemperatureNode
 )
 class SettingsTemperatureNotifyHandler(
-    private val context: Context
+        private val context: Context
 ) {
     private var updatedNodes: MutableList<TemperatureNodeData>? = null
 
@@ -136,13 +136,13 @@ class SettingsTemperatureNotifyHandler(
         }
         dialog.setOnDismissListener {  // this is also called if the dialog is cancelled
             nodeData.temperatureNode = TemperatureNode(
-                battery = batteryCheckbox.isChecked,
-                controller = controllerCheckbox.isChecked,
-                deviceCpu = deviceCpuCheckbox.isChecked,
-                deviceCpuIds = deviceCpuIdsEditText.text.split(",").map { it.trim().toIntOrNull() },
-                highThresholdCelsius = highTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
-                lowThresholdCelsius = lowTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
-                isCritical = isCriticalCheckbox.isChecked
+                    battery = batteryCheckbox.isChecked,
+                    controller = controllerCheckbox.isChecked,
+                    deviceCpu = deviceCpuCheckbox.isChecked,
+                    deviceCpuIds = deviceCpuIdsEditText.text.split(",").map { it.trim().toIntOrNull() },
+                    highThresholdCelsius = highTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
+                    lowThresholdCelsius = lowTemperatureThresholdEditText.text.toString().toFloatOrNull()?.let { temperatureUnit.convertToCelsius(it) },
+                    isCritical = isCriticalCheckbox.isChecked
             )
             showDialog(temperatureUnit)
         }
