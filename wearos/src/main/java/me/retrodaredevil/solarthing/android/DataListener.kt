@@ -1,6 +1,5 @@
 package me.retrodaredevil.solarthing.android
 
-import android.content.ComponentName
 import android.support.wearable.complications.ProviderUpdateRequester
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
@@ -21,10 +20,12 @@ class DataListener : WearableListenerService() {
         }
     }
     private fun requestUpdate() {
-        val requester = ProviderUpdateRequester(
-            this,
-            ComponentName(BatteryVoltageComplicationProviderService::class.java.`package`!!.name, BatteryVoltageComplicationProviderService::class.java.name)
-        )
-        requester.requestUpdateAll()
+        for (componentName in WearConstants.PROVIDER_COMPONENT_NAMES) {
+            val requester = ProviderUpdateRequester(
+                    this,
+                    componentName
+            )
+            requester.requestUpdateAll()
+        }
     }
 }
