@@ -387,19 +387,11 @@ object NotificationHandler {
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
         val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
-            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(
-                info.pvWattage
-            )}</strong> kW\n" +
-                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(
-                info.pvChargerWattage
-            )}</strong> kW") + "\n"
+            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
+                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n"
         } else {
-            "PV: <strong>${wattsToKilowattsString(
-                info.pvWattage
-            )}</strong> kW | " +
-                    "Charger: <strong>${wattsToKilowattsString(
-                        info.pvChargerWattage
-                    )}</strong> kW\n"
+            "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
+                    "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
         }
         val dailyChargeControllerString = when(dailyInfo.dailyKWHMap.size) {
             0 -> ""

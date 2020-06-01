@@ -36,6 +36,7 @@ android {
         exclude 'META-INF/ASL2.0'
     }
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -43,6 +44,25 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+
+    buildFeatures {
+        // Determines whether to generate a BuildConfig class.
+        buildConfig = false
+        // Determines whether to support View Binding.
+        // Note that the viewBinding.enabled property is now deprecated.
+        viewBinding = false
+        // Determines whether to support Data Binding.
+        // Note that the dataBinding.enabled property is now deprecated.
+        dataBinding = false
+        // Determines whether to generate binder classes for your AIDL files.
+        aidl = false
+        // Determines whether to support RenderScript.
+        renderScript = false
+        // Determines whether to support injecting custom variables into the module’s R class.
+        resValues = true
+        // Determines whether to support shader AOT compilation.
+        shaders = false
     }
 }
 repositories {
@@ -86,4 +106,5 @@ dependencies {
     // https://mvnrepository.com/artifact/org.ektorp/org.ektorp.android
     implementation group: 'org.ektorp', name: 'org.ektorp.android', version: '1.5.0'
 
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.0.5'
 }
