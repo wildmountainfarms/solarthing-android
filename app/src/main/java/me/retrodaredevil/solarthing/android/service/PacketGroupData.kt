@@ -22,6 +22,11 @@ class PacketGroupData {
         packetGroups = packets
         lastUpdate = System.currentTimeMillis()
     }
+    @Synchronized
+    fun addReceivedPackets(packets: List<PacketGroup>) {
+        packetGroups = packetGroups + packets
+        lastUpdate = System.currentTimeMillis()
+    }
 
     @Synchronized
     fun getLatestPacketGroups(): Pair<List<PacketGroup>, Long?> {
