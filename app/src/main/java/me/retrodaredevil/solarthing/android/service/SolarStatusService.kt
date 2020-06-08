@@ -12,7 +12,6 @@ import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
 import me.retrodaredevil.solarthing.android.BasicSolarData
 import me.retrodaredevil.solarthing.android.R
@@ -79,6 +78,9 @@ class SolarStatusService(
 
     private lateinit var dataClient: DataClient
 
+
+    private val mutableCalendar: Calendar = Calendar.getInstance()
+
     override fun onInit() {
         notify(getBuilder()
                 .loadingNotification()
@@ -111,36 +113,33 @@ class SolarStatusService(
     }
 
     private fun getDayStartTimeMillis(dateMillis: Long): Long {
-        val calendar: Calendar = Calendar.getInstance()
-        calendar.timeInMillis = dateMillis
-        calendar[Calendar.HOUR_OF_DAY] = 0
-        calendar[Calendar.MINUTE] = 0
-        calendar[Calendar.SECOND] = 0
-        calendar[Calendar.MILLISECOND] = 0
-        return calendar.timeInMillis
+        mutableCalendar.timeInMillis = dateMillis
+        mutableCalendar[Calendar.HOUR_OF_DAY] = 0
+        mutableCalendar[Calendar.MINUTE] = 0
+        mutableCalendar[Calendar.SECOND] = 0
+        mutableCalendar[Calendar.MILLISECOND] = 0
+        return mutableCalendar.timeInMillis
     }
 
     private fun createSolarInfoList(sortedPackets: List<FragmentedPacketGroup>): List<SolarInfo> {
-        val previousPackets = mutableListOf<FragmentedPacketGroup>()
+        val batteryVoltageType = solarProfileProvider.activeProfile.profile.batteryVoltageType
         val r = mutableListOf<SolarInfo>()
-        for (fragmentedPacketGroup in sortedPackets) {
+        for ((i, fragmentedPacketGroup) in sortedPackets.withIndex()) {
             val dateMillis = fragmentedPacketGroup.dateMillis
             val solarPacketInfo = try {
-                SolarPacketInfo(
-                        fragmentedPacketGroup,
-                        solarProfileProvider.activeProfile.profile.batteryVoltageType
-                )
+                SolarPacketInfo(fragmentedPacketGroup, batteryVoltageType)
             } catch (ex: CreationException) {
                 ex.printStackTrace()
                 println("$dateMillis is a packet collection with something wrong!")
                 continue
             }
             val dayStartTimeMillis = getDayStartTimeMillis(dateMillis)
-            previousPackets.removeIfBefore(dayStartTimeMillis) { it.dateMillis }
-            previousPackets.add(fragmentedPacketGroup)
-            val solarDailyInfo = createSolarDailyInfo(dayStartTimeMillis, previousPackets)
 
-            r.add(SolarInfo(solarPacketInfo, solarDailyInfo))
+            r.add(SolarInfo(solarPacketInfo) {
+                val packets = sortedPackets.toMutableList().subList(0, i + 1)
+                packets.removeIfBefore(dayStartTimeMillis) { it.dateMillis }
+                createSolarDailyInfo(dayStartTimeMillis, packets)
+            })
         }
         return r
     }
@@ -158,9 +157,11 @@ class SolarStatusService(
 
             val maxTimeDistance = (miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000).toLong()
             val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
+            val startTime = System.currentTimeMillis()
             if(sortedPackets.isNotEmpty()) {
                 solarInfoCollection = createSolarInfoList(sortedPackets.values.first()) // TODO allow multiple instance sources instead of just one
             }
+            println("Took " + (System.currentTimeMillis() - startTime))
 
             solarStatusData.onAllPacketReceive(packetGroups.toList())
             if(solarInfoCollection.isNotEmpty()) {
@@ -202,7 +203,6 @@ class SolarStatusService(
                         .build())
             }
         }
-
     }
     private fun doNotify(summary: String): Boolean{
         if(solarInfoCollection.isEmpty()){
