@@ -151,9 +151,9 @@ class CommandActivity : AppCompatActivity() {
         val packet = ImmutableIntegrityPacket(sender, encrypted)
         currentTaskText.text = "Sending command"
         currentTask = CouchDbUploadToDatabase(
-            getCouchProperties(),
-            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
-            ::onPostExecute
+                getCouchProperties(),
+                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
+                ::onPostExecute
         ).execute()
     }
     private fun onPostExecute(result: Boolean?){

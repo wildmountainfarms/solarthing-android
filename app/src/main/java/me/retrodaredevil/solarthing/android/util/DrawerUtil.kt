@@ -41,7 +41,9 @@ fun initializeDrawer(
 
     val drawerNotificationSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(100)
             .withName(R.string.notification_settings_select)
-    val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(101)
+    val drawerApplicationSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(101)
+            .withName(R.string.application_settings_select)
+    val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(102)
             .withName(R.string.grafana_select)
 
     DrawerBuilder()
@@ -63,6 +65,7 @@ fun initializeDrawer(
                     drawerItemCommands,
                     DividerDrawerItem(),
                     drawerNotificationSettings,
+                    drawerApplicationSettings,
                     drawerGrafana
             )
             .withOnDrawerItemClickListener(object : Drawer.OnDrawerItemClickListener {
@@ -94,6 +97,12 @@ fun initializeDrawer(
                             activity.startActivity(intent)
                         }
                         101L -> {
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", activity.packageName, null)
+                            }
+                            activity.startActivity(intent)
+                        }
+                        102L -> {
                             val profile = createConnectionProfileManager(activity).activeProfile.profile
                             val couchDb = profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile
                             activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://${couchDb.host}/grafana")))
