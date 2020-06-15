@@ -93,7 +93,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    def solarthingVersion = "3.7.2"
+    def solarthingVersion = "3.8.0"
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 

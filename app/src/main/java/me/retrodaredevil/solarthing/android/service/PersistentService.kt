@@ -28,6 +28,9 @@ import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
 import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
 import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
 import me.retrodaredevil.solarthing.android.util.getSSID
+import me.retrodaredevil.solarthing.commands.packets.open.RequestCommandPacket
+import me.retrodaredevil.solarthing.commands.packets.status.AvailableCommandsPacket
+import me.retrodaredevil.solarthing.commands.packets.status.CommandStatusPacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
 import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
@@ -121,7 +124,8 @@ class PersistentService : Service(), Runnable{
                                 ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java)
+                                ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java),
+                                ObjectMapperPacketConverter(MAPPER, CommandStatusPacket::class.java)
                         ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
                 ),
                 ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(

@@ -47,13 +47,22 @@
                 android:text="Send New Auth Request"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/button4" android:onClick="sendAuthRequest"/>
-        <EditText
+        <Space
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPersonName"
-                android:text="GEN OFF"
-                android:ems="10"
-                android:id="@+id/command_text" android:hint="Command to send"/>
+                android:layout_height="30dp"/>
+        <TextView
+                android:text="Commands"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/command_fragment_spinner"/>
+        <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/command_spinner"/>
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="30dp"/>
         <Button
                 android:text="Send Command"
                 android:layout_width="match_parent"

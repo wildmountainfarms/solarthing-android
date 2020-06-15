@@ -6,28 +6,32 @@ import android.content.Context
 import android.os.AsyncTask
 import android.os.Bundle
 import android.provider.Settings
-import androidx.appcompat.app.AppCompatActivity
 import android.view.View
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.couchdb.DocumentWrapper
 import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.SolarThingApplication
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import me.retrodaredevil.solarthing.android.util.createHttpClient
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
-import me.retrodaredevil.solarthing.packets.collection.PacketCollection
-import me.retrodaredevil.solarthing.packets.collection.PacketCollectionIdGenerator
-import me.retrodaredevil.solarthing.packets.collection.PacketCollections
+import me.retrodaredevil.solarthing.commands.CommandInfo
+import me.retrodaredevil.solarthing.commands.packets.open.ImmutableRequestCommandPacket
+import me.retrodaredevil.solarthing.commands.packets.status.AvailableCommandsPacket
+import me.retrodaredevil.solarthing.packets.collection.*
+import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePacket
+import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePackets
+import me.retrodaredevil.solarthing.packets.instance.InstanceTargetPackets
 import me.retrodaredevil.solarthing.packets.security.ImmutableAuthNewSenderPacket
 import me.retrodaredevil.solarthing.packets.security.ImmutableIntegrityPacket
 import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
+import me.retrodaredevil.solarthing.util.JacksonUtil
 import org.ektorp.impl.StdCouchDbConnector
 import org.ektorp.impl.StdCouchDbInstance
 import java.io.File
@@ -35,9 +39,34 @@ import java.io.FileNotFoundException
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.util.*
 import javax.crypto.Cipher
 
+private fun getAvailableCommands(application: SolarThingApplication): Pair<String, Map<Int, List<CommandInfo>>>? {
+    val packetGroups = application.solarStatusData?.packetGroups ?: return null
+    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000)
+    if (sortedMap.isEmpty()) {
+        return null
+    }
+    val sourceId = sortedMap.keys.first() // TODO sourceId
+    val r = HashMap<Int, List<CommandInfo>>()
+    for (packetGroup in sortedMap[sourceId]!!) {
+        if (packetGroup.dateMillis + 5 * 60 * 1000 < System.currentTimeMillis()) {
+            continue // old packet
+        }
+        for (packet in packetGroup.packets) {
+            if (packet is AvailableCommandsPacket) {
+                r[packetGroup.getFragmentId(packet)] = packet.commandInfoList // since this is ordered oldest to newest, the newest value should be put in here
+            }
+        }
+    }
+    return Pair(sourceId, r)
+}
+
 class CommandActivity : AppCompatActivity() {
+    companion object {
+        private val MAPPER = JacksonUtil.defaultMapper()
+    }
 
     private val cipher = Cipher.getInstance(KeyUtil.CIPHER_TRANSFORMATION)
 
@@ -45,12 +74,17 @@ class CommandActivity : AppCompatActivity() {
 
     private lateinit var sender: String
     private lateinit var publicKeyText: TextView
-    private lateinit var commandText: EditText
+    private lateinit var fragmentSpinner: Spinner
+    private lateinit var commandSpinner: Spinner
     private lateinit var currentTaskText: TextView
 
     private var keyPair: KeyPair? = null
 
     private var currentTask: AsyncTask<*, *, *>? = null
+
+    private var currentCommands: List<CommandInfo> = emptyList()
+    private var sourceId: String? = null
+    private var fragmentId: Int? = null
 
     @SuppressLint("HardwareIds")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,12 +95,53 @@ class CommandActivity : AppCompatActivity() {
         sender = "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
 
         findViewById<TextView>(R.id.sender_name).text = sender
-        commandText = findViewById(R.id.command_text)
+        fragmentSpinner = findViewById(R.id.command_fragment_spinner)
+        commandSpinner = findViewById(R.id.command_spinner)
         publicKeyText = findViewById(R.id.public_key)
         currentTaskText = findViewById(R.id.current_task)
         updateKeyPair()
         setToNoTask()
+        initFragmentSpinner()
     }
+    private fun initFragmentSpinner() {
+        val (sourceId, availableCommandsMap) = getAvailableCommands(application as SolarThingApplication) ?: Pair(InstanceSourcePacket.UNUSED_SOURCE_ID, emptyMap())
+        this.sourceId = sourceId
+        val keys = ArrayList(TreeSet(PacketGroups.DEFAULT_FRAGMENT_ID_COMPARATOR).apply {
+            addAll(availableCommandsMap.keys)
+        })
+        fragmentSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, keys.map { "$it" })
+        val currentPosition = fragmentSpinner.selectedItemPosition
+        if (currentPosition == AdapterView.INVALID_POSITION) {
+            updateSpinner(emptyList())
+            fragmentId = null
+        } else {
+            val fragmentId = keys[currentPosition]
+            this.fragmentId = fragmentId
+            updateSpinner(availableCommandsMap[fragmentId] ?: error("No command list for fragmentId=$fragmentId"))
+        }
+        fragmentSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                updateSpinner(emptyList())
+            }
+
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val fragmentId = keys[position]
+                updateSpinner(availableCommandsMap[fragmentId] ?: error("No command list for fragmentId=$fragmentId"))
+            }
+        }
+    }
+    private fun updateSpinner(commands: List<CommandInfo>) {
+        currentCommands = commands
+        commandSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, commands.map { it.displayName })
+    }
+    private fun getSelectedCommand(): CommandInfo? {
+        val itemId = commandSpinner.selectedItemPosition
+        if (itemId == AdapterView.INVALID_POSITION) {
+            return null
+        }
+        return currentCommands[itemId]
+    }
+
     @Suppress("UNUSED_PARAMETER")
     fun generateNewKey(view: View){
         if(keyPair == null){
@@ -74,12 +149,12 @@ class CommandActivity : AppCompatActivity() {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Replace old key and create new?")
-            .setNegativeButton("Cancel") { _, _ -> }
-            .setPositiveButton("Yes") { _, _ ->
-                generateNewKey()
-            }
-            .create().show()
+                .setTitle("Replace old key and create new?")
+                .setNegativeButton("Cancel") { _, _ -> }
+                .setPositiveButton("Yes") { _, _ ->
+                    generateNewKey()
+                }
+                .create().show()
     }
     private fun generateNewKey(){
         setKeyPair(KeyUtil.generateKeyPair())
@@ -105,17 +180,17 @@ class CommandActivity : AppCompatActivity() {
         val keyPair = this.keyPair
         if(keyPair == null){
             AlertDialog.Builder(this)
-                .setTitle("Please generate a key first!")
-                .setNeutralButton("Ok") { _, _ -> }
-                .create().show()
+                    .setTitle("Please generate a key first!")
+                    .setNeutralButton("Ok") { _, _ -> }
+                    .create().show()
         } else {
             AlertDialog.Builder(this)
-                .setTitle("Would you like to send a new auth request?")
-                .setNegativeButton("Cancel") { _, _ -> }
-                .setPositiveButton("Send") { _, _ ->
-                    sendAuthRequest(keyPair.public)
-                }
-                .create().show()
+                    .setTitle("Would you like to send a new auth request?")
+                    .setNegativeButton("Cancel") { _, _ -> }
+                    .setPositiveButton("Send") { _, _ ->
+                        sendAuthRequest(keyPair.public)
+                    }
+                    .create().show()
         }
     }
     private fun getCouchProperties(): CouchProperties {
@@ -129,9 +204,9 @@ class CommandActivity : AppCompatActivity() {
 
         currentTaskText.text = "Sending Auth Request"
         currentTask = CouchDbUploadToDatabase(
-            getCouchProperties(),
-            PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
-            ::onPostExecute
+                getCouchProperties(),
+                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()),
+                ::onPostExecute
         ).execute()
     }
     @SuppressLint("SetTextI18n")
@@ -144,15 +219,36 @@ class CommandActivity : AppCompatActivity() {
         }
         if(checkCurrentTask()) return
 
-        val text = System.currentTimeMillis().toString(16) + "," + commandText.text.toString()
-        println("Going to send text: $text")
+        val selectedCommand = getSelectedCommand()
+        val instancePackets = arrayOf(
+                InstanceSourcePackets.create(sourceId!!),
+                InstanceTargetPackets.create(listOf(fragmentId!!))
+        )
+        if (selectedCommand == null) {
+            Toast.makeText(this, "No selected command", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        println("Going to send command: ${selectedCommand.name}")
+        val encryptedCollection = PacketCollections.createFromPackets(listOf(
+                ImmutableRequestCommandPacket(selectedCommand.name),
+                *instancePackets
+        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault())
+
+        val text = System.currentTimeMillis().toString(16) + "," + MAPPER.writeValueAsString(encryptedCollection)
+        println(text)
         val encrypted = Encrypt.encrypt(cipher, keyPair.private, text)
 
-        val packet = ImmutableIntegrityPacket(sender, encrypted)
         currentTaskText.text = "Sending command"
         currentTask = CouchDbUploadToDatabase(
                 getCouchProperties(),
-                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR),
+                PacketCollections.createFromPackets(
+                        listOf(
+                                ImmutableIntegrityPacket(sender, encrypted),
+                                *instancePackets
+                        ),
+                        PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()
+                ),
                 ::onPostExecute
         ).execute()
     }
