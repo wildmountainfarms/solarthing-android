@@ -164,7 +164,6 @@ private class MyViewAdapter(
                         val timeString = if(dataSource == null) "???" else DateFormat.getTimeInstance(DateFormat.MEDIUM)
                             .format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis }.time)
                         val senderString = dataSource?.sender ?: "???"
-                        dataSource.data
                         data.add(ViewData(
                             "cmd",
                             packet.command.commandName,

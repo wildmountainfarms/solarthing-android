@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 import me.retrodaredevil.couchdb.DocumentWrapper
+import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
@@ -28,8 +29,9 @@ import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePacket
 import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePackets
 import me.retrodaredevil.solarthing.packets.instance.InstanceTargetPackets
 import me.retrodaredevil.solarthing.packets.security.ImmutableAuthNewSenderPacket
-import me.retrodaredevil.solarthing.packets.security.ImmutableIntegrityPacket
+import me.retrodaredevil.solarthing.packets.security.ImmutableLargeIntegrityPacket
 import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
+import me.retrodaredevil.solarthing.packets.security.crypto.HashUtil
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
 import me.retrodaredevil.solarthing.util.JacksonUtil
 import org.ektorp.impl.StdCouchDbConnector
@@ -155,6 +157,7 @@ class CommandActivity : AppCompatActivity() {
                     generateNewKey()
                 }
                 .create().show()
+        Objects.requireNonNull("", "")
     }
     private fun generateNewKey(){
         setKeyPair(KeyUtil.generateKeyPair())
@@ -220,14 +223,14 @@ class CommandActivity : AppCompatActivity() {
         if(checkCurrentTask()) return
 
         val selectedCommand = getSelectedCommand()
-        val instancePackets = arrayOf(
-                InstanceSourcePackets.create(sourceId!!),
-                InstanceTargetPackets.create(listOf(fragmentId!!))
-        )
         if (selectedCommand == null) {
             Toast.makeText(this, "No selected command", Toast.LENGTH_SHORT).show()
             return
         }
+        val instancePackets = arrayOf(
+                InstanceSourcePackets.create(sourceId!!),
+                InstanceTargetPackets.create(listOf(fragmentId!!))
+        )
 
         println("Going to send command: ${selectedCommand.name}")
         val encryptedCollection = PacketCollections.createFromPackets(listOf(
@@ -235,16 +238,17 @@ class CommandActivity : AppCompatActivity() {
                 *instancePackets
         ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault())
 
-        val text = System.currentTimeMillis().toString(16) + "," + MAPPER.writeValueAsString(encryptedCollection)
-        println(text)
-        val encrypted = Encrypt.encrypt(cipher, keyPair.private, text)
+        val payload = MAPPER.writeValueAsString(encryptedCollection)
+        val hashString = System.currentTimeMillis().toString(16) + "," + HashUtil.encodedHash(payload)
+        println(hashString)
+        val encrypted = Encrypt.encrypt(cipher, keyPair.private, hashString)
 
         currentTaskText.text = "Sending command"
         currentTask = CouchDbUploadToDatabase(
                 getCouchProperties(),
                 PacketCollections.createFromPackets(
                         listOf(
-                                ImmutableIntegrityPacket(sender, encrypted),
+                                ImmutableLargeIntegrityPacket(sender, encrypted, payload),
                                 *instancePackets
                         ),
                         PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()
@@ -329,9 +333,9 @@ class CommandActivity : AppCompatActivity() {
     }
 }
 private class CouchDbUploadToDatabase(
-    private val couchProperties: CouchProperties,
-    private val packetCollection: PacketCollection,
-    private val onFinish: (Boolean?) -> Unit
+        private val couchProperties: CouchProperties,
+        private val packetCollection: PacketCollection,
+        private val onFinish: (Boolean?) -> Unit
 ) : AsyncTask<Void, Void, Boolean>() {
     override fun doInBackground(vararg params: Void?): Boolean {
         try {
@@ -340,7 +344,7 @@ private class CouchDbUploadToDatabase(
                     .setSocketTimeoutMillis(Int.MAX_VALUE)
                     .build())
             val instance = StdCouchDbInstance(httpClient)
-            val client = StdCouchDbConnector("commands", instance)
+            val client = StdCouchDbConnector(SolarThingConstants.OPEN_UNIQUE_NAME, instance)
             client.createDatabaseIfNotExists()
             client.create(DocumentWrapper(packetCollection.dbId).apply {
                 `object` = packetCollection
