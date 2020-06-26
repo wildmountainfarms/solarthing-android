@@ -10,12 +10,18 @@ class DataListener : WearableListenerService() {
     override fun onDataChanged(dataEvent: DataEventBuffer) {
         for (event in dataEvent) {
             val item = event.dataItem!!
-            if (item.uri.path == BasicSolarData.PATH) {
-                println("Got basic solar data")
-                val application = application as SolarThingWearApplication
-                application.basicSolarDataMap = DataMapItem.fromDataItem(item).dataMap
-                requestUpdate()
-                return
+            when (item.uri.path) {
+                BasicSolarData.PATH -> {
+                    println("Got basic solar data")
+                    val application = application as SolarThingWearApplication
+                    application.basicSolarDataMap = DataMapItem.fromDataItem(item).dataMap
+                    requestUpdate()
+                }
+                HeartbeatData.PATH -> {
+                    val application = application as SolarThingWearApplication
+                    application.lastHeartbeat = DataMapItem.fromDataItem(item).dataMap.getLong(HeartbeatData.DATE_MILLIS)
+                    requestUpdate()
+                }
             }
         }
     }

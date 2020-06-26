@@ -345,7 +345,7 @@ private class DataUpdaterTask(
         if(result == null){
             throw NullPointerException("result is null!")
         }
-        println("Received result: $result")
+//        println("Received result: $result")
         updateNotification(result)
     }
 

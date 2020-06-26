@@ -51,16 +51,14 @@ class SolarEventService(
                     }
                 } else if(packet is SolarEventPacket){
                     when(val packetType = packet.packetType){
-                        SolarEventPacketType.MXFM_DAILY_DAY_END -> { }
-                        SolarEventPacketType.FX_DAILY_DAY_END -> { }
                         SolarEventPacketType.FX_AC_MODE_CHANGE -> {
-                            println("We will eventually implement a notification for generator turning on and off")
+//                            println("We will eventually implement a notification for generator turning on and off")
                         }
                         SolarEventPacketType.FX_AUX_STATE_CHANGE -> {
-                            println("We will eventually implement a notification for aux state changing (fx)")
+//                            println("We will eventually implement a notification for aux state changing (fx)")
                         }
                         SolarEventPacketType.MXFM_AUX_MODE_CHANGE -> {
-                            println("We will eventually implement a notification for aux state changing (mx)")
+//                            println("We will eventually implement a notification for aux state changing (mx)")
                         }
                         SolarEventPacketType.FX_OPERATIONAL_MODE_CHANGE, SolarEventPacketType.MXFM_CHARGER_MODE_CHANGE -> {}
                         SolarEventPacketType.MXFM_RAW_DAY_END -> {}

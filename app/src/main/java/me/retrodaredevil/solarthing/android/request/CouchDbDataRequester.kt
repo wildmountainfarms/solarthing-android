@@ -51,7 +51,7 @@ class CouchDbDataRequester(
 
             val query = ViewQuery().designDocId("_design/packets").viewName("millis").startKey(startKeyGetter())
             val result = client.queryView(query)
-            println("result=$result")
+//            println("result=$result")
             val list = ArrayList<PacketGroup>()
             var exception: Exception? = null
             for (row in result.rows) {
@@ -74,7 +74,7 @@ class CouchDbDataRequester(
                 )
             }
             exception?.printStackTrace()
-            println("Updated collections!")
+//            println("Updated collections!")
             return DataRequest(list, true, "Request Successful", couchProperties.host, authDebug = getAuthDebug(couchProperties))
         } catch(ex: DbAccessException){
             ex.printStackTrace()

@@ -15,7 +15,7 @@ class BatteryTemperatureComplicationProviderService : ComplicationProviderServic
         val dataMap = application.basicSolarDataMap
         val data = dataMap?.let { BasicSolarData.fromDataMap(it) }
         val batteryTemperatureString = data?.batteryTemperatureString
-        if (data == null || data.isOld() || batteryTemperatureString == null) {
+        if (data == null || application.isDataOld || batteryTemperatureString == null) {
             println("null or old! data: $data batteryTemperatureString: $batteryTemperatureString")
             manager.updateComplicationData(
                     complicationId,

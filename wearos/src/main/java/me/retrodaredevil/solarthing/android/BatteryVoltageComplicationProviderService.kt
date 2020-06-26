@@ -17,7 +17,7 @@ class BatteryVoltageComplicationProviderService : ComplicationProviderService() 
 
         val dataMap = application.basicSolarDataMap
         val data = dataMap?.let { BasicSolarData.fromDataMap(it) }
-        if (data == null || data.isOld()) {
+        if (data == null || application.isDataOld) {
             println("null or old! data: $data")
             manager.updateComplicationData(
                     complicationId,
@@ -38,7 +38,7 @@ class BatteryVoltageComplicationProviderService : ComplicationProviderService() 
                 complicationId,
                 ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
                         .setIcon(Icon.createWithResource(this, iconResource))
-                        .setShortText(ComplicationText.plainText("${Formatting.TENTHS.format(data.batteryVoltage)}V"))
+                        .setShortText(ComplicationText.plainText(data.batteryVoltage + "V"))
                         .build()
         )
     }

@@ -14,6 +14,7 @@ import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import me.retrodaredevil.solarthing.android.BasicSolarData
+import me.retrodaredevil.solarthing.android.HeartbeatData
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.notifications.*
@@ -22,6 +23,7 @@ import me.retrodaredevil.solarthing.android.prefs.MiscProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
@@ -66,6 +68,8 @@ class SolarStatusService(
     private var lastDoneGeneratorNotification: Long? = null
     private var lastLowBatteryNotification: Long? = null
     private var lastCriticalBatteryNotification: Long? = null
+
+    private var lastHeartbeat: Long? = null
 
     private val moreInfoIntent: PendingIntent by lazy {
         PendingIntent.getBroadcast(
@@ -144,11 +148,37 @@ class SolarStatusService(
         return r
     }
 
+    private fun updateDataClient(solarInfo: SolarInfo) {
+        val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
+        val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
+            BasicSolarData(
+                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.batteryVoltage),
+                    solarInfo.solarPacketInfo.acModeNullable?.valueCode,
+                    solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
+                    solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
+                    Formatting.TENTHS.format(solarInfo.solarDailyInfo.dailyKWH),
+                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.pvWattage / 1000.0f),
+                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.load / 1000.0f)
+            ).applyTo(dataMap)
+            asPutDataRequest()
+        }
+        dataClient.putDataItem(request) // done asynchronously
+
+        val lastHeartbeat = this.lastHeartbeat
+        if (lastHeartbeat == null || lastHeartbeat + 4 * 60 * 1000 < System.currentTimeMillis()) {
+            dataClient.putDataItem(PutDataMapRequest.create(HeartbeatData.PATH).run {
+                dataMap.putLong(HeartbeatData.DATE_MILLIS, solarInfo.solarPacketInfo.dateMillis)
+                asPutDataRequest()
+            })
+            this.lastHeartbeat = System.currentTimeMillis()
+        }
+    }
+
     override fun onDataRequest(dataRequest: DataRequest) {
         val summary: String
 
         if(dataRequest.successful) {
-            println("[123]Got successful data request")
+//            println("[123]Got successful data request")
             val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
             packetGroups.removeIfBefore(System.currentTimeMillis() - 24 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 24 hours old
 
@@ -170,24 +200,10 @@ class SolarStatusService(
                 service.sendBroadcast(intent)
 
                 val solarInfo = solarInfoCollection.last()
-                val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
-                val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
-                    BasicSolarData(
-                            solarInfo.solarPacketInfo.dateMillis,
-                            solarInfo.solarPacketInfo.batteryVoltage,
-                            solarInfo.solarPacketInfo.acModeNullable?.valueCode,
-                            solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
-                            solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
-                            solarInfo.solarDailyInfo.dailyKWH,
-                            solarInfo.solarPacketInfo.pvWattage / 1000.0f,
-                            solarInfo.solarPacketInfo.load / 1000.0f
-                    ).applyTo(dataMap)
-                    asPutDataRequest()
-                }
-                dataClient.putDataItem(request) // done asynchronously
+                updateDataClient(solarInfo)
             }
         } else {
-            println("[123]Got unsuccessful data request")
+//            println("[123]Got unsuccessful data request")
             summary = getFailedSummary(dataRequest.host)
         }
         if(!doNotify(summary)){
@@ -260,10 +276,6 @@ class SolarStatusService(
                 moreInfoIntent,
                 miscProfileProvider.activeProfile.profile.temperatureUnit
         ))
-//        service.getManager().notify(
-//            END_OF_DAY_NOTIFICATION_ID,
-//            NotificationHandler.createDayEnd(service.applicationContext, currentSolarInfo.solarPacketInfo, currentSolarInfo.solarDailyInfo)
-//        )
         if(beginningACDropInfo != null || acUseInfo != null){
             service.getManager().notify(
                     GENERATOR_PERSISTENT_ID,
