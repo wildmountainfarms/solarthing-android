@@ -20,6 +20,7 @@ import me.retrodaredevil.solarthing.android.service.restartService
 import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.service.stopService
 import me.retrodaredevil.solarthing.android.data.TemperatureUnit
+import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import java.util.*
 
@@ -60,6 +61,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var startOnBoot: CheckBox
     private lateinit var networkSwitchingEnabledCheckBox: CheckBox
     private lateinit var temperatureUnitSpinner: Spinner
+
+    private lateinit var drawerHandler: DrawerHandler
 
     // region Initialization
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,7 +111,7 @@ class SettingsActivity : AppCompatActivity() {
         networkSwitchingEnabledCheckBox = findViewById(R.id.network_switching_enabled)
         temperatureUnitSpinner = findViewById(R.id.temperature_unit_spinner)
 
-        initializeDrawer(this, onActivityIntentRequest = { _, intent ->
+        drawerHandler = initializeDrawer(this, onActivityIntentRequest = { _, intent ->
             if(isConnectionProfileNotSaved() || isSolarProfileNotSaved() || isMiscProfileNotSaved()) {
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle("You have unsaved changes")
@@ -187,6 +190,12 @@ class SettingsActivity : AppCompatActivity() {
         startServiceIfNotRunning(this)
     }
 
+    override fun onResume() {
+        super.onResume()
+        drawerHandler.closeDrawer()
+        drawerHandler.highlight()
+    }
+
     private fun requestFineLocation(){
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_FINE_LOCATION_RC)
     }
@@ -231,8 +240,8 @@ class SettingsActivity : AppCompatActivity() {
     }
     // region Saving and Loading
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
-        saveConnectionSettings()
-        saveSolarSettings()
+        saveConnectionSettings(connectionProfileHeader.editUUID)
+        saveSolarSettings(solarProfileHeader.editUUID)
         miscProfileProvider.activeProfile.profile = getMiscProfile()
 
         if(reloadSettings) loadSettings()
@@ -278,13 +287,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun isConnectionProfileNotSaved() = getConnectionProfile() != connectionProfileManager.getProfile(connectionProfileHeader.editUUID).profile
     private fun isSolarProfileNotSaved() = getSolarProfile() != solarProfileManager.getProfile(solarProfileHeader.editUUID).profile
     private fun isMiscProfileNotSaved() = getMiscProfile() != miscProfileProvider.activeProfile.profile
-    private fun saveConnectionSettings(){
-        val uuid = connectionProfileHeader.editUUID
+    private fun saveConnectionSettings(uuid: UUID){
         connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
         connectionProfileManager.getProfile(uuid).profile = getConnectionProfile()
     }
-    private fun saveSolarSettings(){
-        val uuid = solarProfileHeader.editUUID
+    private fun saveSolarSettings(uuid: UUID){
         solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
         solarProfileManager.getProfile(uuid).profile = getSolarProfile()
     }

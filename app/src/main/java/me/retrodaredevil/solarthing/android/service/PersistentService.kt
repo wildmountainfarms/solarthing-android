@@ -234,7 +234,7 @@ class PersistentService : Service(), Runnable{
                         r = uuid
                     }
                 } else if(networkSwitchingProfile.ssid == ssid){
-                    r = uuid
+                    return uuid
                 }
             }
         }
@@ -242,7 +242,7 @@ class PersistentService : Service(), Runnable{
     }
 
     /*
-    This is called periocially whenever we need to update
+    This is called periodically whenever we need to update
      */
     override fun run() {
         if(miscProfileProvider.activeProfile.profile.networkSwitchingEnabled) {
@@ -252,14 +252,13 @@ class PersistentService : Service(), Runnable{
                 val switchUUID = getProfileToSwitchTo(id, connectionProfileManager, ConnectionProfile::networkSwitchingProfile)
                 if (switchUUID != null && connectionProfileManager.activeUUID != switchUUID) {
                     connectionProfileManager.activeUUID = switchUUID
-                    Toast.makeText(this, "Changed to profile: ${connectionProfileManager.activeProfileName}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Changed to profile: ${connectionProfileManager.getProfileName(switchUUID)}", Toast.LENGTH_SHORT).show()
                 }
             } catch(ex: SSIDPermissionException){
                 ex.printStackTrace()
             } catch(ex: SSIDNotAvailable){
                 ex.printStackTrace()
             }
-            // TODO when we get the profile to switch to, figure out how to notify the UI layer
         }
 
         val activeConnectionProfile = connectionProfileManager.activeProfile.profile

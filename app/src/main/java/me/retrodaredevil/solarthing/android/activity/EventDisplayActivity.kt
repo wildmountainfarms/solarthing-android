@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import me.retrodaredevil.solarthing.DataSource
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
+import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
@@ -201,15 +202,22 @@ class EventDisplayActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var lastUpdatedTextView: TextView
 
+    private lateinit var drawerHandler: DrawerHandler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_event_display)
-        initializeDrawer(this)
+        drawerHandler = initializeDrawer(this)
         recyclerView = findViewById<RecyclerView>(R.id.events_display_recycler_view).apply {
             layoutManager = LinearLayoutManager(this@EventDisplayActivity)
         }
         lastUpdatedTextView = findViewById(R.id.events_display_last_updated_text)
         update()
+    }
+    override fun onResume() {
+        super.onResume()
+        drawerHandler.closeDrawer()
+        drawerHandler.highlight()
     }
     fun onRefreshClick(@Suppress("UNUSED_PARAMETER") view: View) {
         update()

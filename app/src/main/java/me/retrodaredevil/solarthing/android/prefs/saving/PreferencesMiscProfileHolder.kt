@@ -22,8 +22,8 @@ constructor(
     override var profile: MiscProfile
         get() {
             val networkSwitchingEnabled =
-                if(context != null && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) false
-                else settings.getBoolean(SaveKeys.networkSwitchingEnabled, DefaultOptions.networkSwitchingEnabled)
+                    if(context != null && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) false
+                    else settings.getBoolean(SaveKeys.networkSwitchingEnabled, DefaultOptions.networkSwitchingEnabled)
 
             return MiscProfile(
                     settings.getFloat(

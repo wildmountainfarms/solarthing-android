@@ -30,7 +30,7 @@
         <activity
                 android:name=".activity.EventDisplayActivity"
                 android:label="@string/title_activity_event_display"
-                android:theme="@style/AppTheme.NoActionBar" />
+                android:theme="@style/AppTheme.NoActionBar" android:launchMode="singleInstance"/>
 
         <receiver android:name=".widget.BatteryVoltageWidget">
             <intent-filter>
@@ -51,7 +51,7 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".activity.CommandActivity" />
+        <activity android:name=".activity.CommandActivity" android:launchMode="singleInstance"/>
 
         <!-- TODO think about using ACTION_USER_UNLOCKED to try and start the service. This comes before BOOT_COMPLETED and doesn't require directBootAware -->
         <receiver
@@ -64,7 +64,7 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".activity.SettingsActivity">
+        <activity android:name=".activity.SettingsActivity" android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -16,14 +16,13 @@ class ProfileHeaderHandler(
         private val context: Context,
         view: View,
         private val profileManager: ProfileManager<*>,
-        private val doSave: (() -> Unit),
-        private val doLoad: ((UUID) -> Unit)
+        private val doSave: (UUID) -> Unit,
+        private val doLoad: (UUID) -> Unit
 )  {
 
 
     private val spinner: Spinner = view.findViewById(R.id.profile_spinner)
     private val profileNameEditText: EditText = view.findViewById(R.id.profile_name)
-    private val profileUUIDMap = mutableMapOf<UUID, Pair<Long, String>>()
 
     /**
      * The [UUID] of the profile being edited. Not necessarily the active uuid
@@ -36,16 +35,13 @@ class ProfileHeaderHandler(
         val deleteButton = view.findViewById<Button>(R.id.delete_profile_button)
         deleteButton.setOnClickListener(::deleteCurrentProfile)
 
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onNothingSelected(parent: AdapterView<*>?) = error("Cannot have nothing selected!")
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onConnectionProfileChange(id)
-        }
         view.findViewById<Button>(R.id.active_profile_button).setOnClickListener(::activateProfile)
     }
     private fun activateProfile(view: View){
         val previous = profileManager.activeUUID
         val newUUID = editUUID
         if(previous != newUUID){
+            doSave(newUUID) // we want to write possible changes so other callers can see the changes
             profileManager.activeUUID = newUUID
             Toast.makeText(context, "Switched to profile: ${profileManager.getProfileName(newUUID)}", Toast.LENGTH_SHORT).show()
         }
@@ -63,53 +59,45 @@ class ProfileHeaderHandler(
         get() = profileNameEditText.text.toString()
         set(value) = profileNameEditText.setText(value)
 
-    private fun onConnectionProfileChange(rowId: Long){
-        println("Connection Profile Changed to ID: $rowId")
-        var selectedUUID: UUID? = null
-        for(entry in profileUUIDMap.entries){
-            val uuid = entry.key
-            val (id, name) = entry.value
-            if(id == rowId){
-                selectedUUID = uuid
-                break
-            }
-        }
-        selectedUUID ?: error("selectedUUID is null from rowId: $rowId")
-        val currentUUID = editUUID
-        if(currentUUID == selectedUUID){ // they're the same
-            return
-        }
-        doSave() // we need to tell the UI to save the current settings because we're about to change the profile being edited profile
-        editUUID = selectedUUID
-        doLoad(selectedUUID) // we need to tell the UI to load the new settings
-    }
-
     /**
      * Used to reload the spinner values or/and to set the current selection
-     * @param editUUID The new UUID of the profile to edit
+     * @param newEditUUID The new UUID of the profile to edit
      */
-    fun loadSpinner(editUUID: UUID){
-        this.editUUID = editUUID
+    fun loadSpinner(newEditUUID: UUID){
+        this.editUUID = newEditUUID
         val uuids = profileManager.profileUUIDs
         val profileNameList = uuids.map { profileManager.getProfileName(it) }
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, profileNameList)
         var selectedPosition: Int? = null
-        profileUUIDMap.clear()
         for((position, uuid) in uuids.withIndex()){
-            val id = adapter.getItemId(position)
-            profileUUIDMap[uuid] = Pair(id, profileNameList[position])
-            if(uuid == editUUID){
+            if(uuid == newEditUUID){
                 selectedPosition = position
             }
         }
-        selectedPosition ?: error("No uuid: $editUUID in uuids: $uuids")
+        selectedPosition ?: error("No uuid: $newEditUUID in uuids: $uuids")
         spinner.adapter = adapter
         spinner.setSelection(selectedPosition)
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) = error("Cannot have nothing selected!")
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedUUID: UUID = uuids[position]
+                val currentUUID = this@ProfileHeaderHandler.editUUID
+                if(currentUUID == selectedUUID){ // they're the same
+                    return
+                }
+                doSave(currentUUID) // we need to tell the UI to save the current settings because we're about to change the profile being edited profile
+                this@ProfileHeaderHandler.editUUID = selectedUUID
+                doLoad(selectedUUID) // we need to tell the UI to load the new settings
+                println("Connection Profile Changed to position: $position uuid: $selectedUUID")
+            }
+        }
+
     }
     private fun newProfilePrompt(){
         createTextPromptAlert("New Profile Name") { name ->
             val (uuid, _) = profileManager.addAndCreateProfile(name)
-            doSave() // we need to tell the UI to save the profile because we're about to change the active profile
+            doSave(editUUID) // we need to tell the UI to save the profile because we're about to change the active profile
             editUUID = uuid
             loadSpinner(uuid) // reload the spinner and set its active profile
             doLoad(uuid) // we need to tell the UI to load the new profile

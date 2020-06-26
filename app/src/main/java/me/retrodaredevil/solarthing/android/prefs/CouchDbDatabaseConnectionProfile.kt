@@ -6,7 +6,7 @@ import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdb.CouchPropertiesBuilder
 
 //@JsonTypeName("COUCHDB")
-@JsonIgnoreProperties(SaveKeys.connectionType)
+@JsonIgnoreProperties(SaveKeys.connectionType, allowGetters = true)
 data class CouchDbDatabaseConnectionProfile(
         @JsonProperty(SaveKeys.CouchDb.protocol)
         val protocol: String = DefaultOptions.CouchDb.protocol,

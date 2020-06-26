@@ -19,6 +19,7 @@ import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
+import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.createHttpClient
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.commands.CommandInfo
@@ -80,6 +81,8 @@ class CommandActivity : AppCompatActivity() {
     private lateinit var commandSpinner: Spinner
     private lateinit var currentTaskText: TextView
 
+    private lateinit var drawerHandler: DrawerHandler
+
     private var keyPair: KeyPair? = null
 
     private var currentTask: AsyncTask<*, *, *>? = null
@@ -92,7 +95,7 @@ class CommandActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_command)
-        initializeDrawer(this)
+        drawerHandler = initializeDrawer(this)
         profileManager = createConnectionProfileManager(this)
         sender = "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
 
@@ -104,6 +107,11 @@ class CommandActivity : AppCompatActivity() {
         updateKeyPair()
         setToNoTask()
         initFragmentSpinner()
+    }
+    override fun onResume() {
+        super.onResume()
+        drawerHandler.closeDrawer()
+        drawerHandler.highlight()
     }
     private fun initFragmentSpinner() {
         val (sourceId, availableCommandsMap) = getAvailableCommands(application as SolarThingApplication) ?: Pair(InstanceSourcePacket.UNUSED_SOURCE_ID, emptyMap())

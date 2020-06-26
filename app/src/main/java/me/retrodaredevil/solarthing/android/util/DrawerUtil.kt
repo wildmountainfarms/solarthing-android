@@ -25,11 +25,19 @@ Thanks https://android.jlelse.eu/android-using-navigation-drawer-across-multiple
 and of course thanks https://github.com/mikepenz/MaterialDrawer
  */
 
+class DrawerHandler(
+        private val itemIdentifier: Long,
+        private val drawer: Drawer
+) {
+    fun closeDrawer() = drawer.closeDrawer()
+    fun highlight() = drawer.setSelection(itemIdentifier, false)
+}
+
 fun initializeDrawer(
         activity: Activity,
         toolbar: Toolbar = activity.findViewById(R.id.toolbar),
         onActivityIntentRequest: (View, Intent) -> Unit = { view, intent -> view.context.startActivity(intent) }
-) {
+) : DrawerHandler {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 
     val drawerItemSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(1)
@@ -46,18 +54,19 @@ fun initializeDrawer(
     val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(102)
             .withName(R.string.grafana_select)
 
-    DrawerBuilder()
+    val itemIdentifier: Long = when(activity){
+        is SettingsActivity -> 1
+        is EventDisplayActivity -> 2
+        is CommandActivity -> 3
+        else -> -1
+    }
+    val drawer = DrawerBuilder()
             .withActivity(activity)
             .withToolbar(toolbar)
             .withActionBarDrawerToggle(true)
             .withActionBarDrawerToggleAnimated(true)
             .withCloseOnClick(true)
-            .withSelectedItem(when(activity){
-                is SettingsActivity -> 1
-                is EventDisplayActivity -> 2
-                is CommandActivity -> 3
-                else -> -1
-            })
+            .withSelectedItem(itemIdentifier)
             .addDrawerItems(
                     drawerEmptyItem,
                     drawerItemSettings,
@@ -112,6 +121,7 @@ fun initializeDrawer(
                 }
             })
             .build()
+    return DrawerHandler(itemIdentifier, drawer)
 }
 private inline fun <reified T> launchActivity(view: View, currentActivity: Activity, onActivityIntentRequest: (View, Intent) -> Unit) {
     if(currentActivity is T){
