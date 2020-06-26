@@ -65,10 +65,10 @@ private class MyViewAdapter(
                             val previousOperationalMode = packet.previousOperationalMode
                             if(previousOperationalMode != null) {
                                 data.add(ViewData(
-                                    "FX${packet.address}",
-                                    packet.operationalMode.modeName,
-                                    "was: " + previousOperationalMode.modeName,
-                                    dateMillis
+                                        "FX${packet.address}",
+                                        packet.operationalMode.modeName,
+                                        "was: " + previousOperationalMode.modeName,
+                                        dateMillis
                                 ))
                             }
                         }
@@ -77,10 +77,10 @@ private class MyViewAdapter(
                             val previousACMode = packet.previousACMode
                             if(previousACMode != null){
                                 data.add(ViewData(
-                                    "FX${packet.address}",
-                                    packet.acMode.modeName,
-                                    "was: " + previousACMode.modeName,
-                                    dateMillis
+                                        "FX${packet.address}",
+                                        packet.acMode.modeName,
+                                        "was: " + previousACMode.modeName,
+                                        dateMillis
                                 ))
                             }
                         }
@@ -89,10 +89,10 @@ private class MyViewAdapter(
                             val auxWasActive = packet.auxWasActive
                             if(auxWasActive != null){
                                 data.add(ViewData(
-                                    "FX${packet.address}",
-                                    if(packet.isAuxActive) "AUX ON" else "AUX Off",
-                                    "was: " + if(auxWasActive) "ON" else "Off",
-                                    dateMillis
+                                        "FX${packet.address}",
+                                        if(packet.isAuxActive) "AUX ON" else "AUX Off",
+                                        "was: " + if(auxWasActive) "ON" else "Off",
+                                        dateMillis
                                 ))
                             }
                         }
@@ -101,10 +101,10 @@ private class MyViewAdapter(
                             val previousChargingMode = packet.previousChargingMode
                             if(previousChargingMode != null){
                                 data.add(ViewData(
-                                    "MX${packet.address}",
-                                    packet.chargingMode.modeName,
-                                    "was: " + previousChargingMode.modeName,
-                                    dateMillis
+                                        "MX${packet.address}",
+                                        packet.chargingMode.modeName,
+                                        "was: " + previousChargingMode.modeName,
+                                        dateMillis
                                 ))
                             }
                         }
@@ -112,10 +112,10 @@ private class MyViewAdapter(
                             packet as MXAuxModeChangePacket
                             if(packet.previousRawAuxModeValue != null){
                                 data.add(ViewData(
-                                    "MX${packet.address}",
-                                    packet.auxMode.modeName,
-                                    "was: " + packet.previousAuxMode!!.modeName,
-                                    dateMillis
+                                        "MX${packet.address}",
+                                        packet.auxMode.modeName,
+                                        "was: " + packet.previousAuxMode!!.modeName,
+                                        dateMillis
                                 ))
                             }
                         }
@@ -124,10 +124,10 @@ private class MyViewAdapter(
                             val previousWarningModeValue = packet.previousWarningModeValue
                             if(previousWarningModeValue != null){
                                 data.add(ViewData(
-                                    "FX${packet.address}",
-                                    Modes.toString(WarningMode::class.java, packet.warningModeValue),
-                                    "was: ${Modes.toString(WarningMode::class.java, previousWarningModeValue)}",
-                                    dateMillis
+                                        "FX${packet.address}",
+                                        Modes.toString(WarningMode::class.java, packet.warningModeValue),
+                                        "was: ${Modes.toString(WarningMode::class.java, previousWarningModeValue)}",
+                                        dateMillis
                                 ))
                             }
                         }
@@ -136,10 +136,10 @@ private class MyViewAdapter(
                             val previousErrorModeValue = packet.previousErrorModeValue
                             if(previousErrorModeValue != null){
                                 data.add(ViewData(
-                                    "FX${packet.address}",
-                                    Modes.toString(FXErrorMode::class.java, packet.errorModeValue),
-                                    "was: ${Modes.toString(FXErrorMode::class.java, previousErrorModeValue)}",
-                                    dateMillis
+                                        "FX${packet.address}",
+                                        Modes.toString(FXErrorMode::class.java, packet.errorModeValue),
+                                        "was: ${Modes.toString(FXErrorMode::class.java, previousErrorModeValue)}",
+                                        dateMillis
                                 ))
                             }
                         }
@@ -148,10 +148,10 @@ private class MyViewAdapter(
                             val previousErrorModeValue = packet.previousErrorModeValue
                             if(previousErrorModeValue != null){
                                 data.add(ViewData(
-                                    "MX${packet.address}",
-                                    Modes.toString(MXErrorMode::class.java, packet.errorModeValue),
-                                    "was: ${Modes.toString(MXErrorMode::class.java, previousErrorModeValue)}",
-                                    dateMillis
+                                        "MX${packet.address}",
+                                        Modes.toString(MXErrorMode::class.java, packet.errorModeValue),
+                                        "was: ${Modes.toString(MXErrorMode::class.java, previousErrorModeValue)}",
+                                        dateMillis
                                 ))
                             }
                         }
@@ -162,13 +162,13 @@ private class MyViewAdapter(
                         packet as SuccessMateCommandPacket
                         val dataSource = DataSource.createFromStringOrNull(packet.source)
                         val timeString = if(dataSource == null) "???" else DateFormat.getTimeInstance(DateFormat.MEDIUM)
-                            .format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis }.time)
+                                .format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis }.time)
                         val senderString = dataSource?.sender ?: "???"
                         data.add(ViewData(
-                            "cmd",
-                            packet.command.commandName,
-                            "Requested at $timeString by $senderString",
-                            dateMillis
+                                "cmd",
+                                packet.command.commandName,
+                                "Requested at $timeString by $senderString",
+                                dateMillis
                         ))
                     }
                 }

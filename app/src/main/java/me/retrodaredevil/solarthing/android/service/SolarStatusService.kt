@@ -427,10 +427,10 @@ class SolarStatusService(
                     notifyMoreInfo(packetInfo)
                 }
                 MORE_INFO_ROVER_ACTION -> {
-                    var fragmentId: Int? = intent.getIntExtra("fragment", -1)
+                    var fragmentId: Int = intent.getIntExtra("fragment", -1)
                     if(fragmentId == -1){
                         if (intent.getIntExtra("fragment", -2) == -2) {
-                            fragmentId = null
+                            fragmentId = DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS.defaultFragmentId
                         }
                     }
                     val packetInfo = lastSolarInfo?.solarPacketInfo ?: run { System.err.println("lastSolarInfo is null when more info is requested!"); return }

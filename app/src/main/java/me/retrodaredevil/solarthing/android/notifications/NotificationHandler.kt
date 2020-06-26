@@ -249,7 +249,7 @@ object NotificationHandler {
         return builder.build()
     }
 
-    private fun getDeviceString(info: SolarPacketInfo, packet: DocumentedPacket<*>, includeParenthesis: Boolean = true): String{
+    private fun getDeviceString(info: SolarPacketInfo, packet: DocumentedPacket, includeParenthesis: Boolean = true): String{
         @Suppress("UsePropertyAccessSyntax")
         val r = when(val packetType = packet.getPacketType()){
             SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
@@ -276,7 +276,7 @@ object NotificationHandler {
         return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).mapNotNull {
             val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
             val device = packetInfo.deviceMap[it] ?: return@mapNotNull null // if this is the case, then this isn't in the current packet
-            getDeviceString(packetInfo, device as DocumentedPacket<*>) + Formatting.FORMAT.format(dailyKWH)
+            getDeviceString(packetInfo, device as DocumentedPacket) + Formatting.FORMAT.format(dailyKWH)
         }.joinToString(SEPARATOR)
     }
 

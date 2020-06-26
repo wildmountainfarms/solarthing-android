@@ -5,21 +5,19 @@ import android.app.Service
 import android.os.Build
 import me.retrodaredevil.solarthing.DataSource
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.notifications.*
+import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCommandPacket
-import me.retrodaredevil.solarthing.solar.outback.fx.event.FXDayEndPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import java.text.DateFormat
 import java.util.*
 
 class SolarEventService(
-    private val service: Service,
-    private val data: PacketGroupData
+        private val service: Service,
+        private val data: PacketGroupData
 ) : DataService {
 
     override fun onInit() { // nothing

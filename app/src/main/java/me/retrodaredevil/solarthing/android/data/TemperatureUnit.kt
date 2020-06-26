@@ -14,8 +14,6 @@ fun convertTemperatureCelsiusTo(temperatureCelsius: Float, desiredTemperatureUni
 val TemperatureUnit.shortRepresentation: String
     get() {
         return when(this){
-//            TemperatureUnit.FAHRENHEIT -> "\u00B0F"
-//            TemperatureUnit.CELSIUS -> "\u00B0C"
             TemperatureUnit.FAHRENHEIT -> "\u2109"
             TemperatureUnit.CELSIUS -> "\u2103"
         }

@@ -8,7 +8,6 @@ import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.event.MXDayEndPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.util.*
 
