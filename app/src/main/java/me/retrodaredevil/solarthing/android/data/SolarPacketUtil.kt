@@ -1,7 +1,6 @@
 package me.retrodaredevil.solarthing.android.data
 
-import me.retrodaredevil.solarthing.packets.collection.PacketGroups
-import me.retrodaredevil.solarthing.packets.identification.Identifiable
+import me.retrodaredevil.solarthing.packets.collection.FragmentUtil
 import me.retrodaredevil.solarthing.packets.identification.Identifier
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.identification.SupplementaryIdentifier
@@ -75,7 +74,7 @@ private fun compareIdentifier(identifier1: Identifier, identifier2: Identifier):
 }
 fun getOrderedIdentifiers(identifiers: Collection<IdentifierFragment>): List<IdentifierFragment> {
     return TreeSet<IdentifierFragment> { o1, o2 ->
-        val r = PacketGroups.DEFAULT_FRAGMENT_ID_COMPARATOR.compare(o1.fragmentId, o2.fragmentId)
+        val r = FragmentUtil.DEFAULT_FRAGMENT_ID_COMPARATOR.compare(o1.fragmentId, o2.fragmentId)
         if (r != 0) r else compareIdentifier(o1.identifier, o2.identifier)
     }.apply { addAll(identifiers) }.toList()
 }

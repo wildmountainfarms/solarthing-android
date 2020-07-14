@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android
 
 import androidx.multidex.MultiDexApplication
+import me.retrodaredevil.solarthing.android.service.MetaHandler
 import me.retrodaredevil.solarthing.android.service.PacketGroupData
 
 class SolarThingApplication : MultiDexApplication() {
@@ -10,4 +11,7 @@ class SolarThingApplication : MultiDexApplication() {
     @get:Synchronized
     @set:Synchronized
     var solarStatusData: PacketGroupData? = null
+    @get:Synchronized
+    @set:Synchronized
+    var metaHandler: MetaHandler? = null
 }

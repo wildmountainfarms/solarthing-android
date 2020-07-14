@@ -47,7 +47,7 @@ import javax.crypto.Cipher
 
 private fun getAvailableCommands(application: SolarThingApplication): Pair<String, Map<Int, List<CommandInfo>>>? {
     val packetGroups = application.solarStatusData?.packetGroups ?: return null
-    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000)
+    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000, 5 * 60 * 1000)
     if (sortedMap.isEmpty()) {
         return null
     }
@@ -66,6 +66,7 @@ private fun getAvailableCommands(application: SolarThingApplication): Pair<Strin
     return Pair(sourceId, r)
 }
 
+// TODO add refresh button
 class CommandActivity : AppCompatActivity() {
     companion object {
         private val MAPPER = JacksonUtil.defaultMapper()
@@ -112,11 +113,15 @@ class CommandActivity : AppCompatActivity() {
         super.onResume()
         drawerHandler.closeDrawer()
         drawerHandler.highlight()
+        initFragmentSpinner()
+    }
+    fun refresh(view: View) {
+        initFragmentSpinner()
     }
     private fun initFragmentSpinner() {
         val (sourceId, availableCommandsMap) = getAvailableCommands(application as SolarThingApplication) ?: Pair(InstanceSourcePacket.UNUSED_SOURCE_ID, emptyMap())
         this.sourceId = sourceId
-        val keys = ArrayList(TreeSet(PacketGroups.DEFAULT_FRAGMENT_ID_COMPARATOR).apply {
+        val keys = ArrayList(TreeSet(FragmentUtil.DEFAULT_FRAGMENT_ID_COMPARATOR).apply {
             addAll(availableCommandsMap.keys)
         })
         fragmentSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, keys.map { "$it" })

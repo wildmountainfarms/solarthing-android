@@ -25,12 +25,20 @@ import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
+import me.retrodaredevil.solarthing.meta.BasicMetaPacketType
+import me.retrodaredevil.solarthing.meta.TargetMetaPacket
+import me.retrodaredevil.solarthing.meta.TargetedMetaPacketType
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingSettings
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingStateHandler
+import me.retrodaredevil.solarthing.solar.outback.fx.charge.ImmutableFXChargingPacket
+import me.retrodaredevil.solarthing.solar.outback.fx.meta.FXChargingSettingsPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
@@ -50,7 +58,8 @@ class SolarStatusService(
         private val solarProfileProvider: ProfileProvider<SolarProfile>,
         private val miscProfileProvider: ProfileProvider<MiscProfile>,
         private val solarStatusData: PacketGroupData,
-        private val solarEventData: PacketGroupData
+        private val solarEventData: PacketGroupData,
+        private val metaHandler: MetaHandler
 ) : DataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
@@ -125,9 +134,12 @@ class SolarStatusService(
         return mutableCalendar.timeInMillis
     }
 
-    private fun createSolarInfoList(sortedPackets: List<FragmentedPacketGroup>): List<SolarInfo> {
+    private fun createSolarInfoList(sortedPackets: List<FragmentedPacketGroup>, fxChargingSettings: FXChargingSettings?): List<SolarInfo> {
         val batteryVoltageType = solarProfileProvider.activeProfile.profile.batteryVoltageType
         val r = mutableListOf<SolarInfo>()
+
+        val stateHandler = fxChargingSettings?.let { FXChargingStateHandler(it) }
+        var lastDateMillis: Long? = null
         for ((i, fragmentedPacketGroup) in sortedPackets.withIndex()) {
             val dateMillis = fragmentedPacketGroup.dateMillis
             val solarPacketInfo = try {
@@ -139,10 +151,30 @@ class SolarStatusService(
             }
             val dayStartTimeMillis = getDayStartTimeMillis(dateMillis)
 
+            val delta = lastDateMillis?.let { dateMillis - it } ?: 1000
+            lastDateMillis = dateMillis
+            var fxChargingPacket: FXChargingPacket? = null
+            if (stateHandler != null) {
+                val fx = solarPacketInfo.masterFXStatusPacket
+                val temperature = solarPacketInfo.batteryTemperatureCelsius
+                if (fx != null && temperature != null) {
+                    stateHandler.update(delta, fx, temperature)
+                    fxChargingPacket = ImmutableFXChargingPacket(
+                            fx.identifier,
+                            stateHandler.mode,
+                            stateHandler.remainingAbsorbTimeMillis,
+                            stateHandler.remainingFloatTimeMillis,
+                            stateHandler.remainingEqualizeTimeMillis,
+                            fxChargingSettings.absorbTimeMillis,
+                            fxChargingSettings.floatTimeMillis,
+                            fxChargingSettings.equalizeTimeMillis
+                    )
+                }
+            }
             r.add(SolarInfo(solarPacketInfo) {
                 val packets = sortedPackets.toMutableList().subList(0, i + 1)
                 packets.removeIfBefore(dayStartTimeMillis) { it.dateMillis }
-                createSolarDailyInfo(dayStartTimeMillis, packets)
+                createSolarDailyInfo(dayStartTimeMillis, packets, fxChargingPacket)
             })
         }
         return r
@@ -189,7 +221,20 @@ class SolarStatusService(
             val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
             val startTime = System.currentTimeMillis()
             if(sortedPackets.isNotEmpty()) {
-                solarInfoCollection = createSolarInfoList(sortedPackets.values.first()) // TODO allow multiple instance sources instead of just one
+                var fxChargingSettings: FXChargingSettings? = null // we might want to make this a Map<Int, FXChargingSettings> in the future
+                for (basicMetaPacket in metaHandler.metaDatabase?.getMeta(startTime) ?: emptyList()) {
+                    if (basicMetaPacket.packetType == BasicMetaPacketType.FRAGMENT_TARGET) {
+                        basicMetaPacket as TargetMetaPacket
+                        for (packet in basicMetaPacket.packets) {
+                            if (packet.packetType == TargetedMetaPacketType.FX_CHARGING_SETTINGS) {
+                                packet as FXChargingSettingsPacket
+                                fxChargingSettings = packet.fxChargingSettings
+                                println("Found fx charging settings")
+                            }
+                        }
+                    }
+                }
+                solarInfoCollection = createSolarInfoList(sortedPackets.values.first(), fxChargingSettings) // TODO allow multiple instance sources instead of just one
             }
             println("Took " + (System.currentTimeMillis() - startTime))
 
@@ -280,7 +325,7 @@ class SolarStatusService(
             service.getManager().notify(
                     GENERATOR_PERSISTENT_ID,
                     NotificationHandler.createPersistentGenerator(
-                            service, currentSolarInfo.solarPacketInfo,
+                            service, currentSolarInfo.solarPacketInfo, currentSolarInfo.solarDailyInfo,
                             beginningACDropInfo, lastACDropInfo, acUseInfo,
                             uncertainGeneratorStartInfo
                     )

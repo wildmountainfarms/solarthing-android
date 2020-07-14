@@ -40,7 +40,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                 val latestInfo = if (applicationContext is SolarThingApplication) {
                     val solarStatusData = applicationContext.solarStatusData
                     if (solarStatusData != null) {
-                        val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000)
+                        val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000, 10 * 60 * 1000)
                         if (sorted.isEmpty()) {
                             System.err.println("Sorted is empty!")
                             null

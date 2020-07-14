@@ -56,7 +56,6 @@ constructor(
     val dailyFXMap: Map<KnownIdentifierFragment<OutbackIdentifier>, DailyFXPacket>
 
     val masterFXStatusPacket: FXStatusPacket?
-    val fxChargingPacket: FXChargingPacket?
 
     /** The battery voltage */
     val batteryVoltage: Float
@@ -105,7 +104,6 @@ constructor(
         batteryMap = LinkedHashMap()
         dailyFXMap = LinkedHashMap()
         deviceCpuTemperatureMap = LinkedHashMap()
-        var fxChargingPacket: FXChargingPacket? = null
         for(packet in packetGroup.packets){
             if(packet is SolarStatusPacket){
                 val identifierFragment = IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)
@@ -142,10 +140,7 @@ constructor(
                         dailyFXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet // TODO remove cast after updating SolarThing
                     }
                     SolarExtraPacketType.MXFM_DAILY -> { }
-                    SolarExtraPacketType.FX_CHARGING -> {
-                        packet as FXChargingPacket
-                        fxChargingPacket = packet
-                    }
+                    SolarExtraPacketType.FX_CHARGING -> { }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unimplemented packet type: ${packet.packetType}")
                 }
@@ -161,7 +156,6 @@ constructor(
             }
         }
         masterFXStatusPacket = OutbackUtil.getMasterFX(fxMap.values) // TODO there may be a better way to indicate the master in the main solarthing codebase
-        this.fxChargingPacket = fxChargingPacket
         if (batteryMap.isEmpty()) {
             throw CreationException("The must be battery voltage packets!")
         }

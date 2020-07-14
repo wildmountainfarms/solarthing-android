@@ -41,6 +41,7 @@ import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
+import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 
 
@@ -83,15 +84,12 @@ private class ServiceObject(
         val packetGroupParser: PacketGroupParser
 ){
     var task: AsyncTask<*, *, *>? = null
-
-    var dataRequesters = emptyList<DataRequester>()
-    val dataRequester = DataRequesterMultiplexer(this::dataRequesters)
 }
 
 class PersistentService : Service(), Runnable{
     companion object {
         private val MAPPER = createDefaultObjectMapper().apply {
-            deserializationConfig.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // we will update SolarThing and add new features
+            JacksonUtil.lenientMapper(this)
         }
     }
     private var initialized = false
@@ -101,6 +99,9 @@ class PersistentService : Service(), Runnable{
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
     private lateinit var services: List<ServiceObject>
+
+    private var metaUpdaterTask: AsyncTask<*, *, *>? = null
+    private val metaHandler = MetaHandler()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -117,9 +118,10 @@ class PersistentService : Service(), Runnable{
         val application = application as SolarThingApplication
         application.solarStatusData = solarStatusData
         application.solarEventData = solarEventData
+        application.metaHandler = metaHandler
         services = listOf(
                 ServiceObject(
-                        SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
+                        SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
                         SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                                 ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
@@ -263,6 +265,8 @@ class PersistentService : Service(), Runnable{
 
         val activeConnectionProfile = connectionProfileManager.activeProfile.profile
 
+        val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
+        val properties = couchDbDatabaseConnectionProfile.createCouchProperties()
         var needsLargeData = false
         for(service in services){
             val task = service.task
@@ -277,11 +281,9 @@ class PersistentService : Service(), Runnable{
                 continue
             }
 
-            val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
-            val properties = couchDbDatabaseConnectionProfile.createCouchProperties()
-            service.dataRequesters = listOf(
+            val dataRequesters = listOf(
                     CouchDbDataRequester(
-                            { properties }, // this can be constant because we change this frequently enough for it to alwasy be accurate
+                            { properties }, // this can be constant because we change this frequently enough for it to always be accurate
                             service.databaseName,
                             service.packetGroupParser,
                             service.dataService::startKey
@@ -290,8 +292,11 @@ class PersistentService : Service(), Runnable{
             if(service.dataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
                 needsLargeData = true
             }
-            service.task = DataUpdaterTask(service.dataRequester, service.dataService::onDataRequest).execute()
+            val dataRequester = DataRequesterMultiplexer(dataRequesters)
+            service.task = DataUpdaterTask(dataRequester, service.dataService::onDataRequest).execute()
         }
+        metaUpdaterTask?.cancel(true)
+        metaUpdaterTask = MetaUpdaterTask(properties, metaHandler).execute()
 
         val delay = if(needsLargeData){ activeConnectionProfile.initialRequestTimeSeconds * 1000L } else { activeConnectionProfile.subsequentRequestTimeSeconds * 1000L }
         handler.postDelayed(this, delay)
@@ -317,6 +322,8 @@ class PersistentService : Service(), Runnable{
             service.dataService.onCancel()
             service.dataService.onEnd()
         }
+        metaUpdaterTask?.cancel(true)
+        metaUpdaterTask = null
     }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -347,6 +354,6 @@ private class DataUpdaterTask(
 //        println("Received result: $result")
         updateNotification(result)
     }
-
 }
+
 

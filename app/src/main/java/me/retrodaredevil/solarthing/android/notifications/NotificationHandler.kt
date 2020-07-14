@@ -135,7 +135,7 @@ object NotificationHandler {
      * @param uncertainGeneratorStartInfo true if we are unsure that [acUseInfo] is actually the first packet while the generator was running
      */
     fun createPersistentGenerator(
-            context: Context, info: SolarPacketInfo,
+            context: Context, info: SolarPacketInfo, dailyInfo: SolarDailyInfo,
             beginningACDropInfo: SolarPacketInfo?, lastACDropInfo: SolarPacketInfo?,
             acUseInfo: SolarPacketInfo?,
             uncertainGeneratorStartInfo: Boolean
@@ -197,7 +197,7 @@ object NotificationHandler {
             if(acMode == ACMode.AC_USE){
                 val operationalMode = (info.masterFXStatusPacket ?: error("AC Mode is use, we should have a master FX!")).operationalMode
 
-                val fxChargingPacket = info.fxChargingPacket
+                val fxChargingPacket = dailyInfo.fxChargingPacket
                 if(fxChargingPacket != null){
                     "Generator | " + when(val mode = fxChargingPacket.fxChargingMode){
                         FXChargingMode.BULK_TO_ABSORB -> "Bulk"
