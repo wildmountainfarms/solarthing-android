@@ -141,6 +141,7 @@ class CommandActivity : AppCompatActivity() {
 
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val fragmentId = keys[position]
+                this@CommandActivity.fragmentId = fragmentId
                 updateSpinner(availableCommandsMap[fragmentId] ?: error("No command list for fragmentId=$fragmentId"))
             }
         }

@@ -492,7 +492,7 @@ class SolarStatusService(
                     }
                     val packetInfo = lastSolarInfo?.solarPacketInfo ?: run { System.err.println("lastSolarInfo is null when more info is requested!"); return }
                     val identifierFragment = IdentifierFragment.create(fragmentId, RoverIdentifier.getDefaultIdentifier())
-                    val rover = packetInfo.roverMap[identifierFragment] ?: run { System.err.println("no rover with fragment $fragmentId"); return}
+                    val rover = packetInfo.roverMap[identifierFragment] ?: run { System.err.println("no rover with identifierFragment: $identifierFragment"); return}
                     notifyMoreRoverInfo(packetInfo, rover)
                 }
             }
