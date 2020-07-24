@@ -277,7 +277,7 @@ object NotificationHandler {
         return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).mapNotNull {
             val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
             val device = packetInfo.deviceMap[it] ?: return@mapNotNull null // if this is the case, then this isn't in the current packet
-            getDeviceString(packetInfo, device as DocumentedPacket) + Formatting.FORMAT.format(dailyKWH)
+            getDeviceString(packetInfo, device as DocumentedPacket) + Formatting.OPTIONAL_HUNDRETHS.format(dailyKWH)
         }.joinToString(SEPARATOR)
     }
 
@@ -545,7 +545,7 @@ object NotificationHandler {
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
                 .setSmallIcon(R.drawable.solar_panel)
                 .setWhen(dateMillis)
-                .setShowWhen(true)
+                .setShowWhen(false)
                 .setOnlyAlertOnce(true)
         val summary = createMoreInfoSummary(context, dateMillis)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
@@ -565,7 +565,7 @@ object NotificationHandler {
                         val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
                         builder.setSubText("${batteryVoltage}V | ${device.operatingModeName} | Inv: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)}A | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
-                            "Battery: $batteryVoltage V | ${device.operatingModeName} | ${device.acModeName}\n" +
+                            "Battery: $batteryVoltage | ${device.operatingModeName} | ${device.acModeName}\n" +
                                     "AC Output: ${device.outputVoltage} V | AC Input: ${device.inputVoltage} V\n" +
                                     "Inverter Current: ${Formatting.OPTIONAL_TENTHS.format(device.inverterCurrent)} | Sell Current: ${Formatting.OPTIONAL_TENTHS.format(device.sellCurrent)}\n" +
                                     "Buy Current: ${Formatting.OPTIONAL_TENTHS.format(device.buyCurrent)} | Charger Current: ${Formatting.OPTIONAL_TENTHS.format(device.chargerCurrent)}\n" +
@@ -583,7 +583,7 @@ object NotificationHandler {
                         device as MXStatusPacket
                         builder.setContentTitle("MX on port ${device.address}")
                         val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
-                        builder.setSubText("$batteryVoltage | ${device.chargerModeName} | ${device.chargingCurrent}A | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
+                        builder.setSubText("$batteryVoltage | ${device.chargerModeName} | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                         builder.style = Notification.BigTextStyle().bigText(
                                 "Battery Voltage: $batteryVoltage V\n" +
                                     createChargeControllerMoreInfo(device) +
@@ -604,7 +604,7 @@ object NotificationHandler {
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
                 val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
-                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
+                builder.setSubText("$batteryVoltage | ${getChargingStateName(device)} | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
                         "Battery Voltage: $batteryVoltage | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
                         createChargeControllerMoreInfo(device) +

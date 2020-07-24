@@ -21,14 +21,13 @@ This works best with Android 8+, but will still work down to Android 4.4.
 * Daily notification for connected devices that informs you of previous day's statistics
 
 Known Bugs:
+* If you have multiple profiles, sometimes one will randomly overwrite the other.
 * When editing a profile when "Auto Network Switching Enable" is enabled, there might be bugs when saving (need to look into this further)
 * When pressing save at the same time the PersistentService changes the activeUUID, one may overwrite the other
   * This is highly unlikely
 
 ### Features to Add:
 * Notification when the generator turns off telling you some useful information
-* Drop down menu for the command to send to the MATE
-* A packet that the MATE pi uploads that communicates available commands to display
 * Add more widgets
 * If a solar packet just has FX's, remove some unnecessary information (completed for MX's and Rover)
 * Clearable notifications for errors
@@ -42,6 +41,7 @@ Known Bugs:
 * https://bitbucket.org/StringMon/unofficialtileapi/src/master/
   * For tiles
 * Lock "more" notifications
+* Only switch networks if previous network failed option
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
