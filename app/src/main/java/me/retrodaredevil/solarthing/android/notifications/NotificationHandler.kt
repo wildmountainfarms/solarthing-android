@@ -29,6 +29,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingMode
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.Voltage
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
@@ -603,9 +604,9 @@ object NotificationHandler {
             is RoverStatusPacket -> {
                 builder.setContentTitle("Rover with serial: ${device.productSerialNumber}")
                 val batteryVoltage = Formatting.TENTHS.format(device.batteryVoltage)
-                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.chargingCurrent}A | ${device.batteryTemperatureCelsius}C | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
+                builder.setSubText("$batteryVoltage | ${device.chargingMode.modeName} | ${device.dailyKWH} kWh | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
-                        "Battery Voltage: $batteryVoltage | SOC: ${device.batteryCapacitySOC}% | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
+                        "Battery Voltage: $batteryVoltage | ${device.recognizedVoltage?.modeName ?: "??V"}/${device.systemVoltageSetting.modeName}\n" +
                         createChargeControllerMoreInfo(device) +
                         "Charging State: ${device.chargingMode.modeName} | Load Mode: ${device.loadWorkingModeValue}\n" +
                         "Errors: ${Modes.toString(RoverErrorMode::class.java, device.errorModeValue)}\n" +
@@ -623,7 +624,7 @@ object NotificationHandler {
                                             context,
                                              0,
                                             Intent(moreRoverInfoAction).apply {
-                                                putExtra("rover_serial", device.productSerialNumber)
+                                                putExtra("fragment", fragmentId)
                                             },
                                             PendingIntent.FLAG_CANCEL_CURRENT
                                     )
@@ -656,17 +657,31 @@ object NotificationHandler {
         val summary = createMoreInfoSummary(context, dateMillis)
 
         builder.setContentTitle("Rover with serial: ${device.productSerialNumber} | More Info")
+        val voltage = device.recognizedVoltage?.let { if (it == Voltage.AUTO) null else it } ?: device.systemVoltageSetting
         builder.style = Notification.BigTextStyle().bigText(
                 "Max Voltage: ${device.maxVoltage.modeName} | Battery: Type: ${device.batteryType.modeName}\n" +
-                "Controller: Address: ${device.controllerDeviceAddress}\n" +
-                "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + "\n" +
-                "Hardware: ${device.hardwareVersion} | Software: ${device.softwareVersion}\n" +
+                "Address: ${device.controllerDeviceAddress} | Hard: ${device.hardwareVersion} | Soft: ${device.softwareVersion}\n" +
                 "${device.productModel} | Charge: ${device.ratedChargingCurrentValue}A | Discharge: ${device.ratedDischargingCurrentValue}A\n" +
-                "Cumulative: kWh: ${device.cumulativeKWH} Ah: ${device.chargingAmpHoursOfBatteryCount}\n" +
-                "Street light: ${device.streetLightStatus.modeName} Brightness: ${device.streetLightBrightnessPercent}"
+                "No Charge Below 0C: " + (if(device.specialPowerControlE021.isNoChargingBelow0CEnabled) "yes" else "no") + " | Street light: ${device.streetLightStatus.modeName} at ${device.streetLightBrightnessPercent}%\n" +
+                "Cumulative Charge: ${device.cumulativeKWH} kWh | ${device.chargingAmpHoursOfBatteryCount}Ah\n" +
+                "Absorb: ${getStringFromRawVoltage(device.boostChargingVoltageRaw, voltage)} for ${device.boostChargingTimeMinutes} minutes\n" +
+                "EQ: ${getStringFromRawVoltage(device.equalizingChargingVoltageRaw, voltage)} for ${device.equalizingChargingTimeMinutes} minutes every ${device.equalizingChargingIntervalDays} days\n" +
+                "Float: ${getStringFromRawVoltage(device.floatingChargingVoltageRaw, voltage)}\n" +
+                "Full Charges: ${device.batteryFullChargesCount} | Batt Capacity:${device.nominalBatteryCapacity}"
         )
 
         return Pair(builder.build(), summary)
+    }
+    private fun getStringFromRawVoltage(rawVoltage: Int, batteryVoltage: Voltage): String {
+        val multiplier = when (batteryVoltage) {
+            Voltage.V12 -> 1
+            Voltage.V24 -> 2
+            Voltage.V36 -> 3
+            Voltage.V48 -> 4
+            Voltage.V96 -> 8
+            Voltage.AUTO -> error("AUTO not valid to get raw voltage")
+        }
+        return Formatting.FORMAT.format(rawVoltage * multiplier / 10.0) + " V"
     }
     private fun createMoreInfoSummary(context: Context, dateMillis: Long): Notification? {
 

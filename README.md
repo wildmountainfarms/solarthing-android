@@ -41,6 +41,7 @@ Known Bugs:
 * Add "turbo" mode for reloading data
 * https://bitbucket.org/StringMon/unofficialtileapi/src/master/
   * For tiles
+* Lock "more" notifications
 
 ### Features to Add that I am unable to test:
 * Supporting systems that don't have both FX's and MX's
