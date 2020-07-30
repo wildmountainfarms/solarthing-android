@@ -250,7 +250,9 @@ class CommandActivity : AppCompatActivity() {
         val encryptedCollection = PacketCollections.createFromPackets(listOf(
                 ImmutableRequestCommandPacket(selectedCommand.name),
                 *instancePackets
-        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault())
+        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()) // TODO have a meta packet for preferred timezone
+//        java.util.Comparator.comparingLong(PacketGroup::getDateMillis)
+
 
         val payload = MAPPER.writeValueAsString(encryptedCollection)
         val hashString = System.currentTimeMillis().toString(16) + "," + HashUtil.encodedHash(payload)
