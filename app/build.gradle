@@ -68,6 +68,7 @@ android {
 repositories {
     jcenter()
     maven { url "https://jitpack.io" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 dependencies {
@@ -93,7 +94,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    def solarthingVersion = "2020.4.0"
+    def solarthingVersion = "3.9.1"
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 
