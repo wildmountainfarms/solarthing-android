@@ -19,12 +19,11 @@ import me.retrodaredevil.solarthing.packets.collection.PacketGroups
  */
 class BatteryVoltageWidget : AppWidgetProvider() {
 
-    override fun onUpdate(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetIds: IntArray?) {
-    }
+    private var latestInfo: SolarPacketInfo? = null
 
-    private fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray, latestInfo: SolarPacketInfo?) {
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) { // called every 30 minutes, or when onReceive calls it
         // There may be multiple widgets active, so update all of them
-//        println("updating widgets. latestInfo: $latestInfo updating: ${appWidgetIds.size}")
+        val latestInfo = latestInfo
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId, latestInfo)
         }
@@ -66,7 +65,8 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                     System.err.println("BAD!! What kind of Android version are we running here? Now we can't update this widget!")
                     null
                 }
-                onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds, latestInfo)
+                this.latestInfo = latestInfo
+                onUpdate(context, AppWidgetManager.getInstance(context), appWidgetIds)
             }
         } else {
             super.onReceive(context, intent)
@@ -82,7 +82,8 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                 latestInfo: SolarPacketInfo?
         ) {
 
-            val widgetText = latestInfo?.batteryVoltageString ?: "??.?"
+            val widgetText = if (latestInfo == null || System.currentTimeMillis() - latestInfo.dateMillis > 7 * 60 * 1000) "??.?" else latestInfo.batteryVoltageString
+
             // Construct the RemoteViews object
             val views = RemoteViews(context.packageName, R.layout.battery_voltage_widget)
             views.setTextViewText(R.id.appwidget_text, widgetText)
