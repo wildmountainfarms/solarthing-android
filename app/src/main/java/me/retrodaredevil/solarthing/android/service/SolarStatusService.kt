@@ -49,8 +49,6 @@ import kotlin.math.max
 
 object SolarPacketCollectionBroadcast {
     const val ACTION = "me.retrodaredevil.solarthing.android.service.SOLAR_PACKET_COLLECTION"
-    @Deprecated("Not used anymore")
-    const val JSON = "json"
 }
 
 class SolarStatusService(

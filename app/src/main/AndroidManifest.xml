@@ -35,7 +35,6 @@
         <receiver android:name=".widget.BatteryVoltageWidget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="me.retrodaredevil.solarthing.android.service.solar-packet-collection" />
             </intent-filter>
 
             <meta-data

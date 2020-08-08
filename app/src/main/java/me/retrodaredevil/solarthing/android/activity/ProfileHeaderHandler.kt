@@ -61,6 +61,8 @@ class ProfileHeaderHandler(
 
     /**
      * Used to reload the spinner values or/and to set the current selection
+     *
+     * Note that you should save before calling this. This will change [editUUID] to [newEditUUID]
      * @param newEditUUID The new UUID of the profile to edit
      */
     fun loadSpinner(newEditUUID: UUID){

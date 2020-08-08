@@ -5,17 +5,17 @@
                 android:background="#09C">
 
     <TextView
-            android:id="@+id/appwidget_text"
+            android:id="@+id/battery_voltage_widget_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
-            android:text="@string/appwidget_text"
+            android:text="\?"
             android:textColor="#ffffff"
             android:textSize="24sp"
             android:textStyle="bold|italic"
             android:layout_margin="8dp"
-            android:contentDescription="@string/appwidget_text"
+            android:contentDescription="The battery voltage"
             android:background="#09C"/>
 
 </RelativeLayout>

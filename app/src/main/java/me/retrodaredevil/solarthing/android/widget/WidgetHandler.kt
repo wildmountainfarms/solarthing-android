@@ -8,14 +8,16 @@ import android.content.Intent
 import me.retrodaredevil.solarthing.android.service.SolarPacketCollectionBroadcast
 
 class WidgetHandler : BroadcastReceiver() {
+    /*
+    NOTE: Testing widgets after a restart will make it seem like they're temporarily broken. However,
+    they are not. So give them some time before you are able to update them again and Android
+    informs you that they actually exist.
+     */
     override fun onReceive(context: Context, intent: Intent) {
         if(intent.action != SolarPacketCollectionBroadcast.ACTION) {
             throw UnsupportedOperationException()
         }
-        packetReceive(context, intent)
-    }
-    private fun packetReceive(context: Context, @Suppress("UNUSED_PARAMETER") intent: Intent) {
-//        println("Received solar packet collection broadcast and now updating all Battery Voltage Widgets!")
+        println("Received solar packet collection broadcast and now updating all Battery Voltage Widgets!")
         context.sendBroadcast(Intent(context, BatteryVoltageWidget::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, AppWidgetManager.getInstance(context).getAppWidgetIds(
@@ -23,5 +25,4 @@ class WidgetHandler : BroadcastReceiver() {
             ))
         })
     }
-
 }

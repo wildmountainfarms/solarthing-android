@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.MotionEvent
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +23,8 @@ import me.retrodaredevil.solarthing.android.service.stopService
 import me.retrodaredevil.solarthing.android.data.TemperatureUnit
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
+import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
+import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import java.util.*
 
 class SettingsActivity : AppCompatActivity() {
@@ -48,11 +51,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var initialRequestTimeout: EditText
     private lateinit var subsequentRequestTimeout: EditText
 
+    private lateinit var preferredSourceIdEditText: EditText
+    private lateinit var preferredSourceIdSpinner: Spinner
 
-//    @Deprecated("Going to update voltage timer soon")
-//    private lateinit var voltageTimerHours: EditText
-//    @Deprecated("Going to update voltage timer soon")
-//    private lateinit var voltageTimerBatteryVoltage: EditText
+
     private lateinit var lowBatteryVoltage: EditText
     private lateinit var criticalBatteryVoltage: EditText
     private lateinit var batteryVoltageTypeSpinner: Spinner
@@ -101,6 +103,9 @@ class SettingsActivity : AppCompatActivity() {
         useAuth = findViewById(R.id.use_auth)
         initialRequestTimeout = findViewById(R.id.initial_request_timeout)
         subsequentRequestTimeout = findViewById(R.id.subsequent_request_timeout)
+        preferredSourceIdEditText = findViewById(R.id.preferred_source_id)
+        preferredSourceIdSpinner = findViewById(R.id.preferred_source_id_spinner)
+
         maxFragmentTime = findViewById(R.id.max_fragment_time)
         lowBatteryVoltage = findViewById(R.id.low_battery_voltage)
         criticalBatteryVoltage = findViewById(R.id.critical_battery_voltage)
@@ -136,6 +141,32 @@ class SettingsActivity : AppCompatActivity() {
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
             onUseAuthUpdate()
+        }
+
+        preferredSourceIdSpinner.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                val application = application as SolarThingApplication
+                val sourceIdSet = mutableSetOf<String>()
+                application.solarStatusData?.packetGroups?.forEach {
+                    val instancePacketGroup = PacketGroups.parseToInstancePacketGroup(it, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS)
+                    sourceIdSet.add(instancePacketGroup.sourceId)
+                }
+                val sourceIdList = LinkedList(sourceIdSet)
+                val currentSourceId = preferredSourceIdEditText.text.toString()
+                sourceIdList.remove(currentSourceId)
+                sourceIdList.addFirst(currentSourceId)
+
+                preferredSourceIdSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, sourceIdList)
+                preferredSourceIdSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onNothingSelected(parent: AdapterView<*>) {}
+
+                    override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+                        preferredSourceIdEditText.setText(sourceIdList[position])
+                    }
+                }
+            }
+            v.performClick() // This is here for some reason because Android Studio likes it
+            false
         }
 
         loadSettings()
@@ -258,7 +289,8 @@ class SettingsActivity : AppCompatActivity() {
             ),
             connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
             initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
-            subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds
+            subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds,
+            preferredSourceIdEditText.text.toString()
     )
     private fun getSolarProfile(): SolarProfile {
         val position = batteryVoltageTypeSpinner.selectedItemPosition
