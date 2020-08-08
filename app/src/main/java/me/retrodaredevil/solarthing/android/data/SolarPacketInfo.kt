@@ -12,6 +12,7 @@ import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.identification.KnownIdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
+import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
 import me.retrodaredevil.solarthing.solar.common.BatteryVoltage
 import me.retrodaredevil.solarthing.solar.common.DailyChargeController
@@ -128,6 +129,10 @@ constructor(
                         batteryMap[identifierFragment] = rover
                         basicChargeControllerMap[identifierFragment] = rover
                         rawDailyChargeControllerMap[identifierFragment] = rover
+                    }
+                    SolarStatusPacketType.BATTERY_VOLTAGE_ONLY -> {
+                        packet as BatteryVoltageOnlyPacket
+                        batteryMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = packet
                     }
                     null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")

@@ -30,6 +30,7 @@ import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
+import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingSettings
@@ -343,6 +344,7 @@ class SolarStatusService(
             // region Device Connection/Disconnection section
             for((identifierFragment, device) in currentSolarInfo.solarPacketInfo.deviceMap.entries){
                 val presentInLast = identifierFragment in lastSolarInfo.solarPacketInfo.deviceMap
+//                println("hi $identifierFragment and last: ${lastSolarInfo.solarPacketInfo.deviceMap.keys}")
                 if(!presentInLast){ // device just connected
                     val notificationAndSummary = NotificationHandler.createDeviceConnectionStatus(service, device, true, currentSolarInfo.solarPacketInfo.dateMillis)
                     service.getManager().apply {
@@ -504,6 +506,9 @@ class SolarStatusService(
         var summary: Notification? = null
 
         for(device in getOrderedValues(packetInfo.deviceMap)){
+            if (device is BatteryVoltageOnlyPacket) {
+                continue
+            }
             val id = getMoreSolarInfoId(device)
             if(statusBarNotifications == null || statusBarNotifications.any { it.id == id }) {
                 val dateMillis = packetInfo.packetGroup.getDateMillis(device) ?: packetInfo.dateMillis

@@ -19,6 +19,7 @@ import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.support.Support
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
+import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
 import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
@@ -45,6 +46,7 @@ object NotificationHandler {
     private const val FX_COLOR_HEX_STRING = "#770000"
     private const val MX_COLOR_HEX_STRING = "#000077"
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
+    private const val BATTERY_ONLY_COLOR_HEX_STRING = "#1b876a"
 
 
     private fun oneWord(string: String): String {
@@ -254,8 +256,9 @@ object NotificationHandler {
         @Suppress("UsePropertyAccessSyntax")
         val r = when(val packetType = packet.getPacketType()){
             SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
-            SolarStatusPacketType.MXFM_STATUS, SolarExtraPacketType.MXFM_DAILY -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
+            SolarStatusPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
             SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverId(packet as RoverStatusPacket)}</span>"
+            SolarStatusPacketType.BATTERY_VOLTAGE_ONLY -> "<span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">*${(packet as BatteryVoltageOnlyPacket).dataId}"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("$packetType not supported!")
         }
@@ -294,6 +297,7 @@ object NotificationHandler {
                 is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
                 is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]")
                 is RoverStatusPacket -> oneWord("[<strong>${info.getRoverId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RV</span>]")
+                is BatteryVoltageOnlyPacket -> oneWord("[<strong>*${it.dataId}</strong> <span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">BAT</span>]")
                 else -> it.toString()
             }
         }
@@ -351,7 +355,9 @@ object NotificationHandler {
         }
 
         val dailyKWHString = getDailyKWHString(info, dailyInfo)
-        val modesString = getOrderedValues(info.deviceMap).joinToString(SEPARATOR) { "${getDeviceString(info, it)}${getModeName(it)}" }
+        val modesString = getOrderedValues(info.deviceMap).mapNotNull {
+            if (it !is BatteryVoltageOnlyPacket) "${getDeviceString(info, it)}${getModeName(it)}" else null
+        }.joinToString(SEPARATOR)
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
             "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(

@@ -12,7 +12,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
-import com.fasterxml.jackson.databind.DeserializationFeature
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.activity.SettingsActivity
@@ -28,8 +27,6 @@ import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
 import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
 import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
 import me.retrodaredevil.solarthing.android.util.getSSID
-import me.retrodaredevil.solarthing.commands.packets.open.RequestCommandPacket
-import me.retrodaredevil.solarthing.commands.packets.status.AvailableCommandsPacket
 import me.retrodaredevil.solarthing.commands.packets.status.CommandStatusPacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter

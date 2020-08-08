@@ -5,6 +5,7 @@ package me.retrodaredevil.solarthing.android.notifications
 
 import me.retrodaredevil.solarthing.packets.Packet
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
+import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -40,6 +41,7 @@ fun getOutbackEndOfDayInfoId(packet: OutbackData): Int = Objects.hash("end_of_da
 fun getDeviceConnectionStatusId(packet: Packet): Int = when(packet){
     is OutbackData -> Objects.hash("device_connection", packet.address)
     is RoverStatusPacket -> Objects.hash("device_connection", 10 + packet.productSerialNumber)
+    is BatteryVoltageOnlyPacket -> Objects.hash("device_connection", packet.dataId, "battery_voltage_only")
     else -> throw IllegalArgumentException("packet: $packet is not supported!")
 }
 fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
