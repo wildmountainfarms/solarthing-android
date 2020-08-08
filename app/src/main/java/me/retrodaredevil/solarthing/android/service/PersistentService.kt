@@ -121,7 +121,7 @@ class PersistentService : Service(), Runnable{
         application.metaHandler = metaHandler
         services = listOf(
                 ServiceObject(
-                        SolarStatusService(this, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
+                        SolarStatusService(this, connectionProfileManager, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
                         SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                                 ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),

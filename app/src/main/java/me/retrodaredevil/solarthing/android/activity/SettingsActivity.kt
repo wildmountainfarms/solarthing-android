@@ -290,7 +290,7 @@ class SettingsActivity : AppCompatActivity() {
             connectionProfileNetworkSwitchingViewHandler.getNetworkSwitchingProfile(),
             initialRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.initialRequestTimeSeconds,
             subsequentRequestTimeout.text.toString().toIntOrNull() ?: DefaultOptions.subsequentRequestTimeSeconds,
-            preferredSourceIdEditText.text.toString()
+            preferredSourceIdEditText.text.toString().let { if (it.isEmpty()) null else it } // a blank source ID represents no preference
     )
     private fun getSolarProfile(): SolarProfile {
         val position = batteryVoltageTypeSpinner.selectedItemPosition
@@ -356,6 +356,7 @@ class SettingsActivity : AppCompatActivity() {
         profile.let {
             initialRequestTimeout.setText(it.initialRequestTimeSeconds.toString())
             subsequentRequestTimeout.setText(it.subsequentRequestTimeSeconds.toString())
+            preferredSourceIdEditText.setText(it.preferredSourceId ?: "")
         }
     }
     private fun loadSolarSettings(uuid: UUID) {

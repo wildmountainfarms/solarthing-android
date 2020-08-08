@@ -6,6 +6,7 @@ import android.content.Context
 import android.widget.RemoteViews
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
+import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.createSolarProfileManager
 import me.retrodaredevil.solarthing.android.data.CreationException
 import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
@@ -36,14 +37,15 @@ class BatteryVoltageWidget : AppWidgetProvider() {
                     System.err.println("Sorted is empty!")
                     null
                 } else {
-                    val firstSourceValue = sorted.values.first()
-                    if (firstSourceValue.isEmpty()) {
+                    val sourceId = createConnectionProfileManager(context).activeProfile.profile.selectSourceId(sorted.keys)
+                    val packets = sorted[sourceId]!!
+                    if (packets.isEmpty()) {
                         throw AssertionError("One of the values of sortPackets() should never be empty!")
                     }
                     try {
                         val manager = createSolarProfileManager(context)
                         val batteryVoltageType = manager.activeProfile.profile.batteryVoltageType
-                        SolarPacketInfo(firstSourceValue.last(), batteryVoltageType) // the most recent info
+                        SolarPacketInfo(packets.last(), batteryVoltageType) // the most recent info
                     } catch (ex: CreationException) {
                         ex.printStackTrace()
                         null

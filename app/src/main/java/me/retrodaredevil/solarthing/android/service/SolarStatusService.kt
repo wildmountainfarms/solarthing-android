@@ -18,10 +18,7 @@ import me.retrodaredevil.solarthing.android.HeartbeatData
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.notifications.*
-import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
-import me.retrodaredevil.solarthing.android.prefs.MiscProfile
-import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
-import me.retrodaredevil.solarthing.android.prefs.SolarProfile
+import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
@@ -53,6 +50,7 @@ object SolarPacketCollectionBroadcast {
 
 class SolarStatusService(
         private val service: Service,
+        private val connectionProfileProvider: ProfileProvider<ConnectionProfile>,
         private val solarProfileProvider: ProfileProvider<SolarProfile>,
         private val miscProfileProvider: ProfileProvider<MiscProfile>,
         private val solarStatusData: PacketGroupData,
@@ -232,7 +230,8 @@ class SolarStatusService(
                         }
                     }
                 }
-                solarInfoCollection = createSolarInfoList(sortedPackets.values.first(), fxChargingSettings) // TODO allow multiple instance sources instead of just one
+                val values = sortedPackets[connectionProfileProvider.activeProfile.profile.selectSourceId(sortedPackets.keys)]!!
+                solarInfoCollection = createSolarInfoList(values, fxChargingSettings)
             }
             println("Took " + (System.currentTimeMillis() - startTime))
 

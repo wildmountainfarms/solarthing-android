@@ -15,4 +15,11 @@ data class ConnectionProfile(
         val subsequentRequestTimeSeconds: Int = DefaultOptions.subsequentRequestTimeSeconds,
         @JsonProperty(SaveKeys.preferredSourceId)
         val preferredSourceId: String? = DefaultOptions.preferredSourceId
-)
+) {
+    fun selectSourceId(sourceIdCollection: Collection<String>): String {
+        if (preferredSourceId != null && preferredSourceId in sourceIdCollection) {
+            return preferredSourceId
+        }
+        return sourceIdCollection.first()
+    }
+}

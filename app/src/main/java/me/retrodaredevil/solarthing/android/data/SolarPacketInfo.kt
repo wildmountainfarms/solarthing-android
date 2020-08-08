@@ -137,7 +137,7 @@ constructor(
                 when(packet.packetType){
                     SolarExtraPacketType.FX_DAILY -> {
                         packet as DailyFXPacket
-                        dailyFXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo as OutbackIdentifier)] = packet // TODO remove cast after updating SolarThing
+                        dailyFXMap[IdentifierFragment.create(fragmentId, packet.identifier.supplementaryTo)] = packet
                     }
                     SolarExtraPacketType.MXFM_DAILY -> { }
                     SolarExtraPacketType.FX_CHARGING -> { }

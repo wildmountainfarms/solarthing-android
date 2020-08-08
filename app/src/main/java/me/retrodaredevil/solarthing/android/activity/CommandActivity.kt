@@ -51,7 +51,7 @@ private fun getAvailableCommands(application: SolarThingApplication): Pair<Strin
     if (sortedMap.isEmpty()) {
         return null
     }
-    val sourceId = sortedMap.keys.first() // TODO sourceId
+    val sourceId = createConnectionProfileManager(application).activeProfile.profile.selectSourceId(sortedMap.keys)
     val r = HashMap<Int, List<CommandInfo>>()
     for (packetGroup in sortedMap[sourceId]!!) {
         if (packetGroup.dateMillis + 5 * 60 * 1000 < System.currentTimeMillis()) {
@@ -66,7 +66,6 @@ private fun getAvailableCommands(application: SolarThingApplication): Pair<Strin
     return Pair(sourceId, r)
 }
 
-// TODO add refresh button
 class CommandActivity : AppCompatActivity() {
     companion object {
         private val MAPPER = JacksonUtil.defaultMapper()
