@@ -124,14 +124,14 @@ class PersistentService : Service(), Runnable{
                                 ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
                                 ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, CommandStatusPacket::class.java)
+                                ObjectMapperPacketConverter(MAPPER, CommandStatusPacket::class.java),
                         ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
                 ),
                 ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(
                         ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java),
                         ObjectMapperPacketConverter(MAPPER, SolarEventPacket::class.java),
-                        ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java)
-                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT)))
+                        ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
+                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))),
         )
         for(service in services){
             service.dataService.onInit()

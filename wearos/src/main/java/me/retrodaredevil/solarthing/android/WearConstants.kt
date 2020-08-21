@@ -9,7 +9,7 @@ object WearConstants {
      */
     val PROVIDER_COMPONENT_NAMES = listOf(
             createFromClass(BatteryVoltageComplicationProviderService::class),
-            createFromClass(BatteryTemperatureComplicationProviderService::class)
+            createFromClass(BatteryTemperatureComplicationProviderService::class),
     )
 
     private fun createFromClass(clazz: KClass<*>): ComponentName {
