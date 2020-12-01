@@ -5,7 +5,6 @@ import android.support.wearable.complications.ComplicationData
 import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
-import me.retrodaredevil.solarthing.android.util.Formatting
 
 
 class BatteryVoltageComplicationProviderService : ComplicationProviderService() {
