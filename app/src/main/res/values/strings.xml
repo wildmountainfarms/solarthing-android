@@ -6,6 +6,7 @@
     <string name="notification_settings_select">Notifications</string>
     <string name="application_settings_select">App Settings</string>
     <string name="grafana_select">Grafana</string>
+    <string name="privacy_policy_select">Privacy Policy</string>
 
     <string name="generator_done_notification">Generator Done Alert</string>
     <string name="generator_done_notification_description">Sends an alert when the generator stopped charging the batteries</string>

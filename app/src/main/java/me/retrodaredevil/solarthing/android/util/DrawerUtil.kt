@@ -53,6 +53,8 @@ fun initializeDrawer(
             .withName(R.string.application_settings_select)
     val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(102)
             .withName(R.string.grafana_select)
+    val drawerPrivacyPolicy: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(103)
+            .withName(R.string.privacy_policy_select)
 
     val itemIdentifier: Long = when(activity){
         is SettingsActivity -> 1
@@ -75,7 +77,8 @@ fun initializeDrawer(
                     DividerDrawerItem(),
                     drawerNotificationSettings,
                     drawerApplicationSettings,
-                    drawerGrafana
+                    drawerGrafana,
+                    drawerPrivacyPolicy,
             )
             .withOnDrawerItemClickListener(object : Drawer.OnDrawerItemClickListener {
                 override fun onItemClick(view: View?, position: Int, drawerItem: IDrawerItem<*>): Boolean {
@@ -115,6 +118,9 @@ fun initializeDrawer(
                             val profile = createConnectionProfileManager(activity).activeProfile.profile
                             val couchDb = profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile
                             activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://${couchDb.host}/grafana")))
+                        }
+                        103L -> {
+                            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/wildmountainfarms/solarthing-android/blob/master/privacy_policy.md")))
                         }
                     }
                     return true
