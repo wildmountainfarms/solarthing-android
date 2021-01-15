@@ -83,23 +83,23 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.2.1'
-    implementation 'androidx.navigation:navigation-fragment:2.3.1'
-    implementation 'androidx.navigation:navigation-ui:2.3.1'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.2'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.3.2'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.1'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.3.1'
-    testImplementation 'junit:junit:4.12'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.2'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.3.2'
+    testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    def solarthingVersion = "3.9.2"
+    def solarthingVersion = "3.10.0"
 
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
 
-    def jacksonVersion = "2.11.3"
+    def jacksonVersion = "2.12.1" // https://github.com/FasterXML/jackson-databind/releases
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") // { changing = true } // uncomment if we use a snapshot version of Jackson
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
     // https://mvnrepository.com/artifact/org.ektorp/org.ektorp.android

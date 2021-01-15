@@ -70,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
+        emptyList<Any>().javaClass.declaredMethods
 
 
         connectionProfileManager = createConnectionProfileManager(this)
@@ -93,7 +94,7 @@ class SettingsActivity : AppCompatActivity() {
         miscProfileProvider = createMiscProfileProvider(this)
 
         connectionProfileNetworkSwitchingViewHandler = NetworkSwitchingViewHandler(this, findViewById(R.id.network_switching)) {
-            requestFineLocation()
+            requestLocationPrePopup()
         }
         protocol = findViewById(R.id.protocol)
         host = findViewById(R.id.hostname)
@@ -227,8 +228,21 @@ class SettingsActivity : AppCompatActivity() {
         drawerHandler.highlight()
     }
 
+    private fun requestLocationPrePopup() {
+        AlertDialog.Builder(this)
+                .setTitle("Grant Location Permission?")
+                .setMessage("SolarThing needs the location permission to view your WiFi's SSID (network name). This is required if you want to enable auto network switching. Please allow all the time.")
+                .setNegativeButton("Cancel") { _, _ -> }
+                .setPositiveButton("Yes") { _, _ ->
+                    requestFineLocation()
+                }
+                .create().show()
+    }
+
     private fun requestFineLocation(){
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_FINE_LOCATION_RC)
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION) else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        ActivityCompat.requestPermissions(this, permissions, REQUEST_FINE_LOCATION_RC)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -300,7 +314,7 @@ class SettingsActivity : AppCompatActivity() {
             DefaultOptions.batteryVoltageType
         }
         return SolarProfile(
-                emptyList(), temperatureNotifyHandler.getTemperatureNodesToSave(),
+                Collections.emptyList(), temperatureNotifyHandler.getTemperatureNodesToSave(),
                 lowBatteryVoltage.text.toString().toFloatOrNull(),
                 criticalBatteryVoltage.text.toString().toFloatOrNull(),
                 batteryVoltageType
