@@ -30,6 +30,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingMode
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
+import me.retrodaredevil.solarthing.solar.renogy.ProductModelUtil
 import me.retrodaredevil.solarthing.solar.renogy.Voltage
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
@@ -293,11 +294,12 @@ object NotificationHandler {
         val devicesString = getOrderedValues(
             info.deviceMap
         ).joinToString("") {
+            val shortName = it.identityInfo.shortName
             when (it) {
-                is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">FX</span>]")
-                is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">MX</span>]")
-                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">RV</span>]")
-                is BatteryVoltageOnlyPacket -> oneWord("[<strong>*${it.dataId}</strong> <span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">BAT</span>]")
+                is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">$shortName</span>]")
+                is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">$shortName</span>]")
+                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">$shortName</span>]")
+                is BatteryVoltageOnlyPacket -> oneWord("[<strong>*${it.dataId}</strong> <span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">$shortName</span>]")
                 else -> it.toString()
             }
         }
@@ -361,7 +363,7 @@ object NotificationHandler {
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
             "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(
-                it.pvCurrent.toDouble() * it.inputVoltage.toDouble()
+                it.pvCurrent.toDouble() * it.pvVoltage.toDouble()
             )}"
         }
         val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
@@ -515,15 +517,10 @@ object NotificationHandler {
      * @param justConnected true if [device] has just been connected, false if [device] has just been disconnected
      */
     fun createDeviceConnectionStatus(context: Context, device: SolarStatusPacket, justConnected: Boolean, dateMillis: Long): Pair<Notification, Notification>{
-        val name = when(device.packetType){
-            SolarStatusPacketType.FX_STATUS -> "FX"
-            SolarStatusPacketType.MXFM_STATUS -> "MX"
-            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "Rover"
-            else -> device.packetType.toString()
-        }
+        val name = device.identityInfo.name
         val deviceName = when(device){
             is OutbackData -> "$name on port ${device.address}"
-            is RoverStatusPacket -> "Rover with serial ${device.productSerialNumber}"
+            is RoverStatusPacket -> "$name with serial ${device.productSerialNumber}"
             else -> name
         }
         val builder = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
@@ -645,8 +642,8 @@ object NotificationHandler {
     private fun createChargeControllerMoreInfo(device: BasicChargeController): String{
         return "Charging: Current: ${Formatting.TENTHS.format(device.chargingCurrent)}A | " +
                 "Power: ${Formatting.TENTHS.format(device.chargingPower)}W\n" +
-                "PV: ${Formatting.OPTIONAL_TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.OPTIONAL_TENTHS.format(device.inputVoltage)}V = " +
-                "${Formatting.OPTIONAL_TENTHS.format(device.inputVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
+                "PV: ${Formatting.OPTIONAL_TENTHS.format(device.pvCurrent)}A * Voltage: ${Formatting.OPTIONAL_TENTHS.format(device.pvVoltage)}V = " +
+                "${Formatting.OPTIONAL_TENTHS.format(device.pvVoltage.toDouble() * device.pvCurrent.toDouble())}W\n"
     }
     fun createMoreRoverInfoNotification(context: Context, device: RoverStatusPacket, dateMillis: Long): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
@@ -737,6 +734,7 @@ object NotificationHandler {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(context, channelId)
         } else {
+            @Suppress("DEPRECATION")
             Notification.Builder(context)
         }
         if(notificationId != null) {

@@ -1,3 +1,5 @@
+@file:Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
+
 package me.retrodaredevil.solarthing.android.data
 
 import me.retrodaredevil.solarthing.packets.collection.FragmentUtil
@@ -27,7 +29,7 @@ fun getOperatingModeName(fx: FXStatusPacket): String =
         else -> mode.modeName
     }
 fun getChargerModeName(mx: MXStatusPacket): String =
-    when(mx.chargingMode!!){
+    when(mx.chargingMode){
         ChargerMode.SILENT -> "Off"
         ChargerMode.FLOAT -> "Float"
         ChargerMode.BULK -> "Bulk"
@@ -35,7 +37,7 @@ fun getChargerModeName(mx: MXStatusPacket): String =
         ChargerMode.EQ -> "EQ"
     }
 fun getChargingStateName(rover: RoverStatusPacket): String =
-    when(rover.chargingMode!!){
+    when(rover.chargingMode){
         ChargingState.DEACTIVATED -> "Off"
         ChargingState.ACTIVATED -> "On"
         ChargingState.MPPT -> "MPPT"
@@ -43,6 +45,7 @@ fun getChargingStateName(rover: RoverStatusPacket): String =
         ChargingState.BOOST -> "Boost"
         ChargingState.FLOAT -> "Float"
         ChargingState.CURRENT_LIMITING -> "Curr lim"
+        ChargingState.DIRECT_CHARGE -> "Direct"
     }
 fun getModeName(packet: SolarStatusPacket): String =
     when(packet){

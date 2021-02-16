@@ -6,6 +6,7 @@ import me.retrodaredevil.solarthing.misc.device.CpuTemperaturePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacketType
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
@@ -22,7 +23,6 @@ import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.OutbackIdentifier
 import me.retrodaredevil.solarthing.solar.outback.OutbackUtil
 import me.retrodaredevil.solarthing.solar.outback.fx.*
-import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
@@ -134,11 +134,11 @@ constructor(
                         packet as BatteryVoltageOnlyPacket
                         batteryMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = packet
                     }
-                    null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unknown packet type: ${packet.packetType}")
                 }
             } else if(packet is SolarExtraPacket){
                 val fragmentId = packetGroup.getFragmentId(packet)
+                @Suppress("DEPRECATION")
                 when(packet.packetType){
                     SolarExtraPacketType.FX_DAILY -> {
                         packet as DailyFXPacket
@@ -146,7 +146,6 @@ constructor(
                     }
                     SolarExtraPacketType.MXFM_DAILY -> { }
                     SolarExtraPacketType.FX_CHARGING -> { }
-                    null -> throw NullPointerException("packetType is null! packet: $packet")
                     else -> System.err.println("Unimplemented packet type: ${packet.packetType}")
                 }
             } else if(packet is DevicePacket){
@@ -155,7 +154,6 @@ constructor(
                         packet as CpuTemperaturePacket
                         deviceCpuTemperatureMap[packetGroup.getFragmentId(packet)] = packet.cpuTemperatureCelsius
                     }
-                    null -> throw NullPointerException()
                     else -> System.err.println("Unimplemented device packet type: ${packet.packetType}")
                 }
             }
@@ -167,7 +165,7 @@ constructor(
         batteryVoltage = when(batteryVoltageType){
             BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
             BatteryVoltageType.FIRST_PACKET -> null
-            BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxBy { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
+            BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxByOrNull { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.firstOrNull { it is OutbackData }?.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK_FX -> fxMap.values.firstOrNull()?.batteryVoltage
         } ?: batteryMap.values.first().batteryVoltage
@@ -183,7 +181,7 @@ constructor(
         generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
         generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
 
-        pvWattage = basicChargeControllerMap.values.sumByDouble { it.pvCurrent.toDouble() * it.inputVoltage.toDouble() }.toInt()
+        pvWattage = basicChargeControllerMap.values.sumBy { it.pvWattage.toInt() }
         pvChargerWattage = basicChargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningModeValue) } }

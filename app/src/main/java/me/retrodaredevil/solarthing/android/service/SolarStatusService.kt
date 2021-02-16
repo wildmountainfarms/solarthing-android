@@ -568,6 +568,7 @@ class SolarStatusService(
         val builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             Notification.Builder(service, NotificationChannels.SOLAR_STATUS.id)
         } else {
+            @Suppress("DEPRECATION")
             Notification.Builder(service)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {

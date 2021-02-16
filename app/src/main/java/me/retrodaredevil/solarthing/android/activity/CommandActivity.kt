@@ -114,7 +114,7 @@ class CommandActivity : AppCompatActivity() {
         drawerHandler.highlight()
         initFragmentSpinner()
     }
-    fun refresh(view: View) {
+    fun refresh(@Suppress("UNUSED_PARAMETER") view: View) {
         initFragmentSpinner()
     }
     private fun initFragmentSpinner() {

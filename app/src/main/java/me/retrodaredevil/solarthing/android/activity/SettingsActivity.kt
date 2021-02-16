@@ -269,7 +269,7 @@ class SettingsActivity : AppCompatActivity() {
     fun stopService(view: View){
         stopService(this)
     }
-    fun openTemperatureNotifySettings(view: View){
+    fun openTemperatureNotifySettings(@Suppress("UNUSED_PARAMETER") view: View){
         temperatureNotifyHandler.showDialog(getMiscProfile().temperatureUnit)
     }
     // endregion

@@ -112,6 +112,7 @@ class SolarEventService(
     private fun getBuilder(): Notification.Builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
         Notification.Builder(service.applicationContext, NotificationChannels.COMMAND_FEEDBACK.id)
     } else {
+        @Suppress("DEPRECATION")
         Notification.Builder(service.applicationContext)
     }
 

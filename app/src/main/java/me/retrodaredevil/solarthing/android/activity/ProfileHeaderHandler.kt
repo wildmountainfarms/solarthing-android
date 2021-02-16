@@ -37,7 +37,7 @@ class ProfileHeaderHandler(
 
         view.findViewById<Button>(R.id.active_profile_button).setOnClickListener(::activateProfile)
     }
-    private fun activateProfile(view: View){
+    private fun activateProfile(@Suppress("UNUSED_PARAMETER") view: View){
         val previous = profileManager.activeUUID
         val newUUID = editUUID
         if(previous != newUUID){
