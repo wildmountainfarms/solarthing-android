@@ -14,7 +14,7 @@ import me.retrodaredevil.solarthing.android.util.getSSID
 
 class NetworkSwitchingViewHandler(
         private val context: Context,
-        view: View,
+        private val view: View,
         requestFineLocation: () -> Unit
 ) {
     private val isEnabledCheckBox: CheckBox = view.findViewById(R.id.is_enabled)
@@ -42,6 +42,10 @@ class NetworkSwitchingViewHandler(
             }
         }
     }
+    fun show(show: Boolean) {
+        view.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
     fun getNetworkSwitchingProfile() = NetworkSwitchingProfile(isEnabledCheckBox.isChecked, isBackupCheckBox.isChecked, networkSSID)
 
     fun load(profile: NetworkSwitchingProfile){

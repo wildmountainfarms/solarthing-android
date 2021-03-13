@@ -13,6 +13,7 @@ import androidx.core.app.ActivityCompat
 import me.retrodaredevil.solarthing.android.SolarThingApplication
 import me.retrodaredevil.solarthing.android.StartupHelper
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.createMiscProfileProvider
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
@@ -123,6 +124,9 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
         super.onResume()
         drawerHandler.closeDrawer()
         drawerHandler.highlight()
+
+        val miscProfile = createMiscProfileProvider(this).activeProfile.profile
+        connectionProfileNetworkSwitchingViewHandler.show(miscProfile.networkSwitchingEnabled)
     }
 
     private fun requestLocationPrePopup() {
@@ -160,11 +164,11 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
 
     private fun onUseAuthUpdate(){
         if(useAuth.isChecked){
-            username.alpha = 1f
-            password.alpha = 1f
+            username.visibility = View.VISIBLE
+            password.visibility = View.VISIBLE
         } else {
-            username.alpha = .5f
-            password.alpha = .5f
+            username.visibility = View.GONE
+            password.visibility = View.GONE
         }
     }
     // region Saving and Loading

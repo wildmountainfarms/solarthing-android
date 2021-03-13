@@ -73,7 +73,7 @@ class SolarEventService(
         if(dateMillis + 10 * 60 * 1000 < System.currentTimeMillis()){
             return // We got a packet from a long time ago. We don't need to display it
         }
-        val source = packet.source!!
+        val source = packet.source
         val dataSource = DataSource.createFromStringOrNull(source) // the dateMillis in here is the time the request for the CommandSequence was made, and may be the same for multiple commands
         if(dataSource == null){
             System.err.println("dataSource was null!")

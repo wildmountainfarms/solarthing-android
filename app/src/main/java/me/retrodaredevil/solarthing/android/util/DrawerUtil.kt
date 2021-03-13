@@ -37,7 +37,7 @@ class DrawerHandler(
 fun initializeDrawer(
         activity: Activity,
         toolbar: Toolbar = activity.findViewById(R.id.toolbar),
-        onActivityIntentRequest: (View, Intent) -> Unit = { view, intent -> view.context.startActivity(intent) }
+        onActivityIntentRequest: (View, Intent, DrawerHandler) -> Unit = { view, intent, _ -> view.context.startActivity(intent) }
 ) : DrawerHandler {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 
@@ -56,8 +56,6 @@ fun initializeDrawer(
             .withName(R.string.notification_settings_select)
     val drawerApplicationSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(101)
             .withName(R.string.application_settings_select)
-    val drawerGrafana: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(102)
-            .withName(R.string.grafana_select)
     val drawerPrivacyPolicy: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(103)
             .withName(R.string.privacy_policy_select)
 
@@ -69,6 +67,7 @@ fun initializeDrawer(
         is CommandActivity -> 5
         else -> -1
     }
+    val drawerHandlerHolder = arrayOf<DrawerHandler?>(null)
     val drawer = DrawerBuilder()
             .withActivity(activity)
             .withToolbar(toolbar)
@@ -78,26 +77,28 @@ fun initializeDrawer(
             .withSelectedItem(itemIdentifier)
             .addDrawerItems(
                     drawerEmptyItem,
+                    DividerDrawerItem(),
                     drawerItemSettingsConnection,
                     drawerItemSettingsSolar,
                     drawerItemSettingsMisc,
+                    DividerDrawerItem(),
                     drawerItemEventDisplay,
                     drawerItemCommands,
                     DividerDrawerItem(),
                     drawerNotificationSettings,
                     drawerApplicationSettings,
-                    drawerGrafana,
                     drawerPrivacyPolicy,
             )
             .withOnDrawerItemClickListener(object : Drawer.OnDrawerItemClickListener {
                 override fun onItemClick(view: View?, position: Int, drawerItem: IDrawerItem<*>): Boolean {
                     view!!
+                    val drawerHandler = drawerHandlerHolder[0]!!
                     when(drawerItem.identifier){
-                        1L -> launchActivity<ConnectionSettingsActivity>(view, activity, onActivityIntentRequest)
-                        2L -> launchActivity<SolarSettingsActivity>(view, activity, onActivityIntentRequest)
-                        3L -> launchActivity<MiscSettingsActivity>(view, activity, onActivityIntentRequest)
-                        4L -> launchActivity<EventDisplayActivity>(view, activity, onActivityIntentRequest)
-                        5L -> launchActivity<CommandActivity>(view, activity, onActivityIntentRequest)
+                        1L -> launchActivity<ConnectionSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
+                        2L -> launchActivity<SolarSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
+                        3L -> launchActivity<MiscSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
+                        4L -> launchActivity<EventDisplayActivity>(view, activity, drawerHandler, onActivityIntentRequest)
+                        5L -> launchActivity<CommandActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         100L -> {
                             // credit here: https://stackoverflow.com/a/45192258/5434860
                             val intent = Intent()
@@ -125,11 +126,6 @@ fun initializeDrawer(
                             }
                             activity.startActivity(intent)
                         }
-                        102L -> {
-                            val profile = createConnectionProfileManager(activity).activeProfile.profile
-                            val couchDb = profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile
-                            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://${couchDb.host}/grafana")))
-                        }
                         103L -> {
                             activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/wildmountainfarms/solarthing-android/blob/master/privacy_policy.md")))
                         }
@@ -138,18 +134,20 @@ fun initializeDrawer(
                 }
             })
             .build()
-    return DrawerHandler(itemIdentifier, drawer)
+    val r = DrawerHandler(itemIdentifier, drawer)
+    drawerHandlerHolder[0] = r
+    return r
 }
-private inline fun <reified T> launchActivity(view: View, currentActivity: Activity, onActivityIntentRequest: (View, Intent) -> Unit) {
+private inline fun <reified T> launchActivity(view: View, currentActivity: Activity, drawerHandler: DrawerHandler, onActivityIntentRequest: (View, Intent, DrawerHandler) -> Unit) {
     if(currentActivity is T){
         return
     }
     val intent = Intent(currentActivity, T::class.java)
-    onActivityIntentRequest(view, intent)
+    onActivityIntentRequest(view, intent, drawerHandler)
 }
 
 fun initializeDrawerWithUnsavedPrompt(activity: Activity, toolbar: Toolbar = activity.findViewById(R.id.toolbar), isNotSavedGetter: () -> Boolean, saveSettings: () -> Unit) : DrawerHandler {
-    return initializeDrawer(activity, toolbar) { _, intent ->
+    return initializeDrawer(activity, toolbar) { _, intent, drawerHandler ->
         if (isNotSavedGetter()) {
             val builder = AlertDialog.Builder(activity)
             builder.setTitle("You have unsaved changes")
@@ -159,16 +157,20 @@ fun initializeDrawerWithUnsavedPrompt(activity: Activity, toolbar: Toolbar = act
             builder.setPositiveButton("Save") { _, _ ->
                 saveSettings()
                 activity.startActivity(intent)
+                activity.finish()
             }
             builder.setNegativeButton("Don't Save") { _, _ ->
                 activity.startActivity(intent)
+                activity.finish()
             }
             builder.setNeutralButton("Cancel") { dialog, _ ->
                 dialog.cancel()
             }
+            drawerHandler.highlight() // We aren't changing to new activity yet, so highlight current one
             builder.create().show()
         } else {
             activity.startActivity(intent)
+            activity.finish()
         }
     }
 }
