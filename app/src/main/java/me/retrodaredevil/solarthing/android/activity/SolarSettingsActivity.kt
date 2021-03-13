@@ -12,16 +12,11 @@ import me.retrodaredevil.solarthing.android.prefs.BatteryVoltageType
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import me.retrodaredevil.solarthing.android.prefs.SolarProfile
-import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawerWithUnsavedPrompt
 import java.util.*
 
 class SolarSettingsActivity : AppCompatActivity() {
-    companion object {
-        private const val REQUEST_FINE_LOCATION_RC = 1801
-    }
-
     private val temperatureNotifyHandler = SettingsTemperatureNotifyHandler(this)
 
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>

@@ -44,6 +44,9 @@ fun initializeDrawer(
 ) : DrawerHandler {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 
+    val drawerItemMain: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(200)
+            .withName(R.string.main_select)
+
     val drawerItemSettingsConnection: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(1)
             .withName(R.string.settings_connection_select)
     val drawerItemSettingsSolar: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(2)
@@ -63,6 +66,7 @@ fun initializeDrawer(
             .withName(R.string.privacy_policy_select)
 
     val itemIdentifier: Long = when(activity){
+        is MainActivity -> 200
         is ConnectionSettingsActivity -> 1
         is SolarSettingsActivity -> 2
         is MiscSettingsActivity -> 3
@@ -80,6 +84,7 @@ fun initializeDrawer(
             .withSelectedItem(itemIdentifier)
             .addDrawerItems(
                     drawerEmptyItem,
+                    drawerItemMain,
                     DividerDrawerItem(),
                     drawerItemSettingsConnection,
                     drawerItemSettingsSolar,
@@ -97,6 +102,7 @@ fun initializeDrawer(
                     view!!
                     val drawerHandler = drawerHandlerHolder[0]!!
                     when(drawerItem.identifier){
+                        200L -> launchActivity<MainActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         1L -> launchActivity<ConnectionSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         2L -> launchActivity<SolarSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         3L -> launchActivity<MiscSettingsActivity>(view, activity, drawerHandler, onActivityIntentRequest)
