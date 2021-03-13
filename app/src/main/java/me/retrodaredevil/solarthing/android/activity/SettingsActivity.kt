@@ -27,6 +27,7 @@ import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import java.util.*
 
+@Deprecated("Use individual activities for changing settings")
 class SettingsActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_FINE_LOCATION_RC = 1801

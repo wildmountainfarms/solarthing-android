@@ -30,7 +30,7 @@
         <activity
                 android:name=".activity.EventDisplayActivity"
                 android:label="@string/title_activity_event_display"
-                android:theme="@style/AppTheme.NoActionBar" android:launchMode="singleInstance"/>
+                android:theme="@style/AppTheme.NoActionBar" android:launchMode="singleTask"/>
 
         <receiver android:name=".widget.BatteryVoltageWidget">
             <intent-filter>
@@ -63,13 +63,19 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".activity.SettingsActivity" android:launchMode="singleInstance">
+        <activity android:name=".activity.ConnectionSettingsActivity" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+                android:name=".activity.SolarSettingsActivity"
+                android:launchMode="singleTask" />
+        <activity
+                android:name=".activity.MiscSettingsActivity"
+                android:launchMode="singleTask" />
 
         <service
                 android:name=".service.PersistentService"

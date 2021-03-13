@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">SolarThing</string>
-    <string name="settings_select">Settings</string>
+    <string name="settings_connection_select">Connection Settings</string>
+    <string name="settings_solar_select">Solar Settings</string>
+    <string name="settings_misc_select">Other Settings</string>
     <string name="event_display_select">Event Display</string>
     <string name="commands_select">Commands</string>
     <string name="notification_settings_select">Notifications</string>

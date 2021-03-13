@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context=".activity.MiscSettingsActivity"
+        tools:showIn="@layout/activity_settings_other"
+        android:id="@+id/settings_root_view">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:ems="10"
+                android:id="@+id/max_fragment_time" android:hint="Max Fragment Time Minutes"/>
+        <CheckBox
+                android:text="Start on boot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/start_on_boot"/>
+        <CheckBox
+                android:text="Auto Network Switching Enable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/network_switching_enabled"/>
+        <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/temperature_unit_spinner"/>
+        <include
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/horizontal_rule"/>
+        <Button
+                android:id="@+id/save_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="saveSettings"
+                android:text="Save"
+                tools:layout_editor_absoluteX="57dp"
+                tools:layout_editor_absoluteY="276dp"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

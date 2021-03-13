@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context=".activity.ConnectionSettingsActivity"
+        tools:showIn="@layout/activity_settings_connection"
+        android:id="@+id/settings_root_view">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <include
+                android:id="@+id/connection_profile_header_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/profile_header"/>
+        <include
+                android:id="@+id/network_switching"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/network_switching_config"/>
+        <EditText
+                android:id="@+id/protocol"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Protocol"
+                android:inputType="textPersonName"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="46dp"/>
+
+        <EditText
+                android:id="@+id/hostname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="host1,host2,host3,etc"
+                android:inputType="textUri"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="92dp"/>
+
+        <EditText
+                android:id="@+id/port"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Port"
+                android:inputType="number"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="138dp"/>
+
+        <CheckBox
+                android:text="Use Username and Password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/use_auth"/>
+        <EditText
+                android:id="@+id/username"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Username"
+                android:inputType="textPersonName"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="184dp"/>
+
+        <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="Password"
+                android:inputType="textPassword"
+                tools:layout_editor_absoluteX="0dp"
+                tools:layout_editor_absoluteY="230dp"/>
+
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="20dp"/>
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:ems="10"
+                android:id="@+id/initial_request_timeout" android:hint="Initial Timeout (seconds)"/>
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:ems="10"
+                android:id="@+id/subsequent_request_timeout" android:hint="Update Period and Timeout (seconds)"/>
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+            <EditText
+                    android:layout_width="0dp"
+                    android:layout_weight=".5"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:ems="10"
+                    android:id="@+id/preferred_source_id" android:hint="Preferred Source ID"/>
+            <Spinner
+                    android:layout_width="0dp"
+                    android:layout_weight=".5"
+                    android:layout_height="wrap_content" android:id="@+id/preferred_source_id_spinner"/>
+        </LinearLayout>
+        <include
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/horizontal_rule"/>
+        <Button
+                android:id="@+id/save_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="saveSettings"
+                android:text="Save"
+                tools:layout_editor_absoluteX="57dp"
+                tools:layout_editor_absoluteY="276dp"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -1,11 +1,14 @@
 package me.retrodaredevil.solarthing.android.util
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.text.InputType
 import android.view.View
+import android.widget.EditText
 import androidx.appcompat.widget.Toolbar
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
@@ -13,9 +16,7 @@ import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.activity.CommandActivity
-import me.retrodaredevil.solarthing.android.activity.EventDisplayActivity
-import me.retrodaredevil.solarthing.android.activity.SettingsActivity
+import me.retrodaredevil.solarthing.android.activity.*
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 
@@ -40,11 +41,15 @@ fun initializeDrawer(
 ) : DrawerHandler {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 
-    val drawerItemSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(1)
-            .withName(R.string.settings_select)
-    val drawerItemEventDisplay: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(2)
+    val drawerItemSettingsConnection: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(1)
+            .withName(R.string.settings_connection_select)
+    val drawerItemSettingsSolar: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(2)
+            .withName(R.string.settings_solar_select)
+    val drawerItemSettingsMisc: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(3)
+            .withName(R.string.settings_misc_select)
+    val drawerItemEventDisplay: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(4)
             .withName(R.string.event_display_select)
-    val drawerItemCommands: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(3)
+    val drawerItemCommands: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(5)
             .withName(R.string.commands_select)
 
     val drawerNotificationSettings: PrimaryDrawerItem = PrimaryDrawerItem().withIdentifier(100)
@@ -57,9 +62,11 @@ fun initializeDrawer(
             .withName(R.string.privacy_policy_select)
 
     val itemIdentifier: Long = when(activity){
-        is SettingsActivity -> 1
-        is EventDisplayActivity -> 2
-        is CommandActivity -> 3
+        is ConnectionSettingsActivity -> 1
+        is SolarSettingsActivity -> 2
+        is MiscSettingsActivity -> 3
+        is EventDisplayActivity -> 4
+        is CommandActivity -> 5
         else -> -1
     }
     val drawer = DrawerBuilder()
@@ -71,7 +78,9 @@ fun initializeDrawer(
             .withSelectedItem(itemIdentifier)
             .addDrawerItems(
                     drawerEmptyItem,
-                    drawerItemSettings,
+                    drawerItemSettingsConnection,
+                    drawerItemSettingsSolar,
+                    drawerItemSettingsMisc,
                     drawerItemEventDisplay,
                     drawerItemCommands,
                     DividerDrawerItem(),
@@ -84,9 +93,11 @@ fun initializeDrawer(
                 override fun onItemClick(view: View?, position: Int, drawerItem: IDrawerItem<*>): Boolean {
                     view!!
                     when(drawerItem.identifier){
-                        1L -> launchActivity<SettingsActivity>(view, activity, onActivityIntentRequest)
-                        2L -> launchActivity<EventDisplayActivity>(view, activity, onActivityIntentRequest)
-                        3L -> launchActivity<CommandActivity>(view, activity, onActivityIntentRequest)
+                        1L -> launchActivity<ConnectionSettingsActivity>(view, activity, onActivityIntentRequest)
+                        2L -> launchActivity<SolarSettingsActivity>(view, activity, onActivityIntentRequest)
+                        3L -> launchActivity<MiscSettingsActivity>(view, activity, onActivityIntentRequest)
+                        4L -> launchActivity<EventDisplayActivity>(view, activity, onActivityIntentRequest)
+                        5L -> launchActivity<CommandActivity>(view, activity, onActivityIntentRequest)
                         100L -> {
                             // credit here: https://stackoverflow.com/a/45192258/5434860
                             val intent = Intent()
@@ -135,4 +146,29 @@ private inline fun <reified T> launchActivity(view: View, currentActivity: Activ
     }
     val intent = Intent(currentActivity, T::class.java)
     onActivityIntentRequest(view, intent)
+}
+
+fun initializeDrawerWithUnsavedPrompt(activity: Activity, toolbar: Toolbar = activity.findViewById(R.id.toolbar), isNotSavedGetter: () -> Boolean, saveSettings: () -> Unit) : DrawerHandler {
+    return initializeDrawer(activity, toolbar) { _, intent ->
+        if (isNotSavedGetter()) {
+            val builder = AlertDialog.Builder(activity)
+            builder.setTitle("You have unsaved changes")
+            val input = EditText(activity)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
+            builder.setPositiveButton("Save") { _, _ ->
+                saveSettings()
+                activity.startActivity(intent)
+            }
+            builder.setNegativeButton("Don't Save") { _, _ ->
+                activity.startActivity(intent)
+            }
+            builder.setNeutralButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+            builder.create().show()
+        } else {
+            activity.startActivity(intent)
+        }
+    }
 }

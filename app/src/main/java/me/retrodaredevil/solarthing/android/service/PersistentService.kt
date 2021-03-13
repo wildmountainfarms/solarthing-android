@@ -14,7 +14,7 @@ import android.os.IBinder
 import android.widget.Toast
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
-import me.retrodaredevil.solarthing.android.activity.SettingsActivity
+import me.retrodaredevil.solarthing.android.activity.ConnectionSettingsActivity
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
@@ -145,7 +145,7 @@ class PersistentService : Service(), Runnable{
     }
     private fun updateNotification(countDownWhen: Long){
         // unanswered question with problem we're having here: https://stackoverflow.com/questions/47703216/android-clicking-grouped-notifications-restarts-app
-        val mainActivityIntent = Intent(this, SettingsActivity::class.java)
+        val mainActivityIntent = Intent(this, ConnectionSettingsActivity::class.java) // TODO go to different main activity
         val builder = getBuilder()
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:context=".activity.SolarSettingsActivity"
+        tools:showIn="@layout/activity_settings_solar"
+        android:id="@+id/settings_root_view">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <include
+                android:id="@+id/solar_profile_header_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/profile_header"/>
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:ems="10"
+                android:id="@+id/low_battery_voltage" android:hint="Low Battery Voltage"/>
+        <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:ems="10"
+                android:id="@+id/critical_battery_voltage" android:hint="Critical Battery Voltage"/>
+        <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/battery_type_spinner"/>
+        <Button
+                android:text="Edit Temperature Notify"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/edit_temperature_notify_button"
+                android:onClick="openTemperatureNotifySettings"
+                />
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="50dp"/>
+        <include
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/horizontal_rule"/>
+        <Button
+                android:id="@+id/save_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="saveSettings"
+                android:text="Save"
+                tools:layout_editor_absoluteX="57dp"
+                tools:layout_editor_absoluteY="276dp"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
