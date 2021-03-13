@@ -372,12 +372,18 @@ object NotificationHandler {
             )}"
         }
 
-        val fxWarningsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.warningsString}" }
-        val fxErrorsString = info.fxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
-        val mxErrorsString = info.mxMap.values.joinToString(SEPARATOR) { "${getDeviceString(info, it)}${it.errorsString}" }
-        val roverErrorsString = info.roverMap.values.joinToString(SEPARATOR) {
-            "${getDeviceString(info, it)}${Modes.toString(RoverErrorMode::class.java, it.errorModeValue)}"
-        }
+        val fxWarningsString = info.fxMap.values.mapNotNull {
+            if (it.warningModes.isEmpty()) null else "${getDeviceString(info, it)}${it.warningsString}"
+        }.joinToString(SEPARATOR)
+        val fxErrorsString = info.fxMap.values.mapNotNull {
+            if (!it.hasError()) null else "${getDeviceString(info, it)}${it.errorsString}"
+        }.joinToString(SEPARATOR)
+        val mxErrorsString = info.mxMap.values.mapNotNull {
+            if (!it.hasError()) null else "${getDeviceString(info, it)}${it.errorsString}"
+        }.joinToString(SEPARATOR)
+        val roverErrorsString = info.roverMap.values.mapNotNull {
+            if (!it.hasError()) null else "${getDeviceString(info, it)}${it.errorsString}"
+        }.joinToString(SEPARATOR)
         val batteryVoltagesString = run {
             val map = LinkedHashMap<String, MutableList<String>>() // maintain insertion order
             for(device in getOrderedValues(info.batteryMap)){
@@ -420,10 +426,10 @@ object NotificationHandler {
                 dailyChargeControllerString +
                 dailyFXLine +
                 "$devicesString$batteryTemperatureString$acModeString\n" +
-                (if(info.fxMap.values.any { it.errorModeValue != 0 }) "FX Errors: $fxErrorsString\n" else "") +
-                (if(info.mxMap.values.any { it.errorModeValue != 0 }) "MX Errors: $mxErrorsString\n" else "") +
-                (if(info.roverMap.values.any { it.errorModes.isNotEmpty() }) "Rover Errors: $roverErrorsString\n" else "") +
-                (if(info.fxMap.values.any { it.warningModeValue != 0 }) "FX Warn: $fxWarningsString\n" else "") +
+                (if(fxErrorsString.isNotEmpty()) "FX Errors: $fxErrorsString\n" else "") +
+                (if(mxErrorsString.isNotEmpty()) "MX Errors: $mxErrorsString\n" else "") +
+                (if(roverErrorsString.isNotEmpty()) "Rover Errors: $roverErrorsString\n" else "") +
+                (if(fxWarningsString.isNotEmpty()) "FX Warn: $fxWarningsString\n" else "") +
                 "Mode: $modesString\n" +
                 (if(info.batteryMap.size > 1) "Batt: $batteryVoltagesString\n" else "") +
                 deviceCpuTemperatureString +
