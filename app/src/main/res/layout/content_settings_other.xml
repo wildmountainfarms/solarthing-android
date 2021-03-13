@@ -30,6 +30,10 @@
         <Spinner
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/temperature_unit_spinner"/>
+        <CheckBox
+                android:text="Enable Wear OS Support"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/wear_os_support"/>
         <include
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

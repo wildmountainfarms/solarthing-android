@@ -37,7 +37,10 @@ class DrawerHandler(
 fun initializeDrawer(
         activity: Activity,
         toolbar: Toolbar = activity.findViewById(R.id.toolbar),
-        onActivityIntentRequest: (View, Intent, DrawerHandler) -> Unit = { view, intent, _ -> view.context.startActivity(intent) }
+        onActivityIntentRequest: (View, Intent, DrawerHandler) -> Unit = { view, intent, _ ->
+            view.context.startActivity(intent)
+            activity.finish()
+        }
 ) : DrawerHandler {
     val drawerEmptyItem = PrimaryDrawerItem().withIdentifier(0).withName("")
 

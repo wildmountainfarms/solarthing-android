@@ -11,5 +11,7 @@ data class MiscProfile(
         @JsonProperty(SaveKeys.networkSwitchingEnabled, required = true)
         val networkSwitchingEnabled: Boolean,
         @JsonProperty(SaveKeys.temperatureUnit, required = true)
-        val temperatureUnit: TemperatureUnit
+        val temperatureUnit: TemperatureUnit,
+        @JsonProperty(SaveKeys.wearOsSupport)
+        val enableWearOsSupport: Boolean = false
 )

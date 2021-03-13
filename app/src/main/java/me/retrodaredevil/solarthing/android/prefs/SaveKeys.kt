@@ -34,4 +34,6 @@ object SaveKeys{
 
     const val connectionType = "connection_type"
     const val temperatureUnit = "temperature_unit"
+
+    const val wearOsSupport = "wear_os_support"
 }

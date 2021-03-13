@@ -11,7 +11,6 @@ import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.MiscProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileHolder
 import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
-import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawerWithUnsavedPrompt
 
@@ -23,6 +22,7 @@ class MiscSettingsActivity : AppCompatActivity() {
     private lateinit var startOnBoot: CheckBox
     private lateinit var networkSwitchingEnabledCheckBox: CheckBox
     private lateinit var temperatureUnitSpinner: Spinner
+    private lateinit var enableWearOsSupport: CheckBox
 
     private lateinit var drawerHandler: DrawerHandler
 
@@ -38,6 +38,7 @@ class MiscSettingsActivity : AppCompatActivity() {
         startOnBoot = findViewById(me.retrodaredevil.solarthing.android.R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(me.retrodaredevil.solarthing.android.R.id.network_switching_enabled)
         temperatureUnitSpinner = findViewById(me.retrodaredevil.solarthing.android.R.id.temperature_unit_spinner)
+        enableWearOsSupport = findViewById(me.retrodaredevil.solarthing.android.R.id.wear_os_support)
 
 
         drawerHandler = initializeDrawerWithUnsavedPrompt(
@@ -77,7 +78,8 @@ class MiscSettingsActivity : AppCompatActivity() {
                 maxFragmentTime.text.toString().toFloatOrNull() ?: DefaultOptions.maxFragmentTimeMinutes,
                 startOnBoot.isChecked,
                 networkSwitchingEnabledCheckBox.isChecked,
-                temperatureUnit
+                temperatureUnit,
+                enableWearOsSupport.isChecked
         )
     }
     private fun isMiscProfileNotSaved() = getMiscProfile() != miscProfileProvider.activeProfile.profile
@@ -103,6 +105,7 @@ class MiscSettingsActivity : AppCompatActivity() {
                 selection!!
                 spinner.setSelection(selection)
             }
+            enableWearOsSupport.isChecked = it.enableWearOsSupport
         }
     }
     // endregion

@@ -177,6 +177,10 @@ class SolarStatusService(
         return r
     }
 
+    /**
+     * Updates [dataClient], which is so people with Wear OS watches get SolarThing data
+     * synced to their watches
+     */
     private fun updateDataClient(solarInfo: SolarInfo) {
         val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
         val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
@@ -242,8 +246,11 @@ class SolarStatusService(
                 intent.action = SolarPacketCollectionBroadcast.ACTION
                 service.sendBroadcast(intent)
 
-                val solarInfo = solarInfoCollection.last()
-                updateDataClient(solarInfo)
+                val miscProfile = miscProfileProvider.activeProfile.profile
+                if (miscProfile.enableWearOsSupport) {
+                    val solarInfo = solarInfoCollection.last()
+                    updateDataClient(solarInfo)
+                }
             }
         } else {
 //            println("[123]Got unsuccessful data request")
