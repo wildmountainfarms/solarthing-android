@@ -57,6 +57,9 @@ the power grid as backup power instead of a generator that can be turned on and 
 * Modularize parts of the program different modules (ex: solar, outhouse, etc) can be enabled or disabled easily
 * Make celsius and fahrenheit use special degrees character
 
+### Google Play Requirements
+Since SolarThing uses the location permission, this YouTube video shows how it is used: https://youtu.be/u9-quz89KQw
+
 ### Contributing
 Contributions are welcome. Right now this app is set up for my specific use case:
 It has a persistent notification for solar data.
