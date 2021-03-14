@@ -19,6 +19,10 @@ class ProfileHeaderHandler(
         private val doSave: (UUID) -> Unit,
         private val doLoad: (UUID) -> Unit
 )  {
+    /*
+    This class is tightly coupled with a bunch of crap, be careful when messing with it.
+    Sorry in advance.
+     */
 
 
     private val spinner: Spinner = view.findViewById(R.id.profile_spinner)
@@ -41,7 +45,7 @@ class ProfileHeaderHandler(
         val previous = profileManager.activeUUID
         val newUUID = editUUID
         if(previous != newUUID){
-            doSave(newUUID) // we want to write possible changes so other callers can see the changes
+            saveUiData(newUUID)
             profileManager.activeUUID = newUUID
             Toast.makeText(context, "Switched to profile: ${profileManager.getProfileName(newUUID)}", Toast.LENGTH_SHORT).show()
         }
@@ -59,13 +63,35 @@ class ProfileHeaderHandler(
         get() = profileNameEditText.text.toString()
         set(value) = profileNameEditText.setText(value)
 
+    private fun loadDataToUi(uuid: UUID) {
+        profileName = profileManager.getProfileName(uuid)
+        doLoad(uuid)
+    }
+    private fun saveUiData(uuid: UUID, reloadSpinnerIfNeeded: Boolean = true) {
+        if (uuid != editUUID) throw IllegalArgumentException("The passed uuid should be the one we're editing!")
+        doSave(uuid)
+        val profileName = profileName
+        if (profileManager.getProfileName(uuid) != profileName) {
+            profileManager.setProfileName(uuid, profileName)
+            if (reloadSpinnerIfNeeded) {
+                loadSpinner(uuid, loadData = false) // If name changed, reload spinner, but nothing else
+            }
+        }
+    }
+
     /**
      * Used to reload the spinner values or/and to set the current selection
      *
      * Note that you should save before calling this. This will change [editUUID] to [newEditUUID]
+     *
+     * This will also load the new UUID's settings
      * @param newEditUUID The new UUID of the profile to edit
      */
-    fun loadSpinner(newEditUUID: UUID){
+    fun loadSpinner(newEditUUID: UUID, loadData: Boolean = true){
+        println("Loading new spinner")
+        if (loadData) {
+            loadDataToUi(newEditUUID)
+        }
         this.editUUID = newEditUUID
         val uuids = profileManager.profileUUIDs
         val profileNameList = uuids.map { profileManager.getProfileName(it) }
@@ -77,6 +103,7 @@ class ProfileHeaderHandler(
             }
         }
         selectedPosition ?: error("No uuid: $newEditUUID in uuids: $uuids")
+        spinner.onItemSelectedListener = null // Remove current listener in case setSelection calls it accidentally
         spinner.adapter = adapter
         spinner.setSelection(selectedPosition)
 
@@ -88,10 +115,10 @@ class ProfileHeaderHandler(
                 if(currentUUID == selectedUUID){ // they're the same
                     return
                 }
-                doSave(currentUUID) // we need to tell the UI to save the current settings because we're about to change the profile being edited profile
+                saveUiData(currentUUID, reloadSpinnerIfNeeded = false) // we need to tell the UI to save the current settings because we're about to change the profile being edited profile
                 this@ProfileHeaderHandler.editUUID = selectedUUID
-                doLoad(selectedUUID) // we need to tell the UI to load the new settings
-                println("Connection Profile Changed to position: $position uuid: $selectedUUID")
+                loadSpinner(selectedUUID)
+                println("Profile Changed to position: $position uuid: $selectedUUID")
             }
         }
 
@@ -99,10 +126,9 @@ class ProfileHeaderHandler(
     private fun newProfilePrompt(){
         createTextPromptAlert("New Profile Name") { name ->
             val (uuid, _) = profileManager.addAndCreateProfile(name)
-            doSave(editUUID) // we need to tell the UI to save the profile because we're about to change the active profile
+            saveUiData(editUUID) // we need to tell the UI to save the profile because we're about to change the active profile
             editUUID = uuid
             loadSpinner(uuid) // reload the spinner and set its active profile
-            doLoad(uuid) // we need to tell the UI to load the new profile
             Toast.makeText(context, "New profile created!", Toast.LENGTH_SHORT).show()
             println("Created profile: $name")
         }.show()
@@ -118,7 +144,6 @@ class ProfileHeaderHandler(
             if (success) {
                 val uuid = profileManager.activeUUID // now the new profile we're editing is the one that's currently active
                 loadSpinner(uuid)
-                doLoad(uuid) // we need to tell the UI to load the settings on the now active profile
                 Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(context, "Error. Unable to remove...", Toast.LENGTH_SHORT).show()

@@ -60,7 +60,7 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
                 this,
                 findViewById(me.retrodaredevil.solarthing.android.R.id.connection_profile_header_layout),
                 connectionProfileManager,
-                this::saveConnectionSettings,
+                this::saveConnectionSettings, // TODO problem here!!!
                 this::loadConnectionSettings
         )
 
@@ -82,7 +82,7 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
         drawerHandler = initializeDrawerWithUnsavedPrompt(
                 this,
                 isNotSavedGetter = { isConnectionProfileNotSaved() },
-                saveSettings = { saveSettings(false, true) }
+                saveSettings = { saveSettings() }
         )
 
         useAuth.setOnCheckedChangeListener{ _, _ ->
@@ -172,10 +172,11 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
         }
     }
     // region Saving and Loading
-    private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
-        saveConnectionSettings(connectionProfileHeader.editUUID)
+    private fun saveSettings(showToast: Boolean = true){
+        val uuid = connectionProfileHeader.editUUID
+        saveConnectionSettings(uuid)
+        connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
 
-        if(reloadSettings) loadSettings()
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
     }
     private fun getConnectionProfile() = ConnectionProfile(
@@ -194,21 +195,15 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
     )
     private fun isConnectionProfileNotSaved() = getConnectionProfile() != connectionProfileManager.getProfile(connectionProfileHeader.editUUID).profile
     private fun saveConnectionSettings(uuid: UUID){
-        connectionProfileManager.setProfileName(uuid, connectionProfileHeader.profileName)
         connectionProfileManager.getProfile(uuid).profile = getConnectionProfile()
     }
     private fun loadSettings(){
-        connectionProfileHeader.editUUID.let{
-            loadConnectionSettings(it)
-            connectionProfileHeader.loadSpinner(it)
-        }
+        connectionProfileHeader.loadSpinner(connectionProfileHeader.editUUID)
     }
     private fun loadConnectionSettings(uuid: UUID) {
         val profile = connectionProfileManager.getProfile(uuid).profile
         connectionProfileNetworkSwitchingViewHandler.load(profile.networkSwitchingProfile)
 
-        val name = connectionProfileManager.getProfileName(uuid)
-        connectionProfileHeader.profileName = name
         (profile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile).let {
             protocol.setText(it.protocol)
             host.setText(it.host)

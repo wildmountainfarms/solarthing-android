@@ -81,7 +81,9 @@ class SolarSettingsActivity : AppCompatActivity() {
     // endregion
     // region Saving and Loading
     private fun saveSettings(reloadSettings: Boolean = true, showToast: Boolean = true){
-        saveSolarSettings(solarProfileHeader.editUUID)
+        val uuid = solarProfileHeader.editUUID
+        saveSolarSettings(uuid)
+        solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
 
         if(reloadSettings) loadSettings()
         if(showToast) Toast.makeText(this, "Saved settings!", Toast.LENGTH_SHORT).show()
@@ -102,19 +104,14 @@ class SolarSettingsActivity : AppCompatActivity() {
     }
     private fun isSolarProfileNotSaved() = getSolarProfile() != solarProfileManager.getProfile(solarProfileHeader.editUUID).profile
     private fun saveSolarSettings(uuid: UUID){
-        solarProfileManager.setProfileName(uuid, solarProfileHeader.profileName)
         solarProfileManager.getProfile(uuid).profile = getSolarProfile()
     }
     private fun loadSettings(){
-        solarProfileHeader.editUUID.let {
-            loadSolarSettings(it)
-            solarProfileHeader.loadSpinner(it)
-        }
+        solarProfileHeader.loadSpinner(solarProfileHeader.editUUID)
     }
+    /** Called from [solarProfileHeader] */
     private fun loadSolarSettings(uuid: UUID) {
         val profile = solarProfileManager.getProfile(uuid).profile
-        val name = solarProfileManager.getProfileName(uuid)
-        solarProfileHeader.profileName = name
         profile.let {
             lowBatteryVoltage.setText(it.lowBatteryVoltage?.toString() ?: "")
             criticalBatteryVoltage.setText(it.criticalBatteryVoltage?.toString() ?: "")
