@@ -12,9 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
-import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.*
-import me.retrodaredevil.solarthing.android.activity.ConnectionSettingsActivity
 import me.retrodaredevil.solarthing.android.activity.MainActivity
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
@@ -24,21 +22,10 @@ import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
-import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
-import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
-import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
-import me.retrodaredevil.solarthing.android.util.getSSID
-import me.retrodaredevil.solarthing.commands.packets.status.CommandStatusPacket
-import me.retrodaredevil.solarthing.misc.device.DevicePacket
-import me.retrodaredevil.solarthing.packets.collection.parsing.ObjectMapperPacketConverter
-import me.retrodaredevil.solarthing.packets.collection.parsing.PacketGroupParser
-import me.retrodaredevil.solarthing.packets.collection.parsing.PacketParserMultiplexer
-import me.retrodaredevil.solarthing.packets.collection.parsing.SimplePacketGroupParser
-import me.retrodaredevil.solarthing.packets.instance.InstancePacket
-import me.retrodaredevil.solarthing.solar.SolarStatusPacket
-import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
-import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacket
-import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
+import me.retrodaredevil.solarthing.android.util.*
+import me.retrodaredevil.solarthing.database.MillisDatabase
+import me.retrodaredevil.solarthing.database.SolarThingDatabase
+import me.retrodaredevil.solarthing.database.couchdb.CouchDbSolarThingDatabase
 import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
 
@@ -78,8 +65,7 @@ private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android
 
 private class ServiceObject(
         val dataService: DataService,
-        val databaseName: String,
-        val packetGroupParser: PacketGroupParser
+        val millisDatabaseGetter: (SolarThingDatabase) -> MillisDatabase
 ){
     var task: AsyncTask<*, *, *>? = null
 }
@@ -119,20 +105,13 @@ class PersistentService : Service(), Runnable{
         application.metaHandler = metaHandler
         services = listOf(
                 ServiceObject(
-                        SolarStatusService(this, connectionProfileManager, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler), SolarThingConstants.SOLAR_STATUS_UNIQUE_NAME,
-                        SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-                                ObjectMapperPacketConverter(MAPPER, SolarStatusPacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, SolarExtraPacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, DevicePacket::class.java),
-                                ObjectMapperPacketConverter(MAPPER, CommandStatusPacket::class.java),
-                        ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))
+                        SolarStatusService(this, connectionProfileManager, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler),
+                        SolarThingDatabase::getStatusDatabase
                 ),
-                ServiceObject(SolarEventService(this, solarEventData), SolarThingConstants.SOLAR_EVENT_UNIQUE_NAME, SimplePacketGroupParser(PacketParserMultiplexer(listOf(
-                        ObjectMapperPacketConverter(MAPPER, MateCommandFeedbackPacket::class.java),
-                        ObjectMapperPacketConverter(MAPPER, SolarEventPacket::class.java),
-                        ObjectMapperPacketConverter(MAPPER, InstancePacket::class.java),
-                ), PacketParserMultiplexer.LenientType.FULLY_LENIENT))),
+                ServiceObject(
+                        SolarEventService(this, solarEventData),
+                        SolarThingDatabase::getEventDatabase
+                )
         )
         for(service in services){
             service.dataService.onInit()
@@ -265,6 +244,8 @@ class PersistentService : Service(), Runnable{
 
         val couchDbDatabaseConnectionProfile = (activeConnectionProfile.databaseConnectionProfile as CouchDbDatabaseConnectionProfile)
         val properties = couchDbDatabaseConnectionProfile.createCouchProperties()
+        val instance = createCouchDbInstance(properties)
+        val database = CouchDbSolarThingDatabase.create(instance)
         var needsLargeData = false
         for(service in services){
             val task = service.task
@@ -281,9 +262,8 @@ class PersistentService : Service(), Runnable{
 
             val dataRequesters = listOf(
                     CouchDbDataRequester(
-                            { properties }, // this can be constant because we change this frequently enough for it to always be accurate
-                            service.databaseName,
-                            service.packetGroupParser,
+                            service.millisDatabaseGetter(database),
+                            properties.host,
                             service.dataService::startKey
                     )
             )

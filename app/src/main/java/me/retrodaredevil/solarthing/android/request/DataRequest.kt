@@ -13,5 +13,4 @@ data class DataRequest(
         val host: String?,
         val stackTrace: String? = null,
         val errorMessage: String? = null,
-        val authDebug: String? = null
 )

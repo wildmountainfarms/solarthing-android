@@ -31,11 +31,7 @@ fun Notification.Builder.failedNotification(request: DataRequest): Notification.
     if(request.successful){
         throw IllegalArgumentException("Use this method when request.successful == false! It equals true right now!")
     }
-    var bigText = ""
-    if(request.authDebug != null){
-        bigText += request.authDebug + "\n"
-    }
-    bigText += "Stack trace:\n${request.stackTrace}"
+    val bigText = "Stack trace:\n${request.stackTrace}"
 
     return setOngoing(true)
             .setOnlyAlertOnce(true)
