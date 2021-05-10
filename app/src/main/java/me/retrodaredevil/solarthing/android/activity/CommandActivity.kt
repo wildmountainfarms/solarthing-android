@@ -9,9 +9,11 @@ import android.provider.Settings
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import me.retrodaredevil.couchdb.CouchDbUtil
 import me.retrodaredevil.couchdb.CouchProperties
-import me.retrodaredevil.couchdb.CouchPropertiesBuilder
-import me.retrodaredevil.couchdb.DocumentWrapper
+import me.retrodaredevil.couchdbjava.exception.CouchDbException
+import me.retrodaredevil.couchdbjava.json.StringJsonData
+import me.retrodaredevil.okhttp3.OkHttpPropertiesBuilder
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
@@ -20,7 +22,7 @@ import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
-import me.retrodaredevil.solarthing.android.util.createHttpClient
+import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.commands.CommandInfo
 import me.retrodaredevil.solarthing.commands.packets.open.ImmutableRequestCommandPacket
@@ -35,8 +37,6 @@ import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
 import me.retrodaredevil.solarthing.packets.security.crypto.HashUtil
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
 import me.retrodaredevil.solarthing.util.JacksonUtil
-import org.ektorp.impl.StdCouchDbConnector
-import org.ektorp.impl.StdCouchDbInstance
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.KeyPair
@@ -351,19 +351,17 @@ private class CouchDbUploadToDatabase(
         private val packetCollection: PacketCollection,
         private val onFinish: (Boolean?) -> Unit
 ) : AsyncTask<Void, Void, Boolean>() {
+    companion object {
+        private val MAPPER = JacksonUtil.defaultMapper()
+    }
     override fun doInBackground(vararg params: Void?): Boolean {
+        val jsonData = StringJsonData(MAPPER.writeValueAsString(packetCollection))
+        val instance = createCouchDbInstance(couchProperties)
+        val database = instance.getDatabase(SolarThingConstants.OPEN_UNIQUE_NAME)
         try {
-            val httpClient = createHttpClient(CouchPropertiesBuilder(couchProperties)
-                    .setConnectionTimeoutMillis(10_000)
-                    .setSocketTimeoutMillis(Int.MAX_VALUE)
-                    .build())
-            val instance = StdCouchDbInstance(httpClient)
-            val client = StdCouchDbConnector(SolarThingConstants.OPEN_UNIQUE_NAME, instance)
-            client.createDatabaseIfNotExists()
-            client.create(DocumentWrapper(packetCollection.dbId).apply {
-                `object` = packetCollection
-            })
-        } catch(ex: Exception){
+            database.createIfNotExists()
+            database.putDocument(packetCollection.dbId, jsonData)
+        } catch(ex: CouchDbException){
             ex.printStackTrace()
             return false
         }

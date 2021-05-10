@@ -2,12 +2,12 @@ package me.retrodaredevil.solarthing.android.service
 
 import android.os.AsyncTask
 import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.JsonNode
 import me.retrodaredevil.couchdb.CouchProperties
-import me.retrodaredevil.couchdb.CouchPropertiesBuilder
+import me.retrodaredevil.couchdbjava.exception.CouchDbException
+import me.retrodaredevil.couchdbjava.json.jackson.CouchDbJacksonUtil
 import me.retrodaredevil.solarthing.SolarThingConstants
+import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
 import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
-import me.retrodaredevil.solarthing.android.util.createHttpClient
 import me.retrodaredevil.solarthing.meta.DefaultMetaDatabase
 import me.retrodaredevil.solarthing.meta.DeviceInfoPacket
 import me.retrodaredevil.solarthing.meta.RootMetaPacket
@@ -15,9 +15,6 @@ import me.retrodaredevil.solarthing.meta.TargetMetaPacket
 import me.retrodaredevil.solarthing.misc.common.meta.DataMetaPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.meta.FXChargingSettingsPacket
 import me.retrodaredevil.solarthing.util.JacksonUtil
-import org.ektorp.DbAccessException
-import org.ektorp.impl.StdCouchDbConnector
-import org.ektorp.impl.StdCouchDbInstance
 
 
 class MetaUpdaterTask(
@@ -36,23 +33,17 @@ class MetaUpdaterTask(
         }
     }
     override fun doInBackground(vararg params: Void?): RootMetaPacket? {
-        val httpClient = createHttpClient(
-                CouchPropertiesBuilder(couchProperties)
-                        .setConnectionTimeoutMillis(10_000)
-                        .setSocketTimeoutMillis(Int.MAX_VALUE)
-                        .build()
-        )
-        val instance = StdCouchDbInstance(httpClient)
-        val client = StdCouchDbConnector(SolarThingConstants.CLOSED_UNIQUE_NAME, instance)
-        val jsonNode = try {
-            client.find(JsonNode::class.java, "meta")
-        } catch (ex: DbAccessException) {
+        val instance = createCouchDbInstance(couchProperties)
+        val database = instance.getDatabase(SolarThingConstants.CLOSED_UNIQUE_NAME)
+        val documentData = try {
+            database.getDocument("meta")
+        } catch (ex: CouchDbException) {
             ex.printStackTrace()
             return null
         }
 
         return try {
-            MAPPER.treeToValue(jsonNode, RootMetaPacket::class.java)
+            CouchDbJacksonUtil.readValue(MAPPER, documentData.jsonData, RootMetaPacket::class.java)
         } catch (e: JsonProcessingException) {
             e.printStackTrace()
             return null

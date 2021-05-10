@@ -78,36 +78,35 @@ dependencies {
     //noinspection GradleDependency
     implementation "com.mikepenz:materialdrawer:$materialDrawerVersion"
 
-    implementation "androidx.recyclerview:recyclerview:1.1.0"
+    implementation "androidx.recyclerview:recyclerview:1.2.0"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.3.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.4'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.3.4'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.5'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.4'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.3.4'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.3.5'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    def solarthingVersion = "3.10.1"
-//    def solarthingVersion = "c569b3eadcfe10f41321402c66de155165860be1".substring(0, 10)
+//    def solarthingVersion = "3.10.1"
+    def solarthingVersion = "16f8b0caf9583ed60f1c8006f0507e2228148817".substring(0, 10)
 
     //noinspection GradleDependency // Since we use pre-releases, we don't need Android Studio warning us about this
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
+    //noinspection GradleDependency
+    implementation "com.github.wildmountainfarms.solarthing:couchdb:$solarthingVersion"
 
-    def jacksonVersion = "2.12.2" // https://github.com/FasterXML/jackson-databind/releases
+    def jacksonVersion = "2.12.3" // https://github.com/FasterXML/jackson-databind/releases
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") // { changing = true } // uncomment if we use a snapshot version of Jackson
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-
-    // https://mvnrepository.com/artifact/org.ektorp/org.ektorp.android
-    implementation group: 'org.ektorp', name: 'org.ektorp.android', version: '1.5.0'
 
 //    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.1'
 }
