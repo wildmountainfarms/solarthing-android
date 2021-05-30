@@ -602,6 +602,7 @@ object NotificationHandler {
                                          0,
                                         Intent(moreRoverInfoAction).apply {
                                             putExtra("fragment", fragmentId)
+                                            putExtra("number", device.number)
                                         },
                                         PendingIntent.FLAG_CANCEL_CURRENT
                                 )

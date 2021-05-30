@@ -12,7 +12,7 @@ Available at https://play.google.com/store/apps/details?id=me.retrodaredevil.sol
 
 For use with https://github.com/wildmountainfarms/solarthing
 
-This works best with Android 8+, but will still work down to Android 4.4.
+This requires Android 8+.
 
 ## Features
 * Adds a persistent notification that is updated constantly

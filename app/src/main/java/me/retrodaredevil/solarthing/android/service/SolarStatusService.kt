@@ -30,6 +30,7 @@ import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
+import me.retrodaredevil.solarthing.packets.identification.NumberedIdentifier
 import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
@@ -494,8 +495,9 @@ class SolarStatusService(
                             fragmentId = DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS.defaultFragmentId
                         }
                     }
+                    val number = intent.getIntExtra("number", NumberedIdentifier.DEFAULT_NUMBER)
                     val packetInfo = lastSolarInfo?.solarPacketInfo ?: run { System.err.println("lastSolarInfo is null when more info is requested!"); return }
-                    val identifierFragment = IdentifierFragment.create(fragmentId, RoverIdentifier.getDefaultIdentifier())
+                    val identifierFragment = IdentifierFragment.create(fragmentId, RoverIdentifier.getFromNumber(number))
                     val rover = packetInfo.roverMap[identifierFragment] ?: run { System.err.println("no rover with identifierFragment: $identifierFragment"); return}
                     notifyMoreRoverInfo(packetInfo, rover)
                 }
