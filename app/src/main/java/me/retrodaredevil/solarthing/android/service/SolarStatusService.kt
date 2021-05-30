@@ -467,9 +467,7 @@ class SolarStatusService(
             temperatureNotifyHandler.checkDeviceCpuTemperature(currentSolarInfo.solarPacketInfo.dateMillis, fragmentId, temperatureCelsius)
         }
         // endregion
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            notifyMoreInfoUpdatePresent(currentSolarInfo.solarPacketInfo)
-        }
+        notifyMoreInfoUpdatePresent(currentSolarInfo.solarPacketInfo)
         return true
     }
     private fun cancelVoltageTimerNotification(){
@@ -530,10 +528,8 @@ class SolarStatusService(
                 }
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            if(summary != null){
-                manager.notify(MORE_SOLAR_INFO_SUMMARY_ID, summary)
-            }
+        if(summary != null){
+            manager.notify(MORE_SOLAR_INFO_SUMMARY_ID, summary)
         }
     }
     private fun notifyMoreRoverInfo(packetInfo: SolarPacketInfo, rover: RoverStatusPacket){
@@ -543,10 +539,8 @@ class SolarStatusService(
         val id = getMoreSolarInfoId(rover) + 1
         service.getManager().apply {
             notify(id, pair.first)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                if (pair.second != null) {
-                    notify(MORE_SOLAR_INFO_SUMMARY_ID, pair.second)
-                }
+            if (pair.second != null) {
+                notify(MORE_SOLAR_INFO_SUMMARY_ID, pair.second)
             }
         }
     }
@@ -570,18 +564,9 @@ class SolarStatusService(
     private fun notify(notification: Notification){
         service.getManager().notify(SOLAR_NOTIFICATION_ID, notification)
     }
-    @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
-        val builder = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            Notification.Builder(service, NotificationChannels.SOLAR_STATUS.id)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(service)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(getGroup(SOLAR_NOTIFICATION_ID))
-        }
-        return builder
+        return Notification.Builder(service, NotificationChannels.SOLAR_STATUS.id)
+                .setGroup(getGroup(SOLAR_NOTIFICATION_ID))
     }
 
 }

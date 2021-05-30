@@ -92,20 +92,16 @@ enum class NotificationChannels(
     fun getDescription(context: Context): String = context.getString(descriptionResId)
 
     fun isCurrentlyEnabled(context: Context): Boolean {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                if(notificationChannelGroups != null){
-                    if(manager.getNotificationChannelGroup(notificationChannelGroups.id).isBlocked){
-                        return false
-                    }
+        val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if(notificationChannelGroups != null){
+                if(manager.getNotificationChannelGroup(notificationChannelGroups.id).isBlocked){
+                    return false
                 }
-                val importance = manager.getNotificationChannel(this.id).importance
-                return importance != NotificationManager.IMPORTANCE_NONE
             }
-            return manager.areNotificationsEnabled()
+            val importance = manager.getNotificationChannel(this.id).importance
+            return importance != NotificationManager.IMPORTANCE_NONE
         }
-        val notificationManagerCompat = NotificationManagerCompat.from(context)
-        return notificationManagerCompat.areNotificationsEnabled()
+        return manager.areNotificationsEnabled()
     }
 }

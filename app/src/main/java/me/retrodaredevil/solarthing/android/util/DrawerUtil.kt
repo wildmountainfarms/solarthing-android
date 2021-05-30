@@ -111,22 +111,8 @@ fun initializeDrawer(
                         100L -> {
                             // credit here: https://stackoverflow.com/a/45192258/5434860
                             val intent = Intent()
-                            when {
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
-                                    intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                                    intent.putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
-                                }
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
-                                    intent.action = "android.settings.APP_NOTIFICATION_SETTINGS"
-                                    intent.putExtra("app_package", activity.packageName)
-                                    intent.putExtra("app_uid", activity.applicationInfo.uid)
-                                }
-                                else -> {
-                                    intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                    intent.addCategory(Intent.CATEGORY_DEFAULT)
-                                    intent.data = Uri.parse("package:" + activity.packageName)
-                                }
-                            }
+                            intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            intent.putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
                             activity.startActivity(intent)
                         }
                         101L -> {

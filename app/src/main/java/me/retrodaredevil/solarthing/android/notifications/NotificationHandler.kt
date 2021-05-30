@@ -74,9 +74,7 @@ object NotificationHandler {
                 .setSubText("Voltage Timer started at $turnedOnAtString")
                 .setWhen(shouldHaveTurnedOffAt)
                 .setUsesChronometer(true) // stopwatch from when the generator should have been turned off
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_ALARM)
-        }
+                .setCategory(Notification.CATEGORY_ALARM)
 
         return builder.build()
     }
@@ -101,22 +99,16 @@ object NotificationHandler {
                 .setContentText("The battery voltage is low! $voltageString!!!")
                 .setWhen(currentInfo.dateMillis)
                 .setShowWhen(true)
+                .setCategory(Notification.CATEGORY_ERROR)
+                .setColor(Color.RED)
         if(critical) {
             builder.setContentTitle("CRITICAL BATTERY $voltageString V")
         } else {
             builder.setContentTitle("Low Battery $voltageString V")
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_ERROR)
-        }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(Color.RED)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if(critical){
-                builder.setColorized(true) // TODO this won't do anything unless we convince android that this notification is important
-            }
+        if(critical){
+            builder.setColorized(true) // TODO this won't do anything unless we convince android that this notification is important
         }
 
         val r = builder.build()
@@ -231,7 +223,7 @@ object NotificationHandler {
                         else -> "not charging (${operationalMode.modeName})"
                     }
                 }.also {
-                    if (remainingTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    if (remainingTime != null) {
                         builder.setWhen(info.dateMillis + remainingTime)
                         builder.setUsesChronometer(true)
                         builder.setChronometerCountDown(true)
@@ -245,11 +237,7 @@ object NotificationHandler {
             }
         }
         builder.setContentTitle(title)
-
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(0x654321) // brown
-        }
+        builder.setColor(0x654321) // brown
         return builder.build()
     }
 
@@ -269,12 +257,7 @@ object NotificationHandler {
             r
     }
     private fun fromHtml(text: String): Spanned {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            Html.fromHtml(text.replace("\n", "<br/>"), 0)
-        } else {
-            @Suppress("DEPRECATION")
-            Html.fromHtml(text.replace("\n", "<br/>"))
-        }
+        return Html.fromHtml(text.replace("\n", "<br/>"), 0)
     }
 
     private fun getDailyKWHString(packetInfo: SolarPacketInfo, dailyInfo: SolarDailyInfo): String {
@@ -459,21 +442,16 @@ object NotificationHandler {
                 .setOnlyAlertOnce(true)
                 .setWhen(info.dateMillis)
                 .setShowWhen(true)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setColor(Color.YELLOW)
-            builder.setCategory(Notification.CATEGORY_STATUS)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if(extraInfoPendingIntent != null) {
-                builder.addAction(
-                    Notification.Action.Builder(
-                        Icon.createWithResource(context, R.drawable.solar_panel),
-                        "More",
-                        extraInfoPendingIntent
-                    ).build()
-                )
-            }
+                .setColor(Color.YELLOW)
+                .setCategory(Notification.CATEGORY_STATUS)
+        if(extraInfoPendingIntent != null) {
+            builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(context, R.drawable.solar_panel),
+                    "More",
+                    extraInfoPendingIntent
+                ).build()
+            )
         }
 
         return builder.build()
@@ -511,9 +489,7 @@ object NotificationHandler {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_STATUS)
-        }
+        builder.setCategory(Notification.CATEGORY_STATUS)
         return builder.build()
     }
 
@@ -534,19 +510,16 @@ object NotificationHandler {
                 .setWhen(dateMillis)
                 .setShowWhen(true)
                 .setContentTitle(deviceName + " " + (if(justConnected) "connected" else "disconnected"))
+                .setGroup(DEVICE_CONNECTION_STATUS_GROUP)
+                .setCategory(Notification.CATEGORY_STATUS)
 
         val summary = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)
                 .setSmallIcon(R.drawable.solar_panel)
                 .setWhen(dateMillis)
                 .setShowWhen(true)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(DEVICE_CONNECTION_STATUS_GROUP)
-            summary.setGroup(DEVICE_CONNECTION_STATUS_GROUP).setGroupSummary(true)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_STATUS)
-            summary.setCategory(Notification.CATEGORY_STATUS)
-        }
+                .setGroup(DEVICE_CONNECTION_STATUS_GROUP)
+                .setGroupSummary(true)
+                .setCategory(Notification.CATEGORY_STATUS)
 
         return Pair(builder.build(), summary.build())
     }
@@ -556,13 +529,9 @@ object NotificationHandler {
                 .setWhen(dateMillis)
                 .setShowWhen(false)
                 .setOnlyAlertOnce(true)
+                .setGroup(MORE_SOLAR_INFO_GROUP)
+                .setCategory(Notification.CATEGORY_STATUS)
         val summary = createMoreInfoSummary(context, dateMillis)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(MORE_SOLAR_INFO_GROUP)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                builder.setCategory(Notification.CATEGORY_STATUS)
-            }
-        }
         val fragmentId = packetInfo.packetGroup.getFragmentId(device)
         when(device){
             is OutbackData -> {
@@ -624,22 +593,20 @@ object NotificationHandler {
                         "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
                         "Charge Max: ${device.dailyMaxChargingCurrent}A/${device.dailyMaxChargingPower}W"
                 )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    builder.addAction(
-                            Notification.Action.Builder(
-                                    Icon.createWithResource(context, R.drawable.solar_panel),
-                                     "More",
-                                    PendingIntent.getBroadcast(
-                                            context,
-                                             0,
-                                            Intent(moreRoverInfoAction).apply {
-                                                putExtra("fragment", fragmentId)
-                                            },
-                                            PendingIntent.FLAG_CANCEL_CURRENT
-                                    )
-                            ).build()
-                    )
-                }
+                builder.addAction(
+                        Notification.Action.Builder(
+                                Icon.createWithResource(context, R.drawable.solar_panel),
+                                 "More",
+                                PendingIntent.getBroadcast(
+                                        context,
+                                         0,
+                                        Intent(moreRoverInfoAction).apply {
+                                            putExtra("fragment", fragmentId)
+                                        },
+                                        PendingIntent.FLAG_CANCEL_CURRENT
+                                )
+                        ).build()
+                )
             }
             else -> throw IllegalArgumentException("$device not supported!")
         }
@@ -657,12 +624,8 @@ object NotificationHandler {
                 .setWhen(dateMillis)
                 .setShowWhen(true)
                 .setOnlyAlertOnce(true)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(MORE_SOLAR_INFO_GROUP)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                builder.setCategory(Notification.CATEGORY_STATUS)
-            }
-        }
+                .setGroup(MORE_SOLAR_INFO_GROUP)
+                .setCategory(Notification.CATEGORY_STATUS)
         val summary = createMoreInfoSummary(context, dateMillis)
 
         builder.setContentTitle("Rover with serial: ${device.productSerialNumber} | More Info")
@@ -693,30 +656,23 @@ object NotificationHandler {
         return Formatting.FORMAT.format(rawVoltage * multiplier / 10.0) + " V"
     }
     private fun createMoreInfoSummary(context: Context, dateMillis: Long): Notification? {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            val summary = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
-                    .setSmallIcon(R.drawable.solar_panel)
-                    .setShowWhen(false)
-                    .setWhen(dateMillis)
-                    .setOnlyAlertOnce(true)
-            summary.setGroup(MORE_SOLAR_INFO_GROUP).setGroupSummary(true)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                summary.setCategory(Notification.CATEGORY_STATUS)
-            }
-            return summary.build()
-        }
-        return null
+        val summary = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setShowWhen(false)
+                .setWhen(dateMillis)
+                .setOnlyAlertOnce(true)
+                .setGroup(MORE_SOLAR_INFO_GROUP)
+                .setGroupSummary(true)
+                .setCategory(Notification.CATEGORY_STATUS)
+        return summary.build()
     }
     fun createTemperatureNotification(context: Context, dateMillis: Long, temperatureName: String, deviceName: String, temperatureCelsius: Float, over: Boolean, critical: Boolean, temperatureUnit: TemperatureUnit): Notification {
         val builder = createNotificationBuilder(context, NotificationChannels.TEMPERATURE_NOTIFICATION.id, null)
                 .setSmallIcon(R.drawable.power_button)
                 .setShowWhen(true)
                 .setWhen(dateMillis)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if(critical){
-                builder.setColorized(true)
-            }
+        if(critical){
+            builder.setColorized(true)
         }
         val temperatureString = "${Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(temperatureCelsius, temperatureUnit))}${temperatureUnit.shortRepresentation}"
         if(over){
@@ -737,16 +693,9 @@ object NotificationHandler {
     private fun getTimeString(dateMillis: Long) = DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time)
 
     private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int?): Notification.Builder {
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(context, channelId)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(context)
-        }
+        val builder = Notification.Builder(context, channelId)
         if(notificationId != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                builder.setGroup(getGroup(notificationId))
-            }
+            builder.setGroup(getGroup(notificationId))
         }
         return builder
     }

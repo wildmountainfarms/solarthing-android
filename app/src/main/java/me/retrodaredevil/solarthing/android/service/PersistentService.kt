@@ -33,22 +33,14 @@ import java.util.*
 fun restartService(context: Context){
     val serviceIntent = Intent(context, PersistentService::class.java)
     context.stopService(serviceIntent)
-    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        context.startForegroundService(serviceIntent)
-    } else {
-        context.startService(serviceIntent)
-    }
+    context.startForegroundService(serviceIntent)
 }
 fun startServiceIfNotRunning(context: Context){
     if(isServiceRunning(context, PersistentService::class.java)){
         return
     }
     val serviceIntent = Intent(context, PersistentService::class.java)
-    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        context.startForegroundService(serviceIntent)
-    } else {
-        context.startService(serviceIntent)
-    }
+    context.startForegroundService(serviceIntent)
 }
 fun stopService(context: Context){
     val serviceIntent = Intent(context, PersistentService::class.java)
@@ -135,71 +127,58 @@ class PersistentService : Service(), Runnable{
                 .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
                 .setWhen(1) // make it the lowest priority
                 .setShowWhen(false)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-            builder.setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_SERVICE)
-        }
+                .setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
+                .setCategory(Notification.CATEGORY_SERVICE)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            // countdown
-            builder.setUsesChronometer(true)
-            builder.setChronometerCountDown(true)
-            builder.setWhen(countDownWhen)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // buttons
-            builder.addAction(
-                    Notification.Action.Builder(
-                            Icon.createWithResource(this, R.drawable.sun),
-                             "Stop",
-                            PendingIntent.getBroadcast(
-                                     this, 0,
-                                    Intent(STOP_SERVICE_ACTION),
-                                    PendingIntent.FLAG_CANCEL_CURRENT
-                            )
-                    ).build()
-            )
-            builder.addAction(
-                    Notification.Action.Builder(
-                            Icon.createWithResource(this, R.drawable.sun),
-                            "Reload",
-                            PendingIntent.getBroadcast(
-                                    this, 0,
-                                    Intent(RELOAD_SERVICE_ACTION),
-                                    PendingIntent.FLAG_CANCEL_CURRENT
-                            )
-                    ).build()
-            )
-            builder.addAction(
-                    Notification.Action.Builder(
+        // countdown
+        builder.setUsesChronometer(true)
+        builder.setChronometerCountDown(true)
+        builder.setWhen(countDownWhen)
+        // buttons
+        builder.addAction(
+                Notification.Action.Builder(
                         Icon.createWithResource(this, R.drawable.sun),
-                        "Restart",
+                         "Stop",
                         PendingIntent.getBroadcast(
-                                this, 0,
-                                Intent(RESTART_SERVICE_ACTION),
+                                 this, 0,
+                                Intent(STOP_SERVICE_ACTION),
                                 PendingIntent.FLAG_CANCEL_CURRENT
                         )
-                    ).build()
-            )
-            val intentFilter = IntentFilter()
-            intentFilter.addAction(STOP_SERVICE_ACTION)
-            intentFilter.addAction(RELOAD_SERVICE_ACTION)
-            intentFilter.addAction(RESTART_SERVICE_ACTION)
-            registerReceiver(receiver, intentFilter)
-        }
+                ).build()
+        )
+        builder.addAction(
+                Notification.Action.Builder(
+                        Icon.createWithResource(this, R.drawable.sun),
+                        "Reload",
+                        PendingIntent.getBroadcast(
+                                this, 0,
+                                Intent(RELOAD_SERVICE_ACTION),
+                                PendingIntent.FLAG_CANCEL_CURRENT
+                        )
+                ).build()
+        )
+        builder.addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(this, R.drawable.sun),
+                    "Restart",
+                    PendingIntent.getBroadcast(
+                            this, 0,
+                            Intent(RESTART_SERVICE_ACTION),
+                            PendingIntent.FLAG_CANCEL_CURRENT
+                    )
+                ).build()
+        )
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(STOP_SERVICE_ACTION)
+        intentFilter.addAction(RELOAD_SERVICE_ACTION)
+        intentFilter.addAction(RESTART_SERVICE_ACTION)
+        registerReceiver(receiver, intentFilter)
         val notification = builder.build()
         getManager().notify(PERSISTENT_NOTIFICATION_ID, notification)
         startForeground(PERSISTENT_NOTIFICATION_ID, notification)
     }
-    @SuppressWarnings("deprecated")
     private fun getBuilder(): Notification.Builder {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            return Notification.Builder(this, NotificationChannels.PERSISTENT.id)
-        }
-        @Suppress("DEPRECATION")
-        return Notification.Builder(this)
+        return Notification.Builder(this, NotificationChannels.PERSISTENT.id)
     }
     private fun getManager() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -292,9 +271,7 @@ class PersistentService : Service(), Runnable{
         }
         println("Stopping persistent service")
         handler.removeCallbacks(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            unregisterReceiver(receiver)
-        }
+        unregisterReceiver(receiver)
         for(service in services){
             service.task?.cancel(true)
             service.dataService.onCancel()

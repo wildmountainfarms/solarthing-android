@@ -359,7 +359,7 @@ private class CouchDbUploadToDatabase(
         val instance = createCouchDbInstance(couchProperties)
         val database = instance.getDatabase(SolarThingConstants.OPEN_UNIQUE_NAME)
         try {
-            database.createIfNotExists()
+            // Note that if we try to create the database, we won't have permission, even if it's already there
             database.putDocument(packetCollection.dbId, jsonData)
         } catch(ex: CouchDbException){
             ex.printStackTrace()
