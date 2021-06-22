@@ -15,6 +15,8 @@ import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingStatus
 import java.util.*
 
 fun getOperatingModeName(fx: FXStatusPacket): String =
@@ -47,11 +49,19 @@ fun getChargingStateName(rover: RoverStatusPacket): String =
         ChargingState.CURRENT_LIMITING -> "Curr lim"
         ChargingState.DIRECT_CHARGE -> "Direct"
     }
+fun getChargingStatusName(tracer: TracerStatusPacket): String =
+        when(tracer.chargingStatus) {
+            ChargingStatus.NO_CHARGING -> "Off"
+            ChargingStatus.BOOST -> "B/B"
+            ChargingStatus.EQUALIZATION -> "EQ"
+            ChargingStatus.FLOAT -> "Float"
+        }
 fun getModeName(packet: SolarStatusPacket): String =
     when(packet){
         is FXStatusPacket -> getOperatingModeName(packet)
         is MXStatusPacket -> getChargerModeName(packet)
         is RoverStatusPacket -> getChargingStateName(packet)
+        is TracerStatusPacket -> getChargingStatusName(packet)
         else -> throw IllegalArgumentException("packet: $packet is not supported")
     }
 private fun compareIdentifier(identifier1: Identifier, identifier2: Identifier): Int {

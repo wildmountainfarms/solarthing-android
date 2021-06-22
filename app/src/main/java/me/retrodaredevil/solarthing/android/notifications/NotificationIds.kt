@@ -10,6 +10,7 @@ import me.retrodaredevil.solarthing.solar.common.DailyData
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 import java.util.*
 
 
@@ -47,6 +48,7 @@ fun getDeviceConnectionStatusId(packet: Packet): Int = when(packet){
 fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
     is OutbackData -> Objects.hash("more_solar_info", packet.address)
     is RoverStatusPacket -> Objects.hash("more_solar_info", 10 + packet.productSerialNumber)
+    is TracerStatusPacket -> Objects.hash("more_solar_info", 200)
     else -> throw IllegalArgumentException("$packet is not supported!")
 }
 fun getBatteryTemperatureId(packet: SolarStatusPacket) = when(packet){

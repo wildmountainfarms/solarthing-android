@@ -78,7 +78,7 @@ dependencies {
     //noinspection GradleDependency
     implementation "com.mikepenz:materialdrawer:$materialDrawerVersion"
 
-    implementation "androidx.recyclerview:recyclerview:1.2.0"
+    implementation "androidx.recyclerview:recyclerview:1.2.1"
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.3.0'
@@ -95,7 +95,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
 //    def solarthingVersion = "3.10.1"
-    def solarthingVersion = "6118671ef4228741d29b16a87c93ff7977e38b7a".substring(0, 10)
+    def solarthingVersion = "bbf399535d3c9435055c67ba8dd3cee10d332f12".substring(0, 10)
 
     //noinspection GradleDependency // Since we use pre-releases, we don't need Android Studio warning us about this
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"

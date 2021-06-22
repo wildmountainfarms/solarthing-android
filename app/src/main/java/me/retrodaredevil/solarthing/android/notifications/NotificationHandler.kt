@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.R
@@ -21,7 +20,6 @@ import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.common.BasicChargeController
-import me.retrodaredevil.solarthing.solar.extra.SolarExtraPacketType
 import me.retrodaredevil.solarthing.solar.outback.OutbackData
 import me.retrodaredevil.solarthing.solar.outback.fx.ACMode
 import me.retrodaredevil.solarthing.solar.outback.fx.FXStatusPacket
@@ -30,11 +28,11 @@ import me.retrodaredevil.solarthing.solar.outback.fx.OperationalMode
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingMode
 import me.retrodaredevil.solarthing.solar.outback.mx.AuxMode
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
-import me.retrodaredevil.solarthing.solar.renogy.ProductModelUtil
 import me.retrodaredevil.solarthing.solar.renogy.Voltage
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
+import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 import java.text.DateFormat
 import java.util.*
 
@@ -47,6 +45,7 @@ object NotificationHandler {
     private const val FX_COLOR_HEX_STRING = "#770000"
     private const val MX_COLOR_HEX_STRING = "#000077"
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
+    private const val TRACER_COLOR_HEX_STRING = "#3e9ae9"
     private const val BATTERY_ONLY_COLOR_HEX_STRING = "#1b876a"
 
 
@@ -246,7 +245,8 @@ object NotificationHandler {
         val r = when(val packetType = packet.getPacketType()){
             SolarStatusPacketType.FX_STATUS -> "<span style=\"color:$FX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
             SolarStatusPacketType.MXFM_STATUS -> "<span style=\"color:$MX_COLOR_HEX_STRING\">${(packet as OutbackData).address}</span>"
-            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getRoverId(packet as RoverStatusPacket)}</span>"
+            SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getAlternateId(packet as SolarStatusPacket)}</span>"
+            SolarStatusPacketType.TRACER_STATUS -> "<span style=\"color:$TRACER_COLOR_HEX_STRING\">${info.getAlternateId(packet as SolarStatusPacket)}</span>"
             SolarStatusPacketType.BATTERY_VOLTAGE_ONLY -> "<span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">*${(packet as BatteryVoltageOnlyPacket).dataId}"
             null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("$packetType not supported!")
@@ -281,7 +281,8 @@ object NotificationHandler {
             when (it) {
                 is FXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$FX_COLOR_HEX_STRING\">$shortName</span>]")
                 is MXStatusPacket -> oneWord("[<strong>${it.address}</strong> <span style=\"color:$MX_COLOR_HEX_STRING\">$shortName</span>]")
-                is RoverStatusPacket -> oneWord("[<strong>${info.getRoverId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">$shortName</span>]")
+                is RoverStatusPacket -> oneWord("[<strong>${info.getAlternateId(it)}</strong> <span style=\"color:$ROVER_COLOR_HEX_STRING\">$shortName</span>]")
+                is TracerStatusPacket -> oneWord("[<strong>${info.getAlternateId(it)}</strong> <span style=\"color:$TRACER_COLOR_HEX_STRING\">$shortName</span>]")
                 is BatteryVoltageOnlyPacket -> oneWord("[<strong>*${it.dataId}</strong> <span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">$shortName</span>]")
                 else -> it.toString()
             }
@@ -503,6 +504,7 @@ object NotificationHandler {
         val deviceName = when(device){
             is OutbackData -> "$name on port ${device.address}"
             is RoverStatusPacket -> "$name with serial ${device.productSerialNumber}"
+            is TracerStatusPacket -> device.identityInfo.displayName
             else -> name
         }
         val builder = createNotificationBuilder(context, NotificationChannels.CONNECTION_STATUS.id, null)

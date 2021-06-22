@@ -15,6 +15,7 @@ import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.extra.DailyFXPacket
 import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 
 
 /**
@@ -26,10 +27,12 @@ fun createSolarDailyInfo(dayStartTimeMillis: Long, packetGroups: List<Fragmented
 
     val mxMap = AccumulationUtil.getAccumulationPairs(AccumulationUtil.mapPackets(MXStatusPacket::class.java, packetGroups), accumulationConfig)
     val roverMap = AccumulationUtil.getAccumulationPairs(AccumulationUtil.mapPackets(RoverStatusPacket::class.java, packetGroups), accumulationConfig)
+    val tracerMap = AccumulationUtil.getAccumulationPairs(AccumulationUtil.mapPackets(TracerStatusPacket::class.java, packetGroups), accumulationConfig)
     val dailyFXMap = AccumulationUtil.getAccumulationPairs(AccumulationUtil.mapPackets(DailyFXPacket::class.java, packetGroups), accumulationConfig)
     return SolarDailyInfo(
             dayStartTimeMillis,
             mxMap.mapValues { AccumulationCalc.getTotal(it.value, FloatAccumulationValue.convert(DailyChargeController::getDailyKWH), FloatAccumulationValueFactory.getInstance()).value }
+                    + tracerMap.mapValues { AccumulationCalc.getTotal(it.value, FloatAccumulationValue.convert(DailyChargeController::getDailyKWH), FloatAccumulationValueFactory.getInstance()).value }
                     + roverMap.mapValues { AccumulationCalc.getTotal(it.value, FloatAccumulationValue.convert(DailyChargeController::getDailyKWH), FloatAccumulationValueFactory.getInstance()).value },
             dailyFXMap.mapValues { getDailyFXTotal(it.value, ::DailyFXInfo) },
             fxChargingPacket

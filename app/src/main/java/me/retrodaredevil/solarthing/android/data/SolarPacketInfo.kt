@@ -6,7 +6,6 @@ import me.retrodaredevil.solarthing.misc.device.CpuTemperaturePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacket
 import me.retrodaredevil.solarthing.misc.device.DevicePacketType
 import me.retrodaredevil.solarthing.packets.Packet
-import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
@@ -29,6 +28,8 @@ import me.retrodaredevil.solarthing.solar.outback.mx.MXStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.TracerIdentifier
+import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 import kotlin.math.round
 
 /**
@@ -48,6 +49,7 @@ constructor(
     /** A map of the port number to the MX/FM status packet associated with device*/
     val mxMap: Map<KnownIdentifierFragment<OutbackIdentifier>, MXStatusPacket>
     val roverMap: Map<KnownIdentifierFragment<RoverIdentifier>, RoverStatusPacket>
+    val tracerMap: Map<KnownIdentifierFragment<TracerIdentifier>, TracerStatusPacket>
 
     val deviceMap: Map<IdentifierFragment, SolarStatusPacket>
     val basicChargeControllerMap: Map<IdentifierFragment, BasicChargeController>
@@ -99,6 +101,7 @@ constructor(
         fxMap = LinkedHashMap()
         mxMap = LinkedHashMap()
         roverMap = LinkedHashMap()
+        tracerMap = LinkedHashMap()
         deviceMap = LinkedHashMap()
         basicChargeControllerMap = LinkedHashMap()
         rawDailyChargeControllerMap = LinkedHashMap()
@@ -129,6 +132,13 @@ constructor(
                         batteryMap[identifierFragment] = rover
                         basicChargeControllerMap[identifierFragment] = rover
                         rawDailyChargeControllerMap[identifierFragment] = rover
+                    }
+                    SolarStatusPacketType.TRACER_STATUS -> {
+                        val tracer = packet as TracerStatusPacket
+                        tracerMap[IdentifierFragment.create(packetGroup.getFragmentId(packet), packet.identifier)] = tracer
+                        batteryMap[identifierFragment] = tracer
+                        basicChargeControllerMap[identifierFragment] = tracer
+                        rawDailyChargeControllerMap[identifierFragment] = tracer
                     }
                     SolarStatusPacketType.BATTERY_VOLTAGE_ONLY -> {
                         packet as BatteryVoltageOnlyPacket
@@ -218,14 +228,14 @@ constructor(
         return dateMillis.hashCode() - fxMap.keys.hashCode() + mxMap.keys.hashCode() - batteryVoltage.hashCode()
     }
 
-    fun getRoverId(rover: RoverStatusPacket): String{
+    fun getAlternateId(solarStatusPacket: SolarStatusPacket): String{
         var counter = 0 // 0->A, 1->B, etc
         for(entry in deviceMap){
             val device = entry.value
-            if(device == rover){
+            if(device == solarStatusPacket){
                 break
             }
-            if(device is RoverStatusPacket){
+            if(device is RoverStatusPacket || device is TracerStatusPacket){
                 counter++
             }
         }
