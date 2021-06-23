@@ -4,6 +4,7 @@
 package me.retrodaredevil.solarthing.android.notifications
 
 import me.retrodaredevil.solarthing.packets.Packet
+import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
 import me.retrodaredevil.solarthing.solar.common.DailyData
@@ -51,12 +52,8 @@ fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
     is TracerStatusPacket -> Objects.hash("more_solar_info", 200)
     else -> throw IllegalArgumentException("$packet is not supported!")
 }
-fun getBatteryTemperatureId(packet: SolarStatusPacket) = when(packet){
-    is RoverStatusPacket -> Objects.hash("battery_temperature_over", packet.productSerialNumber)
-    else -> throw IllegalArgumentException("$packet is not supported!")
-}
-fun getControllerTemperatureId(packet: SolarStatusPacket) = when(packet){
-    is RoverStatusPacket -> Objects.hash("controller_temperature_over", packet.productSerialNumber)
-    else -> throw IllegalArgumentException("$packet is not supported!")
-}
-fun getDeviceCpuTemperatureId(fragmentId: Int?) = Objects.hash("device_cpu_temperature", fragmentId)
+fun getBatteryTemperatureId(identifierFragment: IdentifierFragment) =
+        Objects.hash("battery_temperature_over", identifierFragment.fragmentId, identifierFragment.identifier, identifierFragment.identifier.representation)
+fun getControllerTemperatureId(identifierFragment: IdentifierFragment) =
+        Objects.hash("controller_temperature_over", identifierFragment.fragmentId, identifierFragment.identifier, identifierFragment.identifier.representation)
+fun getDeviceCpuTemperatureId(fragmentId: Int) = Objects.hash("device_cpu_temperature", fragmentId)

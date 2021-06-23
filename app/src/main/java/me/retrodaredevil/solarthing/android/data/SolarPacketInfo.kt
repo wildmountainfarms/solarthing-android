@@ -90,7 +90,7 @@ constructor(
     val hasWarnings: Boolean
     val errorsCount: Int
 
-    val deviceCpuTemperatureMap: Map<Int?, Float>
+    val deviceCpuTemperatureMap: Map<Int, Float>
 
     val batteryTemperatureCelsius: Int?
 

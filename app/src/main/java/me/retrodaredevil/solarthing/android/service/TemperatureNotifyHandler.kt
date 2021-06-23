@@ -6,9 +6,7 @@ import me.retrodaredevil.solarthing.android.notifications.getBatteryTemperatureI
 import me.retrodaredevil.solarthing.android.notifications.getControllerTemperatureId
 import me.retrodaredevil.solarthing.android.notifications.getDeviceCpuTemperatureId
 import me.retrodaredevil.solarthing.android.prefs.*
-import me.retrodaredevil.solarthing.packets.identification.Identifier
-import me.retrodaredevil.solarthing.solar.SolarStatusPacket
-import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 
 private class NotifyInfo(
         val timeMillis: Long,
@@ -20,13 +18,12 @@ class TemperatureNotifyHandler(
         private val solarProfileProvider: ProfileProvider<SolarProfile>,
         private val miscProfileProvider: ProfileProvider<MiscProfile>
 ) {
-    // TODO update this to use IdentifierFragments
-    private val lastBatteryOverNotify = HashMap<Identifier, NotifyInfo>()
-    private val lastBatteryUnderNotify = HashMap<Identifier, NotifyInfo>()
-    private val lastControllerOverNotify = HashMap<Identifier, NotifyInfo>()
-    private val lastControllerUnderNotify = HashMap<Identifier, NotifyInfo>()
-    private val lastDeviceCpuOverNotify = HashMap<Int?, NotifyInfo>()
-    private val lastDeviceCpuUnderNotify = HashMap<Int?, NotifyInfo>()
+    private val lastBatteryOverNotify = HashMap<IdentifierFragment, NotifyInfo>()
+    private val lastBatteryUnderNotify = HashMap<IdentifierFragment, NotifyInfo>()
+    private val lastControllerOverNotify = HashMap<IdentifierFragment, NotifyInfo>()
+    private val lastControllerUnderNotify = HashMap<IdentifierFragment, NotifyInfo>()
+    private val lastDeviceCpuOverNotify = HashMap<Int, NotifyInfo>()
+    private val lastDeviceCpuUnderNotify = HashMap<Int, NotifyInfo>()
 
     private val temperatureNodes: List<TemperatureNode>
         get() = solarProfileProvider.activeProfile.profile.temperatureNodes
@@ -37,47 +34,33 @@ class TemperatureNotifyHandler(
         }
         return lastNotifyInfo.timeMillis + DefaultOptions.importantAlertIntervalMillis <= System.currentTimeMillis()
     }
-    fun checkBatteryTemperature(dateMillis: Long, device: RoverStatusPacket, temperatureCelsius: Float) {
+    private inline fun checkTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float, notificationId: Int, lastOverNotify: MutableMap<IdentifierFragment, NotifyInfo>, lastUnderNotify: MutableMap<IdentifierFragment, NotifyInfo>, useNode: (TemperatureNode) -> Boolean) {
         for(node in temperatureNodes){
-            if(node.battery){
+            if(useNode(node)){
                 val temperatureName = "Battery Temperature"
-                val deviceName = "Rover with serial: ${device.productSerialNumber}"
-                if(node.isOver(temperatureCelsius) && shouldDisplay(node, lastBatteryOverNotify[device.identifier])){
-                    lastBatteryOverNotify[device.identifier] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
-                    lastBatteryUnderNotify.remove(device.identifier)
-                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, true, node.isCritical, getBatteryTemperatureId(device))
+                if(node.isOver(temperatureCelsius) && shouldDisplay(node, lastOverNotify[identifierFragment])){
+                    lastOverNotify[identifierFragment] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
+                    lastUnderNotify.remove(identifierFragment)
+                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, true, node.isCritical, notificationId)
                 }
-                if(node.isUnder(temperatureCelsius) && shouldDisplay(node, lastBatteryUnderNotify[device.identifier])){
-                    lastBatteryUnderNotify[device.identifier] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
-                    lastBatteryOverNotify.remove(device.identifier)
-                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, false, node.isCritical, getBatteryTemperatureId(device))
-                }
-            }
-        }
-    }
-    fun checkControllerTemperature(dateMillis: Long, device: RoverStatusPacket, temperatureCelsius: Float) {
-        for(node in temperatureNodes){
-            if(node.controller){
-                val temperatureName = "Controller Temperature"
-                val deviceName = "Rover with serial: ${device.productSerialNumber}"
-                if(node.isOver(temperatureCelsius) && shouldDisplay(node, lastControllerOverNotify[device.identifier])){
-                    lastControllerOverNotify[device.identifier] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
-                    lastControllerUnderNotify.remove(device.identifier)
-                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, true, node.isCritical, getControllerTemperatureId(device))
-                }
-                if(node.isUnder(temperatureCelsius) && shouldDisplay(node, lastControllerUnderNotify[device.identifier])){
-                    lastControllerUnderNotify[device.identifier] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
-                    lastControllerOverNotify.remove(device.identifier)
-                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, false, node.isCritical, getControllerTemperatureId(device))
+                if(node.isUnder(temperatureCelsius) && shouldDisplay(node, lastUnderNotify[identifierFragment])){
+                    lastUnderNotify[identifierFragment] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
+                    lastOverNotify.remove(identifierFragment)
+                    notify(dateMillis, temperatureName, deviceName, temperatureCelsius, false, node.isCritical, notificationId)
                 }
             }
         }
     }
-    fun checkDeviceCpuTemperature(dateMillis: Long, fragmentId: Int?, temperatureCelsius: Float) {
+    fun checkBatteryTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float) =
+            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getBatteryTemperatureId(identifierFragment), lastBatteryOverNotify, lastBatteryUnderNotify) { it.battery }
+    fun checkControllerTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float) =
+            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getControllerTemperatureId(identifierFragment), lastControllerOverNotify, lastControllerUnderNotify) { it.controller }
+
+    fun checkDeviceCpuTemperature(dateMillis: Long, fragmentId: Int, temperatureCelsius: Float) {
         for(node in temperatureNodes){
             if(node.deviceCpu && (fragmentId in node.deviceCpuIds || node.deviceCpuIds.isEmpty())){
                 val temperatureName = "Device CPU Temperature"
-                val deviceName = "Device #${fragmentId ?: "Default"}"
+                val deviceName = "Device #${fragmentId}"
                 if(node.isOver(temperatureCelsius) && shouldDisplay(node, lastDeviceCpuOverNotify[fragmentId])){
                     lastDeviceCpuOverNotify[fragmentId] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
                     lastDeviceCpuUnderNotify.remove(fragmentId)

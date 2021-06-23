@@ -458,11 +458,17 @@ class SolarStatusService(
         }
         // endregion
         // region Temperature Alert Notifications
-        for(rover in currentSolarInfo.solarPacketInfo.roverMap.values){
+        for((identifierFragment, rover) in currentSolarInfo.solarPacketInfo.roverMap.entries){
             val batteryTemperature = rover.batteryTemperatureCelsius
             val controllerTemperature = rover.controllerTemperatureCelsius
-            temperatureNotifyHandler.checkBatteryTemperature(currentSolarInfo.solarPacketInfo.dateMillis, rover, batteryTemperature.toFloat())
-            temperatureNotifyHandler.checkControllerTemperature(currentSolarInfo.solarPacketInfo.dateMillis, rover, controllerTemperature.toFloat())
+            temperatureNotifyHandler.checkBatteryTemperature(currentSolarInfo.solarPacketInfo.dateMillis, rover.identityInfo.displayName, identifierFragment, batteryTemperature.toFloat())
+            temperatureNotifyHandler.checkControllerTemperature(currentSolarInfo.solarPacketInfo.dateMillis, rover.identityInfo.displayName, identifierFragment, controllerTemperature.toFloat())
+        }
+        for((identifierFragment, tracer) in currentSolarInfo.solarPacketInfo.tracerMap.entries){
+            val batteryTemperature = tracer.batteryTemperatureCelsius
+            val controllerTemperature = tracer.insideControllerTemperatureCelsius
+            temperatureNotifyHandler.checkBatteryTemperature(currentSolarInfo.solarPacketInfo.dateMillis, tracer.identityInfo.displayName, identifierFragment, batteryTemperature)
+            temperatureNotifyHandler.checkControllerTemperature(currentSolarInfo.solarPacketInfo.dateMillis, tracer.identityInfo.displayName, identifierFragment, controllerTemperature)
         }
         for((fragmentId, temperatureCelsius) in currentSolarInfo.solarPacketInfo.deviceCpuTemperatureMap) {
             temperatureNotifyHandler.checkDeviceCpuTemperature(currentSolarInfo.solarPacketInfo.dateMillis, fragmentId, temperatureCelsius)

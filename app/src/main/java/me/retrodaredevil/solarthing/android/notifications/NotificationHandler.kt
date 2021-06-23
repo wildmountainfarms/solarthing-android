@@ -325,6 +325,13 @@ object NotificationHandler {
                         }
                         oneWord(getDeviceString(info, device) + (if(on) "ON" else "Off"))
                     }
+                    is TracerStatusPacket -> {
+                        val on = device.isLoadForcedOn || device.loadVoltage > 0
+                        if (on) {
+                            auxCount++;
+                        }
+                        oneWord(getDeviceString(info, device) + (if(on) "ON" else "Off"))
+                    }
                     else -> null
                 }
                 if(string != null) {
@@ -617,14 +624,13 @@ object NotificationHandler {
                 val batteryVoltage = Formatting.HUNDREDTHS.format(device.batteryVoltage)
                 builder.setSubText("$batteryVoltage | ${getChargingStatusName(device)} | ${Formatting.HUNDREDTHS.format(device.dailyKWH)} kWh | ${getTimeString(dateMillis)}")
                 builder.style = Notification.BigTextStyle().bigText(
-                        "Batt: $batteryVoltage | ${device.realBatteryRatedVoltageValue}V | ${device.chargingType.modeName} ${device.ratedOutputCurrent}A\n" +
+                        "Batt: ${batteryVoltage}V | ${device.realBatteryRatedVoltageValue}V | ${device.chargingType.modeName} ${device.ratedOutputCurrent}A | ${device.batteryType.modeName} ${device.batteryCapacityAmpHours}AH\n" +
                                 createChargeControllerMoreInfo(device) +
-                                "Mode: ${device.chargingMode.modeName} | Load: ${device.loadControlMode.modeName} | Batt: ${device.batteryType.modeName} ${device.batteryCapacityAmpHours}AH\n" +
+                                "${device.chargingMode.modeName} | ${device.loadControlMode.modeName} | Net Curr: ${device.netBatteryCurrent}A\n" +
                                 "Errors: ${Modes.toString(ChargingEquipmentError::class.java, device.chargingEquipmentStatus)}\n" +
                                 "Temperature: Controller: ${device.insideControllerTemperatureCelsius}C | Battery: ${device.batteryTemperatureCelsius}C\n" +
-                                "Day: ${device.clockMonthDay} | kWh: ${device.dailyKWH} | Ah: ${device.dailyAH} | " +
-                                "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
-                                "Max: PV: ${device.dailyMaxPVVoltage}V | Batt: ${device.dailyMaxBatteryVoltage}V\n" +
+                                "Clock: ${device.clockMonthDay} ${device.clockTime} | kWh: ${device.dailyKWH}\n" +
+                                "Max PV: ${device.dailyMaxPVVoltage}V | Night Length: ${device.lengthOfNight.toHours()}h${device.lengthOfNight.toMinutes() % 60}m | \n" +
                                 (if (device.isNight) "Night time" else "Day time") + "\n"
                 )
             }
