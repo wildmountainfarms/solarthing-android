@@ -629,7 +629,7 @@ object NotificationHandler {
                                 "${device.chargingMode.modeName} | ${device.loadControlMode.modeName} | Net Curr: ${device.netBatteryCurrent}A\n" +
                                 "Errors: ${Modes.toString(ChargingEquipmentError::class.java, device.chargingEquipmentStatus)}\n" +
                                 "Temperature: Controller: ${device.insideControllerTemperatureCelsius}C | Battery: ${device.batteryTemperatureCelsius}C\n" +
-                                "Clock: ${device.clockMonthDay} ${device.clockTime} | kWh: ${device.dailyKWH}\n" +
+                                "Clock: ${device.clockYearNumber} ${device.clockMonthDay} ${device.clockTime} | kWh: ${device.dailyKWH}\n" +
                                 "Max PV: ${device.dailyMaxPVVoltage}V | Night Length: ${device.lengthOfNight.toHours()}h${device.lengthOfNight.toMinutes() % 60}m | \n" +
                                 (if (device.isNight) "Night time" else "Day time") + "\n"
                 )

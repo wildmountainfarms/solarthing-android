@@ -95,7 +95,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
 //    def solarthingVersion = "3.10.1"
-    def solarthingVersion = "5f50f443ddd931a7c993243e7ed68e30ef1ad8c4".substring(0, 10)
+    def solarthingVersion = "a667e0b683f1d7eeb6803d9ba12f3971f55cd411".substring(0, 10)
 
     //noinspection GradleDependency // Since we use pre-releases, we don't need Android Studio warning us about this
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
