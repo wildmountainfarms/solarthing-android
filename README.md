@@ -56,6 +56,7 @@ information that dynamically appears if we are selling
 the power grid as backup power instead of a generator that can be turned on and off
 * Modularize parts of the program different modules (ex: solar, outhouse, etc) can be enabled or disabled easily
 * Make celsius and fahrenheit use special degrees character
+* https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 
 ### Google Play Requirements
 Since SolarThing uses the location permission, this YouTube video shows how it is used: https://youtu.be/u9-quz89KQw
