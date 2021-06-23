@@ -49,13 +49,18 @@ fun getChargingStateName(rover: RoverStatusPacket): String =
         ChargingState.CURRENT_LIMITING -> "Curr lim"
         ChargingState.DIRECT_CHARGE -> "Direct"
     }
-fun getChargingStatusName(tracer: TracerStatusPacket): String =
-        when(tracer.chargingStatus) {
-            ChargingStatus.NO_CHARGING -> "Off"
-            ChargingStatus.BOOST -> "B/B"
-            ChargingStatus.EQUALIZATION -> "EQ"
-            ChargingStatus.FLOAT -> "Float"
-        }
+fun getChargingStatusName(tracer: TracerStatusPacket): String {
+    println(tracer.chargingStatus)
+    println(tracer.chargingEquipmentStatus)
+    println(tracer.chargingStatusValue)
+    println(tracer.chargingPower)
+    return when(tracer.chargingStatus) {
+        ChargingStatus.NO_CHARGING -> "Off"
+        ChargingStatus.BOOST -> "B/B"
+        ChargingStatus.EQUALIZATION -> "EQ"
+        ChargingStatus.FLOAT -> "Float"
+    }
+}
 fun getModeName(packet: SolarStatusPacket): String =
     when(packet){
         is FXStatusPacket -> getOperatingModeName(packet)

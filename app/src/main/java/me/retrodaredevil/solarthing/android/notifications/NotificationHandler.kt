@@ -33,6 +33,7 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
 import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
+import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingEquipmentError
 import java.text.DateFormat
 import java.util.*
 
@@ -609,6 +610,22 @@ object NotificationHandler {
                                         PendingIntent.FLAG_CANCEL_CURRENT
                                 )
                         ).build()
+                )
+            }
+            is TracerStatusPacket -> {
+                builder.setContentTitle(device.identityInfo.displayName)
+                val batteryVoltage = Formatting.HUNDREDTHS.format(device.batteryVoltage)
+                builder.setSubText("$batteryVoltage | ${getChargingStatusName(device)} | ${Formatting.HUNDREDTHS.format(device.dailyKWH)} kWh | ${getTimeString(dateMillis)}")
+                builder.style = Notification.BigTextStyle().bigText(
+                        "Batt: $batteryVoltage | ${device.realBatteryRatedVoltageValue}V | ${device.chargingType.modeName} ${device.ratedOutputCurrent}A\n" +
+                                createChargeControllerMoreInfo(device) +
+                                "Mode: ${device.chargingMode.modeName} | Load: ${device.loadControlMode.modeName} | Batt: ${device.batteryType.modeName} ${device.batteryCapacityAmpHours}AH\n" +
+                                "Errors: ${Modes.toString(ChargingEquipmentError::class.java, device.chargingEquipmentStatus)}\n" +
+                                "Temperature: Controller: ${device.insideControllerTemperatureCelsius}C | Battery: ${device.batteryTemperatureCelsius}C\n" +
+                                "Day: ${device.clockMonthDay} | kWh: ${device.dailyKWH} | Ah: ${device.dailyAH} | " +
+                                "Max: ${device.dailyMaxBatteryVoltage}V | Min: ${device.dailyMinBatteryVoltage}V\n" +
+                                "Max: PV: ${device.dailyMaxPVVoltage}V | Batt: ${device.dailyMaxBatteryVoltage}V\n" +
+                                (if (device.isNight) "Night time" else "Day time") + "\n"
                 )
             }
             else -> throw IllegalArgumentException("$device not supported!")
