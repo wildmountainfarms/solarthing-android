@@ -41,12 +41,11 @@ import java.util.*
 object NotificationHandler {
     private const val SEPARATOR = "<span style=\"overflow-wrap:break-word\">|</span>"
     private const val DOUBLE_SEPARATOR = "<span style=\"overflow-wrap:break-word\">||</span>"
-    private const val MX_COLOR = 0x000077
 
     private const val FX_COLOR_HEX_STRING = "#770000"
     private const val MX_COLOR_HEX_STRING = "#000077"
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
-    private const val TRACER_COLOR_HEX_STRING = "#3e9ae9"
+    private const val TRACER_COLOR_HEX_STRING = "#60808f"
     private const val BATTERY_ONLY_COLOR_HEX_STRING = "#1b876a"
 
 
@@ -265,7 +264,7 @@ object NotificationHandler {
         return getOrderedIdentifiers(dailyInfo.dailyKWHMap.keys).mapNotNull {
             val dailyKWH = dailyInfo.dailyKWHMap[it] ?: error("No dailyKWH value for $it")
             val device = packetInfo.deviceMap[it] ?: return@mapNotNull null // if this is the case, then this isn't in the current packet
-            getDeviceString(packetInfo, device as DocumentedPacket) + Formatting.OPTIONAL_HUNDRETHS.format(dailyKWH)
+            getDeviceString(packetInfo, device as DocumentedPacket) + Formatting.OPTIONAL_HUNDREDTHS.format(dailyKWH)
         }.joinToString(SEPARATOR)
     }
 
@@ -354,14 +353,10 @@ object NotificationHandler {
         }.joinToString(SEPARATOR)
 
         val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(
-                it.pvCurrent.toDouble() * it.pvVoltage.toDouble()
-            )}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.pvWattage, Formatting.MINIMAL_HUNDREDTHS)}"
         }
         val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(
-                it.chargingPower
-            )}"
+            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.chargingPower, Formatting.MINIMAL_HUNDREDTHS)}"
         }
 
         val fxWarningsString = info.fxMap.values.mapNotNull {
@@ -394,8 +389,8 @@ object NotificationHandler {
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
         val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
-            "PV: $pvWattagesString | Total: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW\n" +
-                    "Charger: $chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "\n"
+            "PV: <span style=\"float:right;\">$pvWattagesString || <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW</span>\n" +
+                    "Chrgr: <span style=\"float:right;\">$chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "</span>\n"
         } else {
             "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
                     "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
@@ -406,11 +401,11 @@ object NotificationHandler {
                 "Daily kWh: <strong>${dailyInfo.dailyKWHString}</strong>\n"
             }
             else -> {
-                "Daily kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
+                "kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
             }
         }
         val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else ("CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
-            (fragmentId?.toString() ?: "~") + ": " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
+            "$fragmentId: " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
         }.joinToString(SEPARATOR) + "\n")
 
         val text = "" +

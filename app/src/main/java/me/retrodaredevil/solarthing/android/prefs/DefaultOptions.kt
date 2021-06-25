@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.prefs
 
+import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.data.TemperatureUnit
 
 object DefaultOptions {
@@ -21,7 +22,7 @@ object DefaultOptions {
 
     const val initialRequestTimeSeconds = 60
 
-    const val maxFragmentTimeMinutes = 2.0F
+    val maxFragmentTimeMinutes = SolarThingConstants.STANDARD_MAX_TIME_DISTANCE.toMinutes().toFloat()
 
     const val subsequentRequestTimeSeconds = 30
 

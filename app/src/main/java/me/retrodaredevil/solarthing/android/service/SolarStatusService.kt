@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.BasicSolarData
 import me.retrodaredevil.solarthing.android.HeartbeatData
 import me.retrodaredevil.solarthing.android.R
@@ -42,8 +43,10 @@ import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import java.time.Duration
 import java.util.*
 import kotlin.math.max
+import kotlin.math.roundToLong
 
 
 object SolarPacketCollectionBroadcast {
@@ -219,8 +222,8 @@ class SolarStatusService(
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
-            val maxTimeDistance = (miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000).toLong()
-            val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance, max(maxTimeDistance, 10 * 60 * 1000))
+            val maxTimeDistance = Duration.ofMillis((miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000.0).roundToLong())
+            val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance.toMillis(), SolarThingConstants.STANDARD_MASTER_ID_IGNORE_DISTANCE.toMillis())
             val startTime = System.currentTimeMillis()
             if(sortedPackets.isNotEmpty()) {
                 var fxChargingSettings: FXChargingSettings? = null // we might want to make this a Map<Int, FXChargingSettings> in the future

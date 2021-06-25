@@ -34,7 +34,7 @@ fun getChargerModeName(mx: MXStatusPacket): String =
     when(mx.chargingMode){
         ChargerMode.SILENT -> "Off"
         ChargerMode.FLOAT -> "Float"
-        ChargerMode.BULK -> "Bulk"
+        ChargerMode.BULK -> "Blk"
         ChargerMode.ABSORB -> "Absrb"
         ChargerMode.EQ -> "EQ"
     }
@@ -56,7 +56,7 @@ fun getChargingStatusName(tracer: TracerStatusPacket): String {
     println(tracer.chargingPower)
     return when(tracer.chargingStatus) {
         ChargingStatus.NO_CHARGING -> "Off"
-        ChargingStatus.BOOST -> "B/B"
+        ChargingStatus.BOOST -> "Blk"
         ChargingStatus.EQUALIZATION -> "EQ"
         ChargingStatus.FLOAT -> "Float"
     }
