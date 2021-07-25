@@ -23,28 +23,23 @@ const val GENERATOR_DONE_NOTIFICATION_ID = 5
 const val BATTERY_NOTIFICATION_ID = 6
 const val END_OF_DAY_NOTIFICATION_ID = 7
 
-const val END_OF_DAY_SUMMARY_ID = 9
 const val DEVICE_CONNECTION_STATUS_SUMMARY_ID = 10
 const val MORE_SOLAR_INFO_SUMMARY_ID = 11
 
-const val END_OF_DAY_GROUP = "end_of_day"
 const val DEVICE_CONNECTION_STATUS_GROUP = "connection"
 const val MORE_SOLAR_INFO_GROUP = "more_solar_info"
 
 fun getGroup(id: Int) = "group$id"
 
-fun getEndOfDayInfoId(dailyData: DailyData): Int = when(dailyData){
-    is MXStatusPacket -> Objects.hash("end_of_day", dailyData.address)
-    is RoverStatusPacket -> Objects.hash("end_of_day", 10 + dailyData.productSerialNumber)
-    else -> error("dailyData: $dailyData is not supported!")
-}
-fun getOutbackEndOfDayInfoId(packet: OutbackData): Int = Objects.hash("end_of_day", packet.address)
-
 fun getDeviceConnectionStatusId(packet: Packet): Int = when(packet){
     is OutbackData -> Objects.hash("device_connection", packet.address)
     is RoverStatusPacket -> Objects.hash("device_connection", 10 + packet.productSerialNumber)
     is BatteryVoltageOnlyPacket -> Objects.hash("device_connection", packet.dataId, "battery_voltage_only")
-    else -> throw IllegalArgumentException("packet: $packet is not supported!")
+    is TracerStatusPacket -> Objects.hash("device_connection", packet.ratedOutputCurrent, packet.ratedInputCurrent, packet.ratedLoadOutputCurrent, packet.ratedInputVoltage, "tracer")
+    else -> {
+        System.err.println("Unsupported device: $packet. falling back to a random value")
+        (Int.MIN_VALUE..Int.MAX_VALUE).random()
+    }
 }
 fun getMoreSolarInfoId(packet: Packet): Int = when(packet){
     is OutbackData -> Objects.hash("more_solar_info", packet.address)
