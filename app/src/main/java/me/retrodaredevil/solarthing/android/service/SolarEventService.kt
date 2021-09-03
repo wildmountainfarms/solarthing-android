@@ -80,7 +80,6 @@ class SolarEventService(
             return
         }
         val id = Objects.hash(dateMillis, packet.command, source)
-        var groupBuilder: Notification.Builder? = null
         val builder = getBuilder()
                 .setSmallIcon(R.drawable.solar_panel)
                 .setContentTitle("Command executed! ${packet.command.commandName}")
@@ -90,7 +89,7 @@ class SolarEventService(
                 .setSubText(dataSource.data + " requested at " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dataSource.dateMillis}.time))
 
         val group = "command-feedback-$source"
-        groupBuilder = getBuilder()
+        val groupBuilder: Notification.Builder = getBuilder()
                 .setGroup(group)
                 .setGroupSummary(true)
                 .setWhen(dataSource.dateMillis)
@@ -100,9 +99,7 @@ class SolarEventService(
         builder.setGroup(group)
         service.getManager().apply {
             notify(id, builder.build())
-            if(groupBuilder != null){
-                notify(Objects.hash(source), groupBuilder.build())
-            }
+            notify(Objects.hash(source), groupBuilder.build())
         }
     }
 

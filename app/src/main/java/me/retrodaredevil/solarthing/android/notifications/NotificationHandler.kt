@@ -248,7 +248,6 @@ object NotificationHandler {
             SolarStatusPacketType.RENOGY_ROVER_STATUS -> "<span style=\"color:$ROVER_COLOR_HEX_STRING\">${info.getAlternateId(packet as SolarStatusPacket)}</span>"
             SolarStatusPacketType.TRACER_STATUS -> "<span style=\"color:$TRACER_COLOR_HEX_STRING\">${info.getAlternateId(packet as SolarStatusPacket)}</span>"
             SolarStatusPacketType.BATTERY_VOLTAGE_ONLY -> "<span style=\"color:$BATTERY_ONLY_COLOR_HEX_STRING\">*${(packet as BatteryVoltageOnlyPacket).dataId}"
-            null -> throw NullPointerException()
             else -> throw UnsupportedOperationException("$packetType not supported!")
         }
         return if(includeParenthesis)

@@ -7,10 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.drawable.Icon
-import android.os.AsyncTask
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
+import android.os.*
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.activity.MainActivity
@@ -85,7 +82,7 @@ class PersistentService : Service(), Runnable{
 
     @SuppressLint("ShowToast")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        handler = Handler()
+        handler = Handler(Looper.getMainLooper())
         connectionProfileManager = createConnectionProfileManager(this)
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
