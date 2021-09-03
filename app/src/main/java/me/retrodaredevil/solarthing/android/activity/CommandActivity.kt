@@ -42,6 +42,7 @@ import java.io.FileNotFoundException
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.time.ZoneId
 import java.util.*
 import javax.crypto.Cipher
 
@@ -221,7 +222,7 @@ class CommandActivity : AppCompatActivity() {
         currentTaskText.text = "Sending Auth Request"
         currentTask = CouchDbUploadToDatabase(
                 getCouchProperties(),
-                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()),
+                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()),
                 ::onPostExecute
         ).execute()
     }
@@ -249,7 +250,7 @@ class CommandActivity : AppCompatActivity() {
         val encryptedCollection = PacketCollections.createFromPackets(listOf(
                 ImmutableRequestCommandPacket(selectedCommand.name),
                 *instancePackets
-        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()) // TODO have a meta packet for preferred timezone
+        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()) // TODO have a meta packet for preferred timezone
 
 
         val payload = MAPPER.writeValueAsString(encryptedCollection)
@@ -265,7 +266,7 @@ class CommandActivity : AppCompatActivity() {
                                 ImmutableLargeIntegrityPacket(sender, encrypted, payload),
                                 *instancePackets
                         ),
-                        PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, TimeZone.getDefault()
+                        PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()
                 ),
                 ::onPostExecute
         ).execute()
@@ -357,7 +358,7 @@ private class CouchDbUploadToDatabase(
     override fun doInBackground(vararg params: Void?): Boolean {
         val jsonData = StringJsonData(MAPPER.writeValueAsString(packetCollection))
         val instance = createCouchDbInstance(couchProperties)
-        val database = instance.getDatabase(SolarThingConstants.OPEN_UNIQUE_NAME)
+        val database = instance.getDatabase(SolarThingConstants.OPEN_DATABASE)
         try {
             // Note that if we try to create the database, we won't have permission, even if it's already there
             database.putDocument(packetCollection.dbId, jsonData)

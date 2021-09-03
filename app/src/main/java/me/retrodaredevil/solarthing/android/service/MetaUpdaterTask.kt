@@ -34,7 +34,7 @@ class MetaUpdaterTask(
     }
     override fun doInBackground(vararg params: Void?): RootMetaPacket? {
         val instance = createCouchDbInstance(couchProperties)
-        val database = instance.getDatabase(SolarThingConstants.CLOSED_UNIQUE_NAME)
+        val database = instance.getDatabase(SolarThingConstants.CLOSED_DATABASE)
         val documentData = try {
             database.getDocument("meta")
         } catch (ex: CouchDbException) {
