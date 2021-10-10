@@ -389,7 +389,7 @@ object NotificationHandler {
         }
         val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
             "PV: <span style=\"float:right;\">$pvWattagesString || <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW</span>\n" +
-                    "Chrgr: <span style=\"float:right;\">$chargerWattagesString | " + oneWord("Total: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW") + "</span>\n"
+                    "Chrgr: <span style=\"float:right;\">$chargerWattagesString || <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW</span>\n"
         } else {
             "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
                     "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
