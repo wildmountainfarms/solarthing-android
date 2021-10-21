@@ -225,7 +225,7 @@ class EventDisplayActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun update(){
         val application = application as SolarThingApplication
-        val (packetGroups, updateTime) = application.solarEventData?.getLatestPacketGroups() ?: Pair(emptyList(), null)
+        val (packetGroups, updateTime) = application.solarEventData?.useCacheGetLastUpdate { it.allCachedPackets } ?: Pair(emptyList(), null)
         if(updateTime == null){
             lastUpdatedTextView.text = "No data"
             return

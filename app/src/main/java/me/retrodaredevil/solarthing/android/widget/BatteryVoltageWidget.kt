@@ -12,6 +12,7 @@ import me.retrodaredevil.solarthing.android.data.CreationException
 import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
+import java.time.Duration
 
 /**
  * Implementation of App Widget functionality.
@@ -32,7 +33,7 @@ class BatteryVoltageWidget : AppWidgetProvider() {
         return if (applicationContext is SolarThingApplication) {
             val solarStatusData = applicationContext.solarStatusData
             if (solarStatusData != null) {
-                val sorted = PacketGroups.sortPackets(solarStatusData.packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000L, 10 * 60 * 1000L)
+                val sorted = PacketGroups.sortPackets(solarStatusData.getLastPacketsGroups(Duration.ofMinutes(20)), DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 10 * 60 * 1000L, 10 * 60 * 1000L)
                 if (sorted.isEmpty()) {
                     System.err.println("Sorted is empty!")
                     null

@@ -15,7 +15,7 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.prefs.*
-import me.retrodaredevil.solarthing.android.request.CouchDbDataRequester
+import me.retrodaredevil.solarthing.android.request.MillisDatabaseDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
@@ -52,9 +52,9 @@ private const val STOP_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.se
 private const val RELOAD_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.reload_service"
 private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.restart_service"
 
-private class ServiceObject(
-        val dataService: DataService,
-        val millisDatabaseGetter: (SolarThingDatabase) -> MillisDatabase
+private class MillisServiceObject(
+    val millisDataService: MillisDataService,
+    val millisDatabaseGetter: (SolarThingDatabase) -> MillisDatabase
 ){
     var task: AsyncTask<*, *, *>? = null
 }
@@ -71,7 +71,7 @@ class PersistentService : Service(), Runnable{
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
-    private lateinit var services: List<ServiceObject>
+    private lateinit var millisServices: List<MillisServiceObject>
 
     private var metaUpdaterTask: AsyncTask<*, *, *>? = null
     private val metaHandler = MetaHandler()
@@ -92,18 +92,18 @@ class PersistentService : Service(), Runnable{
         application.solarStatusData = solarStatusData
         application.solarEventData = solarEventData
         application.metaHandler = metaHandler
-        services = listOf(
-                ServiceObject(
+        millisServices = listOf(
+                MillisServiceObject(
                         SolarStatusService(this, connectionProfileManager, solarProfileManager, createMiscProfileProvider(this), solarStatusData, solarEventData, metaHandler),
                         SolarThingDatabase::getStatusDatabase
                 ),
-                ServiceObject(
+                MillisServiceObject(
                         SolarEventService(this, solarEventData),
                         SolarThingDatabase::getEventDatabase
                 )
         )
-        for(service in services){
-            service.dataService.onInit()
+        for(service in millisServices){
+            service.millisDataService.onInit()
         }
         handler.postDelayed(this, 300)
         Toast.makeText(this, "SolarThing Notification Service started", Toast.LENGTH_LONG).show()
@@ -120,7 +120,7 @@ class PersistentService : Service(), Runnable{
                 .setOnlyAlertOnce(true)
                 .setSmallIcon(R.drawable.sun)
                 .setContentTitle("SolarThing service is running")
-                .setContentText("${services.count { it.dataService.shouldUpdate }} service(s) are running")
+                .setContentText("${millisServices.count { it.millisDataService.shouldUpdate }} service(s) are running")
                 .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
                 .setWhen(1) // make it the lowest priority
                 .setShowWhen(false)
@@ -223,31 +223,31 @@ class PersistentService : Service(), Runnable{
         val instance = createCouchDbInstance(properties)
         val database = CouchDbSolarThingDatabase.create(instance)
         var needsLargeData = false
-        for(service in services){
+        for(service in millisServices){
             val task = service.task
             if(task != null){
                 service.task = null
                 if(task.cancel(true)) { // if the task was still running then...
-                    service.dataService.onTimeout()
+                    service.millisDataService.onTimeout()
                 }
             }
-            if(!service.dataService.shouldUpdate){
-                service.dataService.onCancel()
+            if(!service.millisDataService.shouldUpdate){
+                service.millisDataService.onCancel()
                 continue
             }
 
             val dataRequesters = listOf(
-                    CouchDbDataRequester(
+                    MillisDatabaseDataRequester(
                             service.millisDatabaseGetter(database),
                             properties.host,
-                            service.dataService::startKey
+                            service.millisDataService::recommendedMillisQuery // HERE
                     )
             )
-            if(service.dataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
+            if(service.millisDataService.updatePeriodType == UpdatePeriodType.LARGE_DATA){
                 needsLargeData = true
             }
             val dataRequester = DataRequesterMultiplexer(dataRequesters)
-            service.task = DataUpdaterTask(dataRequester, service.dataService::onDataRequest).execute()
+            service.task = DataUpdaterTask(dataRequester, service.millisDataService::onDataRequest).execute()
         }
         metaUpdaterTask?.cancel(true)
         metaUpdaterTask = MetaUpdaterTask(properties, metaHandler).execute()
@@ -269,10 +269,10 @@ class PersistentService : Service(), Runnable{
         println("Stopping persistent service")
         handler.removeCallbacks(this)
         unregisterReceiver(receiver)
-        for(service in services){
+        for(service in millisServices){
             service.task?.cancel(true)
-            service.dataService.onCancel()
-            service.dataService.onEnd()
+            service.millisDataService.onCancel()
+            service.millisDataService.onEnd()
         }
         metaUpdaterTask?.cancel(true)
         metaUpdaterTask = null

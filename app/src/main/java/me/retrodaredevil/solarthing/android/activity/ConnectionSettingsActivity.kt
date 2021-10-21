@@ -22,6 +22,9 @@ import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawerWithUnsavedPrompt
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
+import me.retrodaredevil.solarthing.util.TimeRange
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 
 class ConnectionSettingsActivity  : AppCompatActivity() {
@@ -93,10 +96,11 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 val application = application as SolarThingApplication
                 val sourceIdSet = mutableSetOf<String>()
-                application.solarStatusData?.packetGroups?.forEach {
-                    val instancePacketGroup = PacketGroups.parseToInstancePacketGroup(it, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS)
+                // TODO maybe don't iterate over *all* the packets
+                application.solarStatusData?.useCache { it.createAllCachedPacketsStream(false).forEach { storedPacketGroup ->
+                    val instancePacketGroup = PacketGroups.parseToInstancePacketGroup(storedPacketGroup, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS)
                     sourceIdSet.add(instancePacketGroup.sourceId)
-                }
+                } } // This puts a lot on other things that want to use useCache, but that's OK, this shouldn't take long, and it doesn't happen often
                 val sourceIdList = LinkedList(sourceIdSet)
                 val currentSourceId = preferredSourceIdEditText.text.toString()
                 sourceIdList.remove(currentSourceId)

@@ -23,6 +23,7 @@ import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
+import me.retrodaredevil.solarthing.database.MillisQuery
 import me.retrodaredevil.solarthing.type.closed.meta.BasicMetaPacketType
 import me.retrodaredevil.solarthing.type.closed.meta.TargetMetaPacket
 import me.retrodaredevil.solarthing.type.closed.meta.TargetedMetaPacketType
@@ -45,7 +46,6 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import java.time.Duration
 import java.util.*
-import kotlin.math.max
 import kotlin.math.roundToLong
 
 
@@ -61,7 +61,7 @@ class SolarStatusService(
         private val solarStatusData: PacketGroupData,
         private val solarEventData: PacketGroupData,
         private val metaHandler: MetaHandler
-) : DataService {
+) : MillisDataService {
     companion object {
         /** This is used when comparing battery voltages in case the battery voltage is something like 26.000001*/
         const val ROUND_OFF_ERROR_DEADZONE = 0.001
@@ -71,7 +71,6 @@ class SolarStatusService(
     }
 
     private val temperatureNotifyHandler = TemperatureNotifyHandler(service, solarProfileProvider, miscProfileProvider)
-    private val packetGroups = TreeSet<PacketGroup>(createComparator { it.dateMillis })
     private var solarInfoCollection: Collection<SolarInfo> = emptySet()
     private var lastSolarInfo: SolarInfo? = null
     private var lastVoltageTimerNotification: Long? = null
@@ -86,7 +85,7 @@ class SolarStatusService(
                 service,
                 0,
                 Intent(MORE_INFO_ACTION),
-                PendingIntent.FLAG_CANCEL_CURRENT
+                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
@@ -216,14 +215,19 @@ class SolarStatusService(
 
         if(dataRequest.successful) {
 //            println("[123]Got successful data request")
-            val anyAdded = packetGroups.addAll(dataRequest.packetGroupList)
-            packetGroups.removeIfBefore(System.currentTimeMillis() - 24 * 60 * 60 * 1000) { it.dateMillis } // remove stuff 24 hours old
 
+            val latestDateMillisBeforeFeed = solarStatusData.getLatestPacket()?.dateMillis
+            solarStatusData.feed(dataRequest.packetGroupList, dataRequest.query!!)
+            val latestDateMillisAfterFeed = solarStatusData.getLatestPacket()?.dateMillis
+            val rawPacketGroups = solarStatusData.useCache { it.allCachedPackets }
+
+            val anyAdded = (latestDateMillisBeforeFeed == null && latestDateMillisAfterFeed != null) ||
+                    (latestDateMillisBeforeFeed != null && latestDateMillisAfterFeed != null && latestDateMillisAfterFeed > latestDateMillisBeforeFeed)
             summary = if(anyAdded) getConnectedSummary(dataRequest.host) else getConnectedNoNewDataSummary(dataRequest.host)
 
 
             val maxTimeDistance = Duration.ofMillis((miscProfileProvider.activeProfile.profile.maxFragmentTimeMinutes * 60 * 1000.0).roundToLong())
-            val sortedPackets = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance.toMillis(), SolarThingConstants.STANDARD_MASTER_ID_IGNORE_DISTANCE.toMillis())
+            val sortedPackets = PacketGroups.sortPackets(rawPacketGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, maxTimeDistance.toMillis(), SolarThingConstants.STANDARD_MASTER_ID_IGNORE_DISTANCE.toMillis())
             val startTime = System.currentTimeMillis()
             if(sortedPackets.isNotEmpty()) {
                 var fxChargingSettings: FXChargingSettings? = null // we might want to make this a Map<Int, FXChargingSettings> in the future
@@ -244,7 +248,6 @@ class SolarStatusService(
             }
             println("Took " + (System.currentTimeMillis() - startTime))
 
-            solarStatusData.onAllPacketReceive(packetGroups.toList())
             if(solarInfoCollection.isNotEmpty()) {
                 val intent = Intent(service, WidgetHandler::class.java)
                 intent.action = SolarPacketCollectionBroadcast.ACTION
@@ -561,12 +564,8 @@ class SolarStatusService(
             UpdatePeriodType.LARGE_DATA
         else
             UpdatePeriodType.SMALL_DATA
-
-    override val startKey: Long
-        get() = if(solarInfoCollection.isEmpty()) {
-            getDayStartTimeMillis(System.currentTimeMillis())
-        } else
-            solarInfoCollection.last().solarPacketInfo.dateMillis
+    override val recommendedMillisQuery: MillisQuery
+        get() = solarStatusData.recommendedQuery
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)

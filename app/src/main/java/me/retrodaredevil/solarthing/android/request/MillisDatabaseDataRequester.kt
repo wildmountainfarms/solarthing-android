@@ -2,16 +2,17 @@ package me.retrodaredevil.solarthing.android.request
 
 import me.retrodaredevil.couchdbjava.exception.CouchDbException
 import me.retrodaredevil.solarthing.database.MillisDatabase
+import me.retrodaredevil.solarthing.database.MillisQuery
 import me.retrodaredevil.solarthing.database.MillisQueryBuilder
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.*
 
 
-class CouchDbDataRequester(
+class MillisDatabaseDataRequester(
         private val database: MillisDatabase,
         private val host: String,
-        private val startKeyGetter: () -> Long = { System.currentTimeMillis() - 2 * 60 * 60 * 1000 }
+        private val queryGetter: () -> MillisQuery
 ) : DataRequester {
 
     @Volatile
@@ -32,29 +33,32 @@ class CouchDbDataRequester(
             currentlyUpdating = true
         }
         try {
-            val packetGroups = database.query(MillisQueryBuilder().startKey(startKeyGetter()).build())
+            val query = queryGetter()
+            val packetGroups = database.query(query)
             if(packetGroups.isEmpty()){
                 return DataRequest(
                     emptyList(),
+                    null,
                     false, "Got all unknown packets",
                     host,
                     null,
                     null,
                 )
             }
-            return DataRequest(packetGroups, true, "Request Successful", host)
+            return DataRequest(packetGroups, query, true, "Request Successful", host)
         } catch(ex: CouchDbException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false,
+            return DataRequest(Collections.emptyList(), null, false,
                 "Request Failed", host, getStackTrace(ex), ex.message)
         } catch(ex: NullPointerException){
             ex.printStackTrace()
-            return DataRequest(Collections.emptyList(), false,
+            return DataRequest(Collections.emptyList(), null, false,
                 "(Please report) NPE (Likely Parsing Error)", host, getStackTrace(ex), ex.message)
         } catch(ex: Exception) {
             ex.printStackTrace()
             return DataRequest(
                     Collections.emptyList(),
+                    null,
                     false,
                     "(Please report) ${ex.javaClass.simpleName} (Unknown)",
                     host,

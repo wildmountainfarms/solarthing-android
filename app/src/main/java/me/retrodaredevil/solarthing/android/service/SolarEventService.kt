@@ -2,23 +2,26 @@ package me.retrodaredevil.solarthing.android.service
 
 import android.app.Notification
 import android.app.Service
-import android.os.Build
 import me.retrodaredevil.solarthing.DataSource
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.database.MillisQuery
+import me.retrodaredevil.solarthing.database.cache.SimpleDatabaseCache
+import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacket
 import me.retrodaredevil.solarthing.solar.outback.command.packets.MateCommandFeedbackPacketType
 import me.retrodaredevil.solarthing.solar.outback.command.packets.SuccessMateCommandPacket
+import me.retrodaredevil.solarthing.util.TimeRange
 import java.text.DateFormat
 import java.util.*
 
 class SolarEventService(
         private val service: Service,
         private val data: PacketGroupData
-) : DataService {
+) : MillisDataService {
 
     override fun onInit() { // nothing
     }
@@ -34,14 +37,16 @@ class SolarEventService(
     }
 
     override fun onDataRequest(dataRequest: DataRequest) {
-        val lastDateMillis = data.packetGroups.lastOrNull()?.dateMillis
-        val receivedPackets = dataRequest.packetGroupList
-        data.addReceivedPackets(receivedPackets)
-        for(packetGroup in receivedPackets){
+        val latestDateMillisBeforeFeed = data.useCache { it.createAllCachedPacketsStream(true).findFirst().orElse(null) }?.dateMillis
+        if (dataRequest.successful) {
+            data.feed(dataRequest.packetGroupList, dataRequest.query!!)
+            val packets = data.useCache { it.getCachedPacketsInRange(if (latestDateMillisBeforeFeed == null) TimeRange.ALWAYS else TimeRange.createAfter(latestDateMillisBeforeFeed), false) }
+            processEventPacketGroups(packets)
+        }
+    }
+    private fun processEventPacketGroups(newEventPacketGroups: List<PacketGroup>) {
+        for(packetGroup in newEventPacketGroups){
             val basicDateMillis = packetGroup.dateMillis
-            if(lastDateMillis != null && basicDateMillis <= lastDateMillis){
-                continue
-            }
             for(packet in packetGroup.packets){
                 val dateMillis = packetGroup.getDateMillis(packet) ?: basicDateMillis
                 if(packet is MateCommandFeedbackPacket){
@@ -112,10 +117,8 @@ class SolarEventService(
 
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA // it should always be small data
 
-    // TODO, by doing it this way, we risk missing events that are uploaded
-    override val startKey: Long
-        get() = data.packetGroups.lastOrNull()?.dateMillis?.plus(1) ?: (System.currentTimeMillis() - (18 * 60 * 60 * 1000))
-//        get() = System.currentTimeMillis() - (18 * 60 * 60 * 1000) // we want to make sure we always have all the data
+    override val recommendedMillisQuery: MillisQuery
+        get() = data.recommendedQuery
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service) || NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)

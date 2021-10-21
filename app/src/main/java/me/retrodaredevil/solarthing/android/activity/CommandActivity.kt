@@ -38,18 +38,23 @@ import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
 import me.retrodaredevil.solarthing.packets.security.crypto.HashUtil
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
 import me.retrodaredevil.solarthing.util.JacksonUtil
+import me.retrodaredevil.solarthing.util.TimeRange
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.*
 import javax.crypto.Cipher
 
 private fun getAvailableCommands(application: SolarThingApplication): Pair<String, Map<Int, List<CommandInfo>>>? {
-    val packetGroups = application.solarStatusData?.packetGroups ?: return null
+    // Just get the last 20 minutes worth of data, because we don't need much data to find what the available commands are.
+    //   Remember that it's beneficial to ask for less data from the cache because it has to copy all the data into a new list.
+    val packetGroups = application.solarStatusData?.getLastPacketsGroups(Duration.ofMinutes(20)) ?: return null
+    // TODO do we really need to sort the packets to find out what the available commands are?
     val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000L, 5 * 60 * 1000L)
     if (sortedMap.isEmpty()) {
         return null

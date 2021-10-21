@@ -1,13 +1,14 @@
 package me.retrodaredevil.solarthing.android.service
 
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.database.MillisQuery
 
 /**
  * An interface representing different services
  *
  * All method calls will be run on the UI thread so they cannot block.
  */
-interface DataService {
+interface MillisDataService {
     /**
      * Will only ever be called once.
      */
@@ -30,7 +31,8 @@ interface DataService {
     fun onTimeout()
 
     val updatePeriodType: UpdatePeriodType
-    val startKey: Long
+
+    val recommendedMillisQuery: MillisQuery
 
     val shouldUpdate: Boolean
 }
