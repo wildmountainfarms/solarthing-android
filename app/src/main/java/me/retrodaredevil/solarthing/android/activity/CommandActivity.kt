@@ -27,6 +27,7 @@ import me.retrodaredevil.solarthing.android.util.initializeDrawer
 import me.retrodaredevil.solarthing.commands.CommandInfo
 import me.retrodaredevil.solarthing.commands.packets.open.ImmutableRequestCommandPacket
 import me.retrodaredevil.solarthing.commands.packets.status.AvailableCommandsPacket
+import me.retrodaredevil.solarthing.commands.util.CommandManager
 import me.retrodaredevil.solarthing.packets.collection.*
 import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePacket
 import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePackets
@@ -42,13 +43,14 @@ import java.io.FileNotFoundException
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.time.Instant
 import java.time.ZoneId
 import java.util.*
 import javax.crypto.Cipher
 
 private fun getAvailableCommands(application: SolarThingApplication): Pair<String, Map<Int, List<CommandInfo>>>? {
     val packetGroups = application.solarStatusData?.packetGroups ?: return null
-    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000, 5 * 60 * 1000)
+    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000L, 5 * 60 * 1000L)
     if (sortedMap.isEmpty()) {
         return null
     }
@@ -83,6 +85,7 @@ class CommandActivity : AppCompatActivity() {
     private lateinit var currentTaskText: TextView
 
     private lateinit var drawerHandler: DrawerHandler
+    private lateinit var commandManager: CommandManager
 
     private var keyPair: KeyPair? = null
 
@@ -105,6 +108,7 @@ class CommandActivity : AppCompatActivity() {
         commandSpinner = findViewById(R.id.command_spinner)
         publicKeyText = findViewById(R.id.public_key)
         currentTaskText = findViewById(R.id.current_task)
+        commandManager = CommandManager({ keyPair!! }, sender) // keyPair may not be initialized now, but that's OK
         updateKeyPair()
         setToNoTask()
         initFragmentSpinner()
@@ -219,10 +223,11 @@ class CommandActivity : AppCompatActivity() {
 
         val packet = ImmutableAuthNewSenderPacket(sender, KeyUtil.encodePublicKey(publicKey))
 
+        val now = Instant.now()
         currentTaskText.text = "Sending Auth Request"
         currentTask = CouchDbUploadToDatabase(
                 getCouchProperties(),
-                PacketCollections.createFromPackets(listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()),
+                PacketCollections.createFromPackets(now, listOf(packet), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()),
                 ::onPostExecute
         ).execute()
     }
@@ -241,33 +246,16 @@ class CommandActivity : AppCompatActivity() {
             Toast.makeText(this, "No selected command", Toast.LENGTH_SHORT).show()
             return
         }
-        val instancePackets = arrayOf(
-                InstanceSourcePackets.create(sourceId!!),
-                InstanceTargetPackets.create(listOf(fragmentId!!))
-        )
+        val creator = commandManager.makeCreator(sourceId!!, ZoneId.systemDefault(), InstanceTargetPackets.create(listOf(fragmentId!!)), ImmutableRequestCommandPacket(selectedCommand.name), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR)
+        val now = Instant.now()
+        val packetCollection = creator.create(now)
 
         println("Going to send command: ${selectedCommand.name}")
-        val encryptedCollection = PacketCollections.createFromPackets(listOf(
-                ImmutableRequestCommandPacket(selectedCommand.name),
-                *instancePackets
-        ), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()) // TODO have a meta packet for preferred timezone
-
-
-        val payload = MAPPER.writeValueAsString(encryptedCollection)
-        val hashString = System.currentTimeMillis().toString(16) + "," + HashUtil.encodedHash(payload)
-        println(hashString)
-        val encrypted = Encrypt.encrypt(cipher, keyPair.private, hashString)
 
         currentTaskText.text = "Sending command"
         currentTask = CouchDbUploadToDatabase(
                 getCouchProperties(),
-                PacketCollections.createFromPackets(
-                        listOf(
-                                ImmutableLargeIntegrityPacket(sender, encrypted, payload),
-                                *instancePackets
-                        ),
-                        PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR, ZoneId.systemDefault()
-                ),
+                packetCollection,
                 ::onPostExecute
         ).execute()
     }

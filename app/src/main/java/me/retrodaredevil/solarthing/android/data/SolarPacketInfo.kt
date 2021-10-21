@@ -173,7 +173,7 @@ constructor(
             throw CreationException("The must be battery voltage packets!")
         }
         batteryVoltage = when(batteryVoltageType){
-            BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumByDouble { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
+            BatteryVoltageType.AVERAGE -> batteryMap.values.let { it.sumOf { packet -> packet.batteryVoltage.toDouble() } / it.size }.toFloat()
             BatteryVoltageType.FIRST_PACKET -> null
             BatteryVoltageType.MOST_RECENT -> batteryMap.values.maxByOrNull { packetGroup.getDateMillis(it as Packet) }!!.batteryVoltage
             BatteryVoltageType.FIRST_OUTBACK -> batteryMap.values.firstOrNull { it is OutbackData }?.batteryVoltage
@@ -181,18 +181,18 @@ constructor(
         } ?: batteryMap.values.first().batteryVoltage
         batteryVoltageString = Formatting.TENTHS.format(batteryVoltage)
 
-        estimatedBatteryVoltage = (round(batteryMap.values.sumByDouble { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
+        estimatedBatteryVoltage = (round(batteryMap.values.sumOf { it.batteryVoltage.toDouble() } / batteryMap.size * 10) / 10).toFloat()
         estimatedBatteryVoltageString = Formatting.FORMAT.format(estimatedBatteryVoltage)
 
         acMode = fxMap.values.firstOrNull()?.acMode ?: ACMode.NO_AC
         acModeNullable = fxMap.values.firstOrNull()?.acMode
         generatorChargingBatteries = masterFXStatusPacket != null && masterFXStatusPacket.operationalMode in setOf(OperationalMode.CHARGE, OperationalMode.FLOAT, OperationalMode.EQ)
-        load = fxMap.values.sumBy { it.inverterWattage }
-        generatorToBatteryWattage = fxMap.values.sumBy { it.chargerWattage }
-        generatorTotalWattage = fxMap.values.sumBy { it.buyWattage }
+        load = fxMap.values.sumOf { it.inverterWattage }
+        generatorToBatteryWattage = fxMap.values.sumOf { it.chargerWattage }
+        generatorTotalWattage = fxMap.values.sumOf { it.buyWattage }
 
-        pvWattage = basicChargeControllerMap.values.sumBy { it.pvWattage.toInt() }
-        pvChargerWattage = basicChargeControllerMap.values.sumByDouble { it.chargingPower.toDouble() }.toFloat()
+        pvWattage = basicChargeControllerMap.values.sumOf { it.pvWattage.toInt() }
+        pvChargerWattage = basicChargeControllerMap.values.sumOf { it.chargingPower.toDouble() }.toFloat()
 
         warningsCount = WarningMode.values().count { warningMode -> fxMap.values.any { warningMode.isActive(it.warningModeValue) } }
         hasWarnings = fxMap.isNotEmpty()

@@ -23,9 +23,9 @@ import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
-import me.retrodaredevil.solarthing.meta.BasicMetaPacketType
-import me.retrodaredevil.solarthing.meta.TargetMetaPacket
-import me.retrodaredevil.solarthing.meta.TargetedMetaPacketType
+import me.retrodaredevil.solarthing.type.closed.meta.BasicMetaPacketType
+import me.retrodaredevil.solarthing.type.closed.meta.TargetMetaPacket
+import me.retrodaredevil.solarthing.type.closed.meta.TargetedMetaPacketType
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup

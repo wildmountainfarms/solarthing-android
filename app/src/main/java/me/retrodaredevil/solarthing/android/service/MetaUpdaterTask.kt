@@ -8,12 +8,12 @@ import me.retrodaredevil.couchdbjava.json.jackson.CouchDbJacksonUtil
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
 import me.retrodaredevil.solarthing.android.util.createDefaultObjectMapper
-import me.retrodaredevil.solarthing.meta.DefaultMetaDatabase
-import me.retrodaredevil.solarthing.meta.DeviceInfoPacket
-import me.retrodaredevil.solarthing.meta.RootMetaPacket
-import me.retrodaredevil.solarthing.meta.TargetMetaPacket
 import me.retrodaredevil.solarthing.misc.common.meta.DataMetaPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.meta.FXChargingSettingsPacket
+import me.retrodaredevil.solarthing.type.closed.meta.DefaultMetaDatabase
+import me.retrodaredevil.solarthing.type.closed.meta.DeviceInfoPacket
+import me.retrodaredevil.solarthing.type.closed.meta.RootMetaPacket
+import me.retrodaredevil.solarthing.type.closed.meta.TargetMetaPacket
 import me.retrodaredevil.solarthing.util.JacksonUtil
 
 
