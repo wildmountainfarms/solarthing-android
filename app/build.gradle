@@ -99,8 +99,10 @@ dependencies {
 
     //noinspection GradleDependency // Since we use pre-releases, we don't need Android Studio warning us about this
     implementation "com.github.wildmountainfarms.solarthing:core:$solarthingVersion"
+    // Note that Gradle cannot always tell that it needs to bump this couchdb-java version, so if you don't bump it to
+    //   match whatever couchdb-java version solarthing:core is using, you might get problems because a new method might not be found
     //noinspection GradleDependency
-    implementation "com.github.retrodaredevil:couchdb-java:${"d569107681177d796e9982b6371cd40e019bcbf4".substring(0, 10)}"
+    implementation "com.github.retrodaredevil:couchdb-java:${"d41524674af822438430d5228550c3caff0ab145".substring(0, 10)}"
 
     def jacksonVersion = "2.12.4" // https://github.com/FasterXML/jackson-databind/releases
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"

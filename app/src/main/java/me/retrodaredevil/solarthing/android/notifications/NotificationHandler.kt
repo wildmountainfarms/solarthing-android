@@ -12,10 +12,12 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
+import me.retrodaredevil.solarthing.database.VersionedPacket
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.support.Support
+import me.retrodaredevil.solarthing.reason.OpenSourceExecutionReason
 import me.retrodaredevil.solarthing.solar.SolarStatusPacket
 import me.retrodaredevil.solarthing.solar.SolarStatusPacketType
 import me.retrodaredevil.solarthing.solar.batteryvoltage.BatteryVoltageOnlyPacket
@@ -34,6 +36,8 @@ import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.solar.renogy.rover.StreetLight
 import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingEquipmentError
+import me.retrodaredevil.solarthing.type.alter.StoredAlterPacket
+import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
 import java.text.DateFormat
 import java.util.*
 
@@ -710,11 +714,34 @@ object NotificationHandler {
         }
         return r
     }
+    fun createScheduledCommandNotification(context: Context, versionedPacket: VersionedPacket<StoredAlterPacket>, scheduledCommandPacket: ScheduledCommandPacket): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, null)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(scheduledCommandPacket.data.scheduledTimeMillis)
+                .setShowWhen(true)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true) // Although most people will have this on silent, for those that don't, we don't want their phone to vibrate a bunch
+                .setContentTitle("Scheduled Command: ${scheduledCommandPacket.data.commandName}")
+                .setSubText("Targeting: ${scheduledCommandPacket.data.targetFragmentIds}")
+        (scheduledCommandPacket.executionReason as? OpenSourceExecutionReason)?.let {
+            val requestedDateMillis = it.source.dateMillis
+            builder.setContentText("Requested at ${getTimeString(requestedDateMillis)} by ${it.source.sender}")
+        }
+        // TODO use versionedPacket to add a button that will send a request to cancel the scheduled command
+
+        return builder.build()
+    }
+
     private fun getTimeString(dateMillis: Long) = DateFormat.getTimeInstance(DateFormat.MEDIUM).format(GregorianCalendar().apply { timeInMillis = dateMillis}.time)
 
     private fun createNotificationBuilder(context: Context, channelId: String, notificationId: Int?): Notification.Builder {
         val builder = Notification.Builder(context, channelId)
         if(notificationId != null) {
+            // We don't actually need the notificationId to construct the builder or the Notification object itself,
+            //   but we do use it to set the group to a unique group based on the notification ID.
+            //   Doing this is optional, but I believe it prevents notification grouping in certain situations
             builder.setGroup(getGroup(notificationId))
         }
         return builder

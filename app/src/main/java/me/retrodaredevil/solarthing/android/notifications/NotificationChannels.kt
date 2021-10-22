@@ -78,6 +78,9 @@ enum class NotificationChannels(
         R.string.silent_vacant_notification,
         R.string.silent_vacant_notification_status, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.OUTHOUSE)
      */
+    SCHEDULED_COMMAND_NOTIFICATION("scheduled_command_notification",
+            R.string.scheduled_command_upcoming,
+            R.string.scheduled_command_upcoming_description, NotificationManager.IMPORTANCE_LOW, notificationChannelGroups = NotificationChannelGroups.SOLAR)
     ;
     companion object {
         val OLD_CHANNELS = listOf(

@@ -72,7 +72,7 @@ class PersistentService : Service(), Runnable{
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
-    private val executorService = Executors.newFixedThreadPool(3) // This value of 3 should be increased if we add more services
+    private val executorService = Executors.newCachedThreadPool()
     private lateinit var millisServices: List<MillisServiceObject>
 
     private var metaUpdaterFuture: Future<*>? = null
@@ -259,7 +259,7 @@ class PersistentService : Service(), Runnable{
         val preferredSourceId = createConnectionProfileManager(this).activeProfile.profile.preferredSourceId
         alterUpdaterFuture?.cancel(true)
         if (preferredSourceId != null) {
-            alterUpdaterFuture = executorService.submit(AlterUpdater(database, alterHandler, preferredSourceId))
+            alterUpdaterFuture = executorService.submit(AlterUpdater(database, alterHandler, preferredSourceId, this))
         } else {
             println("Not updating alter packets because the user has not set a preferred source ID")
         }
@@ -291,6 +291,7 @@ class PersistentService : Service(), Runnable{
 
         alterUpdaterFuture?.cancel(true)
         alterUpdaterFuture = null
+        cancelAlterNotifications(this)
 
         executorService.shutdownNow()
     }
