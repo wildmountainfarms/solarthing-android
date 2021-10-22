@@ -36,6 +36,7 @@ class PacketGroupData {
     fun getLatestPacket(): StoredPacketGroup? {
         return useCache { it.createAllCachedPacketsStream(true).findFirst().orElse(null) }
     }
+    @get:Synchronized
     val recommendedQuery: MillisQuery
         get() = cache.recommendedQuery
 

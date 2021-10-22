@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.drawable.Icon
-import android.os.*
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.activity.MainActivity
@@ -15,16 +17,20 @@ import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
 import me.retrodaredevil.solarthing.android.prefs.*
-import me.retrodaredevil.solarthing.android.request.MillisDatabaseDataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
-import me.retrodaredevil.solarthing.android.util.*
+import me.retrodaredevil.solarthing.android.request.MillisDatabaseDataRequester
+import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
+import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
+import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
+import me.retrodaredevil.solarthing.android.util.getSSID
 import me.retrodaredevil.solarthing.database.MillisDatabase
 import me.retrodaredevil.solarthing.database.SolarThingDatabase
 import me.retrodaredevil.solarthing.database.couchdb.CouchDbSolarThingDatabase
-import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 
 fun restartService(context: Context){
@@ -56,25 +62,23 @@ private class MillisServiceObject(
     val millisDataService: MillisDataService,
     val millisDatabaseGetter: (SolarThingDatabase) -> MillisDatabase
 ){
-    var task: AsyncTask<*, *, *>? = null
+    var future: Future<*>? = null
 }
 
 class PersistentService : Service(), Runnable{
-    companion object {
-        private val MAPPER = createDefaultObjectMapper().apply {
-            JacksonUtil.lenientMapper(this)
-        }
-    }
     private var initialized = false
     private lateinit var handler: Handler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
+    private val executorService = Executors.newFixedThreadPool(3) // This value of 3 should be increased if we add more services
     private lateinit var millisServices: List<MillisServiceObject>
 
-    private var metaUpdaterTask: AsyncTask<*, *, *>? = null
+    private var metaUpdaterFuture: Future<*>? = null
     private val metaHandler = MetaHandler()
+    private var alterUpdaterFuture: Future<*>? = null
+    private val alterHandler = AlterHandler()
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -224,10 +228,10 @@ class PersistentService : Service(), Runnable{
         val database = CouchDbSolarThingDatabase.create(instance)
         var needsLargeData = false
         for(service in millisServices){
-            val task = service.task
-            if(task != null){
-                service.task = null
-                if(task.cancel(true)) { // if the task was still running then...
+            val future = service.future
+            if(future != null){
+                service.future = null
+                if(future.cancel(true)) { // if the task was still running then...
                     service.millisDataService.onTimeout()
                 }
             }
@@ -247,10 +251,18 @@ class PersistentService : Service(), Runnable{
                 needsLargeData = true
             }
             val dataRequester = DataRequesterMultiplexer(dataRequesters)
-            service.task = DataUpdaterTask(dataRequester, service.millisDataService::onDataRequest).execute()
+            service.future = executorService.submit(DataUpdater(dataRequester, service.millisDataService::onDataRequest))
         }
-        metaUpdaterTask?.cancel(true)
-        metaUpdaterTask = MetaUpdaterTask(properties, metaHandler).execute()
+        metaUpdaterFuture?.cancel(true)
+        metaUpdaterFuture = executorService.submit(MetaUpdater(database, metaHandler))
+
+        val preferredSourceId = createConnectionProfileManager(this).activeProfile.profile.preferredSourceId
+        alterUpdaterFuture?.cancel(true)
+        if (preferredSourceId != null) {
+            alterUpdaterFuture = executorService.submit(AlterUpdater(database, alterHandler, preferredSourceId))
+        } else {
+            println("Not updating alter packets because the user has not set a preferred source ID")
+        }
 
         val delay = if(needsLargeData){ activeConnectionProfile.initialRequestTimeSeconds * 1000L } else { activeConnectionProfile.subsequentRequestTimeSeconds * 1000L }
         handler.postDelayed(this, delay)
@@ -270,12 +282,17 @@ class PersistentService : Service(), Runnable{
         handler.removeCallbacks(this)
         unregisterReceiver(receiver)
         for(service in millisServices){
-            service.task?.cancel(true)
+            service.future?.cancel(true)
             service.millisDataService.onCancel()
             service.millisDataService.onEnd()
         }
-        metaUpdaterTask?.cancel(true)
-        metaUpdaterTask = null
+        metaUpdaterFuture?.cancel(true)
+        metaUpdaterFuture = null
+
+        alterUpdaterFuture?.cancel(true)
+        alterUpdaterFuture = null
+
+        executorService.shutdownNow()
     }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -291,19 +308,12 @@ class PersistentService : Service(), Runnable{
 
     }
 }
-private class DataUpdaterTask(
+private class DataUpdater(
         private val dataRequester: DataRequester,
         private val updateNotification: (dataRequest: DataRequest) -> Unit
-) : AsyncTask<Void, Void, DataRequest>() {
-    override fun doInBackground(vararg params: Void?): DataRequest {
-        return dataRequester.requestData()
-    }
-
-    override fun onPostExecute(result: DataRequest?) {
-        if(result == null){
-            throw NullPointerException("result is null!")
-        }
-//        println("Received result: $result")
+) : Runnable {
+    override fun run() {
+        val result = dataRequester.requestData()
         updateNotification(result)
     }
 }

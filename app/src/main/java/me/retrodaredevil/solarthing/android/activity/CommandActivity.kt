@@ -9,11 +9,9 @@ import android.provider.Settings
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import me.retrodaredevil.couchdb.CouchDbUtil
 import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdbjava.exception.CouchDbException
 import me.retrodaredevil.couchdbjava.json.StringJsonData
-import me.retrodaredevil.okhttp3.OkHttpPropertiesBuilder
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
@@ -30,15 +28,10 @@ import me.retrodaredevil.solarthing.commands.packets.status.AvailableCommandsPac
 import me.retrodaredevil.solarthing.commands.util.CommandManager
 import me.retrodaredevil.solarthing.packets.collection.*
 import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePacket
-import me.retrodaredevil.solarthing.packets.instance.InstanceSourcePackets
 import me.retrodaredevil.solarthing.packets.instance.InstanceTargetPackets
 import me.retrodaredevil.solarthing.packets.security.ImmutableAuthNewSenderPacket
-import me.retrodaredevil.solarthing.packets.security.ImmutableLargeIntegrityPacket
-import me.retrodaredevil.solarthing.packets.security.crypto.Encrypt
-import me.retrodaredevil.solarthing.packets.security.crypto.HashUtil
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
 import me.retrodaredevil.solarthing.util.JacksonUtil
-import me.retrodaredevil.solarthing.util.TimeRange
 import java.io.File
 import java.io.FileNotFoundException
 import java.security.KeyPair

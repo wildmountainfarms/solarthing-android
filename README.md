@@ -72,3 +72,6 @@ as many use cases as possible. I recommend opening an issue and getting some tho
 
 There are a few things I am unable to test because I have only tested with a system with both FX's and MX's.
 Some of these features are in the "Features to Add that I am unable to test" and "Future changes to make"
+
+### Code Style
+* Use continuation indent for everything Android gives you the option
