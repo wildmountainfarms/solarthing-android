@@ -9,6 +9,7 @@ import me.retrodaredevil.solarthing.database.VersionedPacket
 import me.retrodaredevil.solarthing.database.exception.SolarThingDatabaseException
 import me.retrodaredevil.solarthing.type.alter.StoredAlterPacket
 import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
+import java.lang.RuntimeException
 
 fun cancelAlterNotifications(context: Context) {
     context.getManager().apply {
@@ -36,7 +37,7 @@ class AlterUpdater(
                 ex.printStackTrace()
             }
         } catch (ex: SolarThingDatabaseException) {
-            ex.printStackTrace()
+            throw RuntimeException(ex)
         }
     }
     private fun updateNotifications(packets: List<VersionedPacket<StoredAlterPacket>>) {

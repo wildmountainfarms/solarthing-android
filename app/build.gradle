@@ -110,5 +110,10 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") // { changing = true } // uncomment if we use a snapshot version of Jackson
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    api group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-android
+    implementation group: 'org.slf4j', name: 'slf4j-android', version: slf4jVersion
+
 //    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.1'
 }

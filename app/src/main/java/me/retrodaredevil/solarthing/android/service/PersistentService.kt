@@ -10,6 +10,7 @@ import android.graphics.drawable.Icon
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.activity.MainActivity
@@ -28,7 +29,9 @@ import me.retrodaredevil.solarthing.android.util.getSSID
 import me.retrodaredevil.solarthing.database.MillisDatabase
 import me.retrodaredevil.solarthing.database.SolarThingDatabase
 import me.retrodaredevil.solarthing.database.couchdb.CouchDbSolarThingDatabase
+import org.slf4j.LoggerFactory
 import java.util.*
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
@@ -65,20 +68,24 @@ private class MillisServiceObject(
     var future: Future<*>? = null
 }
 
+
 class PersistentService : Service(), Runnable{
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(PersistentService::class.java)
+    }
     private var initialized = false
     private lateinit var handler: Handler
     private lateinit var connectionProfileManager: ProfileManager<ConnectionProfile>
     private lateinit var solarProfileManager: ProfileManager<SolarProfile>
     private lateinit var miscProfileProvider: ProfileProvider<MiscProfile>
 
-    private val executorService = Executors.newCachedThreadPool()
+    private lateinit var executorService: ExecutorService
     private lateinit var millisServices: List<MillisServiceObject>
 
     private var metaUpdaterFuture: Future<*>? = null
-    private val metaHandler = MetaHandler()
+    private lateinit var metaHandler: MetaHandler
     private var alterUpdaterFuture: Future<*>? = null
-    private val alterHandler = AlterHandler()
+    private lateinit var alterHandler: AlterHandler
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -90,6 +97,11 @@ class PersistentService : Service(), Runnable{
         connectionProfileManager = createConnectionProfileManager(this)
         solarProfileManager = createSolarProfileManager(this)
         miscProfileProvider = createMiscProfileProvider(this)
+
+        executorService = Executors.newCachedThreadPool()
+        metaHandler = MetaHandler()
+        alterHandler = AlterHandler()
+
         val solarStatusData = PacketGroupData()
         val solarEventData = PacketGroupData()
         val application = application as SolarThingApplication
@@ -251,15 +263,15 @@ class PersistentService : Service(), Runnable{
                 needsLargeData = true
             }
             val dataRequester = DataRequesterMultiplexer(dataRequesters)
-            service.future = executorService.submit(DataUpdater(dataRequester, service.millisDataService::onDataRequest))
+            service.future = submit(DataUpdater(dataRequester, service.millisDataService::onDataRequest))
         }
         metaUpdaterFuture?.cancel(true)
-        metaUpdaterFuture = executorService.submit(MetaUpdater(database, metaHandler))
+        metaUpdaterFuture = submit(MetaUpdater(database, metaHandler))
 
         val preferredSourceId = createConnectionProfileManager(this).activeProfile.profile.preferredSourceId
         alterUpdaterFuture?.cancel(true)
         if (preferredSourceId != null) {
-            alterUpdaterFuture = executorService.submit(AlterUpdater(database, alterHandler, preferredSourceId, this))
+            alterUpdaterFuture = submit(AlterUpdater(database, alterHandler, preferredSourceId, this))
         } else {
             println("Not updating alter packets because the user has not set a preferred source ID")
         }
@@ -267,6 +279,16 @@ class PersistentService : Service(), Runnable{
         val delay = if(needsLargeData){ activeConnectionProfile.initialRequestTimeSeconds * 1000L } else { activeConnectionProfile.subsequentRequestTimeSeconds * 1000L }
         handler.postDelayed(this, delay)
         updateNotification(System.currentTimeMillis() + delay)
+    }
+    private fun submit(runnable: Runnable): Future<*> {
+        return executorService.submit {
+            try {
+                runnable.run()
+            } catch (th: Throwable) {
+                LOGGER.error("Got error from a submitted Runnable", th)
+                throw th
+            }
+        }
     }
     private fun reload(){
         handler.removeCallbacks(this)
