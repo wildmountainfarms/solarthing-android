@@ -9,7 +9,7 @@ import me.retrodaredevil.solarthing.database.VersionedPacket
 import me.retrodaredevil.solarthing.database.exception.SolarThingDatabaseException
 import me.retrodaredevil.solarthing.type.alter.StoredAlterPacket
 import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
-import java.lang.RuntimeException
+import org.slf4j.LoggerFactory
 
 fun cancelAlterNotifications(context: Context) {
     context.getManager().apply {
@@ -24,20 +24,17 @@ class AlterUpdater(
         private val sourceId: String,
         private val context: Context,
 ) : Runnable {
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(AlterUpdater::class.java)
+        val CANCEL_COMMAND_ACTION = "me.retrodaredevil.solarthing.android.CANCEL_COMMAND_ACTION"
+    }
     override fun run() {
-        println("Going to get alter packets")
         try {
             val packets: List<VersionedPacket<StoredAlterPacket>> = database.alterDatabase.queryAll(sourceId)
-            println("Got ${packets.size} alter packets!")
             alterHandler.update(packets)
-            try {
-                updateNotifications(packets)
-            } catch(ex: Exception) {
-                // This is here because I need to know when this fails, and currently executor services don't print the stacktrace when they swallow an exception
-                ex.printStackTrace()
-            }
+            updateNotifications(packets)
         } catch (ex: SolarThingDatabaseException) {
-            throw RuntimeException(ex)
+            LOGGER.error("Error querying alter database", ex)
         }
     }
     private fun updateNotifications(packets: List<VersionedPacket<StoredAlterPacket>>) {
@@ -47,21 +44,16 @@ class AlterUpdater(
         }
                 .sortedBy { it.second.data.scheduledTimeMillis }
                 .take(5) // maximum of 5 notifications for now
-        println("Going to send ${scheduledStoredPackets.size} scheduled command notifications")
+        LOGGER.info("Going to send ${scheduledStoredPackets.size} scheduled command notifications")
         val manager = context.getManager()
-        println("here1 $scheduledStoredPackets")
         for ((i, pair) in scheduledStoredPackets.withIndex()) {
             val notificationId = SCHEDULED_COMMAND_NOTIFICATION_START_ID + i
             val (versionedPacket, scheduledCommandPacket) = pair
             val notification = NotificationHandler.createScheduledCommandNotification(context, versionedPacket, scheduledCommandPacket)
             manager.notify(notificationId, notification)
-            println("Notifying with $notificationId")
         }
-        println("here2")
         for (notificationId in (SCHEDULED_COMMAND_NOTIFICATION_START_ID + scheduledStoredPackets.size) until (SCHEDULED_COMMAND_NOTIFICATION_START_ID + SCHEDULED_COMMAND_MAX_NOTIFICATIONS)) {
             manager.cancel(notificationId)
-            println("Cancelling $notificationId")
         }
-        println("here3")
     }
 }

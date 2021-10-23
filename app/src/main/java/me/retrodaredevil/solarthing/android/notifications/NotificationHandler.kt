@@ -10,9 +10,12 @@ import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
+import me.retrodaredevil.solarthing.android.service.AlterUpdater
+import me.retrodaredevil.solarthing.android.service.SolarStatusService
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
 import me.retrodaredevil.solarthing.database.VersionedPacket
+import me.retrodaredevil.solarthing.database.couchdb.RevisionUpdateToken
 import me.retrodaredevil.solarthing.packets.DocumentedPacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
@@ -38,6 +41,7 @@ import me.retrodaredevil.solarthing.solar.tracer.TracerStatusPacket
 import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingEquipmentError
 import me.retrodaredevil.solarthing.type.alter.StoredAlterPacket
 import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
+import org.slf4j.LoggerFactory
 import java.text.DateFormat
 import java.util.*
 
@@ -51,6 +55,8 @@ object NotificationHandler {
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
     private const val TRACER_COLOR_HEX_STRING = "#60808f"
     private const val BATTERY_ONLY_COLOR_HEX_STRING = "#1b876a"
+
+    private val LOGGER = LoggerFactory.getLogger(NotificationHandler::class.java)
 
 
     private fun oneWord(string: String): String {
@@ -729,7 +735,26 @@ object NotificationHandler {
             val requestedDateMillis = it.source.dateMillis
             builder.setContentText("Requested at ${getTimeString(requestedDateMillis)} by ${it.source.sender}")
         }
-        // TODO use versionedPacket to add a button that will send a request to cancel the scheduled command
+        val updateToken = versionedPacket.updateToken
+        if (updateToken is RevisionUpdateToken) {
+            builder.addAction(
+                    Notification.Action.Builder(
+                            Icon.createWithResource(context, R.drawable.solar_panel),
+                            "Cancel Command",
+                            PendingIntent.getBroadcast(
+                                    context,
+                                    0,
+                                    Intent(AlterUpdater.CANCEL_COMMAND_ACTION).apply {
+                                        putExtra("documentId", versionedPacket.packet.dbId)
+                                        putExtra("revision", updateToken.revision) // for now, hard code to assume the database is CouchDB
+                                    },
+                                    PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                    ).build()
+            )
+        } else {
+            LOGGER.warn("The update token is not a RevisionUpdateToken! We were not expecting that.")
+        }
 
         return builder.build()
     }

@@ -24,12 +24,8 @@ import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
 import me.retrodaredevil.solarthing.database.MillisQuery
-import me.retrodaredevil.solarthing.type.closed.meta.BasicMetaPacketType
-import me.retrodaredevil.solarthing.type.closed.meta.TargetMetaPacket
-import me.retrodaredevil.solarthing.type.closed.meta.TargetedMetaPacketType
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.FragmentedPacketGroup
-import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
 import me.retrodaredevil.solarthing.packets.identification.IdentifierFragment
 import me.retrodaredevil.solarthing.packets.identification.NumberedIdentifier
@@ -44,8 +40,12 @@ import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
 import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
+import me.retrodaredevil.solarthing.type.closed.meta.BasicMetaPacketType
+import me.retrodaredevil.solarthing.type.closed.meta.TargetMetaPacket
+import me.retrodaredevil.solarthing.type.closed.meta.TargetedMetaPacketType
 import java.time.Duration
-import java.util.*
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.math.roundToLong
 
 
@@ -91,9 +91,6 @@ class SolarStatusService(
 
     private lateinit var dataClient: DataClient
 
-
-    private val mutableCalendar: Calendar = Calendar.getInstance()
-
     override fun onInit() {
         notify(getBuilder()
                 .loadingNotification()
@@ -126,12 +123,8 @@ class SolarStatusService(
     }
 
     private fun getDayStartTimeMillis(dateMillis: Long): Long {
-        mutableCalendar.timeInMillis = dateMillis
-        mutableCalendar[Calendar.HOUR_OF_DAY] = 0
-        mutableCalendar[Calendar.MINUTE] = 0
-        mutableCalendar[Calendar.SECOND] = 0
-        mutableCalendar[Calendar.MILLISECOND] = 0
-        return mutableCalendar.timeInMillis
+        val zoneId = ZoneId.systemDefault()
+        return Instant.ofEpochMilli(dateMillis).atZone(zoneId).toLocalDate().atStartOfDay(zoneId).toInstant().toEpochMilli()
     }
 
     private fun createSolarInfoList(sortedPackets: List<FragmentedPacketGroup>, fxChargingSettings: FXChargingSettings?): List<SolarInfo> {

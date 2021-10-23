@@ -10,7 +10,6 @@ import android.graphics.drawable.Icon
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.activity.MainActivity
@@ -86,6 +85,7 @@ class PersistentService : Service(), Runnable{
     private lateinit var metaHandler: MetaHandler
     private var alterUpdaterFuture: Future<*>? = null
     private lateinit var alterHandler: AlterHandler
+    private lateinit var alterService: AlterService
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -101,6 +101,7 @@ class PersistentService : Service(), Runnable{
         executorService = Executors.newCachedThreadPool()
         metaHandler = MetaHandler()
         alterHandler = AlterHandler()
+        alterService = AlterService(this)
 
         val solarStatusData = PacketGroupData()
         val solarEventData = PacketGroupData()
@@ -121,9 +122,10 @@ class PersistentService : Service(), Runnable{
         for(service in millisServices){
             service.millisDataService.onInit()
         }
+        alterService.register()
         handler.postDelayed(this, 300)
         Toast.makeText(this, "SolarThing Notification Service started", Toast.LENGTH_LONG).show()
-        println("Starting service")
+        LOGGER.info("Starting service")
         updateNotification(System.currentTimeMillis() + 300)
         initialized = true
         return START_STICKY
@@ -219,16 +221,16 @@ class PersistentService : Service(), Runnable{
         if(miscProfileProvider.activeProfile.profile.networkSwitchingEnabled) {
             try {
                 val id = getSSID(this)
-                println("Current ssid: $id")
+                LOGGER.debug("Current ssid: $id")
                 val switchUUID = getProfileToSwitchTo(id, connectionProfileManager, ConnectionProfile::networkSwitchingProfile)
                 if (switchUUID != null && connectionProfileManager.activeUUID != switchUUID) {
                     connectionProfileManager.activeUUID = switchUUID
                     Toast.makeText(this, "Changed to profile: ${connectionProfileManager.getProfileName(switchUUID)}", Toast.LENGTH_SHORT).show()
                 }
             } catch(ex: SSIDPermissionException){
-                ex.printStackTrace()
+                LOGGER.info("Got permission exception while trying to get SSID", ex)
             } catch(ex: SSIDNotAvailable){
-                ex.printStackTrace()
+                LOGGER.info("Got unknown SSID", ex)
             }
         }
 
@@ -273,7 +275,7 @@ class PersistentService : Service(), Runnable{
         if (preferredSourceId != null) {
             alterUpdaterFuture = submit(AlterUpdater(database, alterHandler, preferredSourceId, this))
         } else {
-            println("Not updating alter packets because the user has not set a preferred source ID")
+            LOGGER.warn("Not updating alter packets because the user has not set a preferred source ID")
         }
 
         val delay = if(needsLargeData){ activeConnectionProfile.initialRequestTimeSeconds * 1000L } else { activeConnectionProfile.subsequentRequestTimeSeconds * 1000L }
@@ -297,10 +299,10 @@ class PersistentService : Service(), Runnable{
 
     override fun onDestroy() {
         if(!initialized){
-            println("This PersistentService wasn't initialized for some reason... Not to worry, we prepared for this!")
+            LOGGER.info("This PersistentService wasn't initialized for some reason... Not to worry, we prepared for this!")
             return
         }
-        println("Stopping persistent service")
+        LOGGER.info("Stopping persistent service")
         handler.removeCallbacks(this)
         unregisterReceiver(receiver)
         for(service in millisServices){
@@ -314,6 +316,7 @@ class PersistentService : Service(), Runnable{
         alterUpdaterFuture?.cancel(true)
         alterUpdaterFuture = null
         cancelAlterNotifications(this)
+        alterService.unregister()
 
         executorService.shutdownNow()
     }
@@ -324,7 +327,7 @@ class PersistentService : Service(), Runnable{
                     STOP_SERVICE_ACTION -> stopService(context)
                     RELOAD_SERVICE_ACTION -> reload()
                     RESTART_SERVICE_ACTION -> restartService(context)
-                    else -> println("unknown action: ${intent.action}")
+                    else -> LOGGER.warn("unknown action: ${intent.action}")
                 }
             }
         }
