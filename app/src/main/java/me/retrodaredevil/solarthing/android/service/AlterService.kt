@@ -1,5 +1,6 @@
 package me.retrodaredevil.solarthing.android.service
 
+import android.app.KeyguardManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -24,6 +25,14 @@ class AlterService(
         service.unregisterReceiver(receiver)
     }
 
+    private fun getKeyguardManager(): KeyguardManager {
+        return service.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+    }
+
+    private fun isScreenUnlocked(): Boolean {
+        return !getKeyguardManager().isDeviceLocked
+    }
+
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             context!!; intent!!
@@ -31,7 +40,14 @@ class AlterService(
                 AlterUpdater.CANCEL_COMMAND_ACTION -> {
                     val documentId = intent.getStringExtra("documentId") ?: error("documentId was null!")
                     val revision = intent.getStringExtra("revision") ?: error("revision was null!")
-                    LOGGER.info("Cancelling scheduled command: $documentId $revision")
+                    if (isScreenUnlocked()) {
+                        LOGGER.info("Cancelling scheduled command: $documentId $revision unlocked: ${isScreenUnlocked()}")
+                    } else {
+                        LOGGER.info("Cannot cancel command when the screen is locked!")
+                        // TODO maybe tell the user they need to unlock the screen?
+//                        getKeyguardManager().requestDismissKeyguard(..., null)
+                        // We cannot force an unlock of the screen without an activity unless we're on Android 12
+                    }
                 }
             }
         }

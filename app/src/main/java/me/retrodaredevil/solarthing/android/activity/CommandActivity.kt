@@ -41,7 +41,6 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.*
-import javax.crypto.Cipher
 
 private fun getAvailableCommands(application: SolarThingApplication): Pair<String, Map<Int, List<CommandInfo>>>? {
     // Just get the last 20 minutes worth of data, because we don't need much data to find what the available commands are.
@@ -68,11 +67,6 @@ private fun getAvailableCommands(application: SolarThingApplication): Pair<Strin
 }
 
 class CommandActivity : AppCompatActivity() {
-    companion object {
-        private val MAPPER = JacksonUtil.defaultMapper()
-    }
-
-    private val cipher = Cipher.getInstance(KeyUtil.CIPHER_TRANSFORMATION)
 
     private lateinit var profileManager: ProfileManager<ConnectionProfile>
 

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.R
@@ -737,21 +738,26 @@ object NotificationHandler {
         }
         val updateToken = versionedPacket.updateToken
         if (updateToken is RevisionUpdateToken) {
-            builder.addAction(
-                    Notification.Action.Builder(
-                            Icon.createWithResource(context, R.drawable.solar_panel),
-                            "Cancel Command",
-                            PendingIntent.getBroadcast(
-                                    context,
-                                    0,
-                                    Intent(AlterUpdater.CANCEL_COMMAND_ACTION).apply {
-                                        putExtra("documentId", versionedPacket.packet.dbId)
-                                        putExtra("revision", updateToken.revision) // for now, hard code to assume the database is CouchDB
-                                    },
-                                    PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                            )
-                    ).build()
+            val actionBuilder = Notification.Action.Builder(
+                    Icon.createWithResource(context, R.drawable.solar_panel),
+                    "Cancel Command",
+                    PendingIntent.getBroadcast(
+                            context,
+                            0,
+                            Intent(AlterUpdater.CANCEL_COMMAND_ACTION).apply {
+                                putExtra("documentId", versionedPacket.packet.dbId)
+                                putExtra("revision", updateToken.revision) // for now, hard code to assume the database is CouchDB
+                            },
+                            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
             )
+            // TODO require authentication on SDK_INT >= 31 (Android 12)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                // We are "deleting" the scheduled command
+                actionBuilder.setSemanticAction(Notification.Action.SEMANTIC_ACTION_DELETE)
+            }
+            builder.addAction(actionBuilder.build())
         } else {
             LOGGER.warn("The update token is not a RevisionUpdateToken! We were not expecting that.")
         }

@@ -26,7 +26,7 @@ class AlterUpdater(
 ) : Runnable {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(AlterUpdater::class.java)
-        val CANCEL_COMMAND_ACTION = "me.retrodaredevil.solarthing.android.CANCEL_COMMAND_ACTION"
+        const val CANCEL_COMMAND_ACTION = "me.retrodaredevil.solarthing.android.CANCEL_COMMAND_ACTION"
     }
     override fun run() {
         try {
