@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.widget.Toast
 import me.retrodaredevil.solarthing.android.getIntExtraOrNull
 import me.retrodaredevil.solarthing.android.notifications.CANCEL_SCHEDULED_COMMAND_ALREADY_RUNNING_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
@@ -59,7 +60,7 @@ class AlterService(
                         LOGGER.info("Cancelling scheduled command: $documentId $revision unlocked: ${isScreenUnlocked()}")
                     } else {
                         LOGGER.info("Cannot cancel command when the screen is locked!")
-                        // TODO maybe tell the user they need to unlock the screen?
+                        Toast.makeText(service, "Must unlock device", Toast.LENGTH_LONG).show()
 //                        getKeyguardManager().requestDismissKeyguard(..., null)
                         // We cannot force an unlock of the screen without an activity unless we're on Android 12
                     }
