@@ -1,6 +1,7 @@
 package me.retrodaredevil.solarthing.android.service
 
 import me.retrodaredevil.solarthing.database.MillisQuery
+import me.retrodaredevil.solarthing.database.MillisQueryBuilder
 import me.retrodaredevil.solarthing.database.cache.DatabaseCache
 import me.retrodaredevil.solarthing.database.cache.SimpleDatabaseCache
 import me.retrodaredevil.solarthing.packets.collection.StoredPacketGroup
@@ -36,9 +37,11 @@ class PacketGroupData {
     fun getLatestPacket(): StoredPacketGroup? {
         return useCache { it.createAllCachedPacketsStream(true).findFirst().orElse(null) }
     }
-    @get:Synchronized
-    val recommendedQuery: MillisQuery
-        get() = cache.recommendedQuery
+
+    @Synchronized
+    fun createRecommendedQueryBuilder(): MillisQueryBuilder {
+        return cache.createRecommendedQueryBuilder()
+    }
 
     fun getLastPacketsGroups(last: Duration): List<StoredPacketGroup> {
         return useCache { it.getCachedPacketsInRange(TimeRange.createAfter(Instant.now() - last), false) }

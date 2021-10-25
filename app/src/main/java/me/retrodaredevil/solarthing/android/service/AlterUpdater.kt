@@ -49,7 +49,7 @@ class AlterUpdater(
         for ((i, pair) in scheduledStoredPackets.withIndex()) {
             val notificationId = SCHEDULED_COMMAND_NOTIFICATION_START_ID + i
             val (versionedPacket, scheduledCommandPacket) = pair
-            val notification = NotificationHandler.createScheduledCommandNotification(context, versionedPacket, scheduledCommandPacket)
+            val notification = NotificationHandler.createScheduledCommandNotification(context, notificationId, versionedPacket, scheduledCommandPacket)
             manager.notify(notificationId, notification)
         }
         for (notificationId in (SCHEDULED_COMMAND_NOTIFICATION_START_ID + scheduledStoredPackets.size) until (SCHEDULED_COMMAND_NOTIFICATION_START_ID + SCHEDULED_COMMAND_MAX_NOTIFICATIONS)) {

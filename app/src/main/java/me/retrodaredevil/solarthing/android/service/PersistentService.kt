@@ -21,10 +21,7 @@ import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
 import me.retrodaredevil.solarthing.android.request.MillisDatabaseDataRequester
-import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
-import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
-import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
-import me.retrodaredevil.solarthing.android.util.getSSID
+import me.retrodaredevil.solarthing.android.util.*
 import me.retrodaredevil.solarthing.database.MillisDatabase
 import me.retrodaredevil.solarthing.database.SolarThingDatabase
 import me.retrodaredevil.solarthing.database.couchdb.CouchDbSolarThingDatabase
@@ -35,27 +32,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
 
-fun restartService(context: Context){
-    val serviceIntent = Intent(context, PersistentService::class.java)
-    context.stopService(serviceIntent)
-    context.startForegroundService(serviceIntent)
-}
-fun startServiceIfNotRunning(context: Context){
-    if(isServiceRunning(context, PersistentService::class.java)){
-        return
-    }
-    val serviceIntent = Intent(context, PersistentService::class.java)
-    context.startForegroundService(serviceIntent)
-}
-fun stopService(context: Context){
-    val serviceIntent = Intent(context, PersistentService::class.java)
-    context.stopService(serviceIntent)
-}
-private fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
-    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    @Suppress("DEPRECATION")
-    return manager.getRunningServices(Int.MAX_VALUE).any { serviceClass.name == it.service.className }
-}
 private const val STOP_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.stop_service"
 private const val RELOAD_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.reload_service"
 private const val RESTART_SERVICE_ACTION = "me.retrodaredevil.solarthing.android.service.action.restart_service"
@@ -71,6 +47,7 @@ private class MillisServiceObject(
 class PersistentService : Service(), Runnable{
     companion object {
         private val LOGGER = LoggerFactory.getLogger(PersistentService::class.java)
+        val serviceHelper = ServiceHelper(PersistentService::class.java)
     }
     private var initialized = false
     private lateinit var handler: Handler
@@ -324,9 +301,9 @@ class PersistentService : Service(), Runnable{
         override fun onReceive(context: Context?, intent: Intent?) {
             if(context != null && intent != null){
                 when(intent.action){
-                    STOP_SERVICE_ACTION -> stopService(context)
+                    STOP_SERVICE_ACTION -> serviceHelper.stopService(context)
                     RELOAD_SERVICE_ACTION -> reload()
-                    RESTART_SERVICE_ACTION -> restartService(context)
+                    RESTART_SERVICE_ACTION -> serviceHelper.restartService(context)
                     else -> LOGGER.warn("unknown action: ${intent.action}")
                 }
             }

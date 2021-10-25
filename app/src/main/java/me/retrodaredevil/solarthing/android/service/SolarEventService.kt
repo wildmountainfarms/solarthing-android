@@ -118,7 +118,7 @@ class SolarEventService(
     override val updatePeriodType = UpdatePeriodType.SMALL_DATA // it should always be small data
 
     override val recommendedMillisQuery: MillisQuery
-        get() = data.recommendedQuery
+        get() = data.createRecommendedQueryBuilder().build()
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.COMMAND_FEEDBACK.isCurrentlyEnabled(service) || NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)

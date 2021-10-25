@@ -3,9 +3,8 @@ package me.retrodaredevil.solarthing.android
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.widget.Toast
-import me.retrodaredevil.solarthing.android.service.startServiceIfNotRunning
+import me.retrodaredevil.solarthing.android.service.PersistentService
 
 class BootReceiver : BroadcastReceiver() {
     private var alreadyStarted = false
@@ -17,7 +16,7 @@ class BootReceiver : BroadcastReceiver() {
             if(alreadyStarted){
                 println("Good")
                 Toast.makeText(context, "Checking to make sure SolarThing is started.", Toast.LENGTH_LONG).show()
-                startServiceIfNotRunning(context)
+                PersistentService.serviceHelper.startServiceIfNotRunning(context)
                 return
             } else {
                 println("Even though SDK_INT >= N, this isn't started yet!")
@@ -29,7 +28,7 @@ class BootReceiver : BroadcastReceiver() {
         val miscProfile = createMiscProfileProvider(context).activeProfile.profile
         if(miscProfile.startOnBoot) {
             println("Starting on boot")
-            startServiceIfNotRunning(context)
+            PersistentService.serviceHelper.startServiceIfNotRunning(context)
             alreadyStarted = true
         } else {
             println("Start on boot not enabled!")

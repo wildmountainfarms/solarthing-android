@@ -5,8 +5,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.StartupHelper
-import me.retrodaredevil.solarthing.android.service.restartService
-import me.retrodaredevil.solarthing.android.service.stopService
+import me.retrodaredevil.solarthing.android.service.PersistentService
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
 
@@ -32,10 +31,10 @@ class MainActivity : AppCompatActivity() {
     }
     @Suppress("UNUSED_PARAMETER")
     fun restartService(view: View){
-        restartService(this)
+        PersistentService.serviceHelper.restartService(this)
     }
     @Suppress("UNUSED_PARAMETER")
     fun stopService(view: View){
-        stopService(this)
+        PersistentService.serviceHelper.stopService(this)
     }
 }

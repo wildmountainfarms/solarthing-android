@@ -12,7 +12,6 @@ import android.text.Spanned
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.service.AlterUpdater
-import me.retrodaredevil.solarthing.android.service.SolarStatusService
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
 import me.retrodaredevil.solarthing.database.VersionedPacket
@@ -44,6 +43,7 @@ import me.retrodaredevil.solarthing.type.alter.StoredAlterPacket
 import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
 import org.slf4j.LoggerFactory
 import java.text.DateFormat
+import java.time.Instant
 import java.util.*
 
 
@@ -721,8 +721,8 @@ object NotificationHandler {
         }
         return r
     }
-    fun createScheduledCommandNotification(context: Context, versionedPacket: VersionedPacket<StoredAlterPacket>, scheduledCommandPacket: ScheduledCommandPacket): Notification {
-        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, null)
+    fun createScheduledCommandNotification(context: Context, notificationId: Int?, versionedPacket: VersionedPacket<StoredAlterPacket>, scheduledCommandPacket: ScheduledCommandPacket): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, notificationId)
                 .setSmallIcon(R.drawable.solar_panel)
                 .setWhen(scheduledCommandPacket.data.scheduledTimeMillis)
                 .setShowWhen(true)
@@ -747,6 +747,7 @@ object NotificationHandler {
                             Intent(AlterUpdater.CANCEL_COMMAND_ACTION).apply {
                                 putExtra("documentId", versionedPacket.packet.dbId)
                                 putExtra("revision", updateToken.revision) // for now, hard code to assume the database is CouchDB
+                                putExtra("sourceId", versionedPacket.packet.sourceId)
                             },
                             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
@@ -762,6 +763,46 @@ object NotificationHandler {
             LOGGER.warn("The update token is not a RevisionUpdateToken! We were not expecting that.")
         }
 
+        return builder.build()
+    }
+    fun createNoGeneratedKeyNotification(context: Context, notificationId: Int?): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, notificationId)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle("No Generated Keys")
+                .setContentText("You must generate keys to send requests")
+        // TODO open command activity when tapping on this notification
+        return builder.build()
+    }
+    fun createCancelCommandAlreadyRunningNotification(context: Context, notificationId: Int?): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, notificationId)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(System.currentTimeMillis())
+                .setContentTitle("Already Cancelling A Command")
+                .setContentText("Only one command can be cancelled at a time")
+                .setAutoCancel(true)
+        return builder.build()
+    }
+    fun createCancellingCommandNotification(context: Context, now: Instant, notificationId: Int?, documentId: String): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, notificationId)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(now.toEpochMilli())
+                .setContentTitle("Cancelling")
+                .setContentText(documentId)
+
+        return builder.build()
+    }
+    fun createCancelCommandResultNotification(context: Context, success: Boolean, notificationId: Int?, documentId: String): Notification {
+        val builder = createNotificationBuilder(context, NotificationChannels.SCHEDULED_COMMAND_NOTIFICATION.id, notificationId)
+                .setSmallIcon(R.drawable.solar_panel)
+                .setWhen(System.currentTimeMillis())
+        if (success) {
+            builder.setContentTitle("Requested to Cancel Command")
+                    .setContentText(documentId)
+        } else {
+            builder.setContentTitle("Failed to Cancel")
+                    .setContentText(documentId)
+        }
         return builder.build()
     }
 

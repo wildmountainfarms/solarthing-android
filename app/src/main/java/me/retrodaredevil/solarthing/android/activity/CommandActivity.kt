@@ -13,9 +13,7 @@ import me.retrodaredevil.couchdb.CouchProperties
 import me.retrodaredevil.couchdbjava.exception.CouchDbException
 import me.retrodaredevil.couchdbjava.json.StringJsonData
 import me.retrodaredevil.solarthing.SolarThingConstants
-import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.SolarThingApplication
-import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.*
 import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileManager
@@ -33,9 +31,7 @@ import me.retrodaredevil.solarthing.packets.security.ImmutableAuthNewSenderPacke
 import me.retrodaredevil.solarthing.packets.security.crypto.KeyUtil
 import me.retrodaredevil.solarthing.util.JacksonUtil
 import java.io.File
-import java.io.FileNotFoundException
 import java.security.KeyPair
-import java.security.PrivateKey
 import java.security.PublicKey
 import java.time.Duration
 import java.time.Instant
@@ -47,7 +43,9 @@ private fun getAvailableCommands(application: SolarThingApplication): Pair<Strin
     //   Remember that it's beneficial to ask for less data from the cache because it has to copy all the data into a new list.
     val packetGroups = application.solarStatusData?.getLastPacketsGroups(Duration.ofMinutes(20)) ?: return null
     // TODO do we really need to sort the packets to find out what the available commands are?
-    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, 2 * 60 * 1000L, 5 * 60 * 1000L)
+
+    // TODO Use the user's configured maxTimeDistance instead of the constant (or maybe don't sort at all like the above todo says)
+    val sortedMap = PacketGroups.sortPackets(packetGroups, DefaultInstanceOptions.DEFAULT_DEFAULT_INSTANCE_OPTIONS, SolarThingConstants.STANDARD_MAX_TIME_DISTANCE.toMillis(), SolarThingConstants.SHORT_MASTER_ID_IGNORE_DISTANCE.toMillis())
     if (sortedMap.isEmpty()) {
         return null
     }
@@ -87,13 +85,12 @@ class CommandActivity : AppCompatActivity() {
     private var sourceId: String? = null
     private var fragmentId: Int? = null
 
-    @SuppressLint("HardwareIds")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_command)
         drawerHandler = initializeDrawer(this)
         profileManager = createConnectionProfileManager(this)
-        sender = "android-${Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)}"
+        sender = getSenderName(this)
 
         findViewById<TextView>(R.id.sender_name).text = sender
         fragmentSpinner = findViewById(R.id.command_fragment_spinner)
@@ -290,17 +287,7 @@ class CommandActivity : AppCompatActivity() {
     }
     @SuppressLint("SetTextI18n")
     private fun updateKeyPair(){
-        val keyPair = try {
-            val publicKey: PublicKey = openFileInput(".publickey").use {
-                KeyUtil.decodePublicKey(it.readBytes())
-            }
-            val privateKey: PrivateKey = openFileInput(".privatekey").use {
-                KeyUtil.decodePrivateKey(it.readBytes())
-            }
-            KeyPair(publicKey, privateKey)
-        } catch(ex: FileNotFoundException){
-            null
-        }
+        val keyPair = getSavedKeyPair(this)
         this.keyPair = keyPair
         if(keyPair == null){
             publicKeyText.text = "none created"

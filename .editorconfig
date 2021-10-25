@@ -17,9 +17,10 @@ indent_size = 4
 ij_continuation_indent_size = 8
 
 [{*.java, *.kt}]
-max_line_length = 180
+max_line_length = 180  # Android Studio doesn't respect this most of the time
 
 [*.kt]
+# Android Studio usually doesn't respect these, so we have code style stuff in .idea/codeStyles/
 ij_kotlin_continuation_indent_in_supertype_lists = true
 ij_kotlin_continuation_indent_in_parameter_lists = true
 ij_kotlin_continuation_indent_for_expression_bodies = true

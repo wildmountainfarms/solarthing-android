@@ -558,7 +558,9 @@ class SolarStatusService(
         else
             UpdatePeriodType.SMALL_DATA
     override val recommendedMillisQuery: MillisQuery
-        get() = solarStatusData.recommendedQuery
+        get() = solarStatusData.createRecommendedQueryBuilder()
+                .endKey(null) // Make endKey null so that any device that uploads and replaces data after our end key still gets included
+                .build()
 
     override val shouldUpdate: Boolean
         get() = NotificationChannels.SOLAR_STATUS.isCurrentlyEnabled(service)
