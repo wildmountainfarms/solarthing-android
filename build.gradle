@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '1.5.31' // https://kotlinlang.org/docs/releases.html
+    ext.kotlin_version = '1.6.10' // https://kotlinlang.org/docs/releases.html
 //    ext.materialDrawerVersion = '8.0.1' // we'll eventually have to migrate: https://github.com/mikepenz/MaterialDrawer/blob/develop/MIGRATION.md
     ext.materialDrawerVersion = '7.0.0'
     ext.slf4jVersion = '1.7.32' // http://www.slf4j.org/download.html
@@ -10,7 +10,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.3'
+        classpath 'com.android.tools.build:gradle:7.0.4'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
