@@ -14,6 +14,7 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.SolarThingApplication
 import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawer
+import me.retrodaredevil.solarthing.packets.ChangePacket
 import me.retrodaredevil.solarthing.packets.Modes
 import me.retrodaredevil.solarthing.packets.collection.PacketGroup
 import me.retrodaredevil.solarthing.solar.event.SolarEventPacket
@@ -28,6 +29,12 @@ import me.retrodaredevil.solarthing.solar.outback.mx.MXErrorMode
 import me.retrodaredevil.solarthing.solar.outback.mx.event.MXAuxModeChangePacket
 import me.retrodaredevil.solarthing.solar.outback.mx.event.MXChargerModeChangePacket
 import me.retrodaredevil.solarthing.solar.outback.mx.event.MXErrorModeChangePacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.RoverErrorMode
+import me.retrodaredevil.solarthing.solar.renogy.rover.event.RoverChargingStateChangePacket
+import me.retrodaredevil.solarthing.solar.renogy.rover.event.RoverErrorModeChangePacket
+import me.retrodaredevil.solarthing.solar.tracer.TracerChargingEquipmentStatus
+import me.retrodaredevil.solarthing.solar.tracer.event.TracerChargingEquipmentStatusChangePacket
+import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingEquipmentError
 import java.text.DateFormat
 import java.util.*
 
@@ -58,100 +65,121 @@ private class MyViewAdapter(
     init {
         for(packetGroup in packetGroups){
             for(packet in packetGroup.packets){
+                if (packet is ChangePacket && packet.isLastUnknown) {
+                    continue
+                }
                 val dateMillis = packetGroup.getDateMillis(packet) ?: packetGroup.dateMillis
                 if(packet is SolarEventPacket){
                     when(packet.packetType){
                         SolarEventPacketType.FX_OPERATIONAL_MODE_CHANGE -> {
                             packet as FXOperationalModeChangePacket
-                            val previousOperationalMode = packet.previousOperationalMode
-                            if(previousOperationalMode != null) {
-                                data.add(ViewData(
-                                        "FX${packet.address}",
-                                        packet.operationalMode.modeName,
-                                        "was: " + previousOperationalMode.modeName,
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "FX${packet.address}",
+                                    packet.operationalMode.modeName,
+                                    "was: " + packet.previousOperationalMode!!.modeName,
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.FX_AC_MODE_CHANGE -> {
                             packet as FXACModeChangePacket
-                            val previousACMode = packet.previousACMode
-                            if(previousACMode != null){
-                                data.add(ViewData(
-                                        "FX${packet.address}",
-                                        packet.acMode.modeName,
-                                        "was: " + previousACMode.modeName,
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "FX${packet.address}",
+                                    packet.acMode.modeName,
+                                    "was: " + packet.previousACMode!!.modeName,
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.FX_AUX_STATE_CHANGE -> {
                             packet as FXAuxStateChangePacket
-                            val auxWasActive = packet.auxWasActive
-                            if(auxWasActive != null){
-                                data.add(ViewData(
-                                        "FX${packet.address}",
-                                        if(packet.isAuxActive) "AUX ON" else "AUX Off",
-                                        "was: " + if(auxWasActive) "ON" else "Off",
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "FX${packet.address}",
+                                    if(packet.isAuxActive) "AUX ON" else "AUX Off",
+                                    "was: " + if(packet.auxWasActive!!) "ON" else "Off",
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.MXFM_CHARGER_MODE_CHANGE -> {
                             packet as MXChargerModeChangePacket
-                            val previousChargingMode = packet.previousChargingMode
-                            if(previousChargingMode != null){
-                                data.add(ViewData(
-                                        "MX${packet.address}",
-                                        packet.chargingMode.modeName,
-                                        "was: " + previousChargingMode.modeName,
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "MX${packet.address}",
+                                    packet.chargingMode.modeName,
+                                    "was: " + packet.previousChargingMode!!.modeName,
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.MXFM_AUX_MODE_CHANGE -> {
                             packet as MXAuxModeChangePacket
-                            if(packet.previousRawAuxModeValue != null){
-                                data.add(ViewData(
-                                        "MX${packet.address}",
-                                        packet.auxMode.modeName,
-                                        "was: " + packet.previousAuxMode!!.modeName,
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "MX${packet.address}",
+                                    packet.auxMode.modeName,
+                                    "was: " + packet.previousAuxMode!!.modeName,
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.FX_WARNING_MODE_CHANGE -> {
                             packet as FXWarningModeChangePacket
-                            val previousWarningModeValue = packet.previousWarningModeValue
-                            if(previousWarningModeValue != null){
-                                data.add(ViewData(
-                                        "FX${packet.address}",
-                                        Modes.toString(WarningMode::class.java, packet.warningModeValue),
-                                        "was: ${Modes.toString(WarningMode::class.java, previousWarningModeValue)}",
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "FX${packet.address}",
+                                    Modes.toString(WarningMode::class.java, packet.warningModeValue),
+                                    "was: ${Modes.toString(WarningMode::class.java, packet.previousWarningModeValue!!)}",
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.FX_ERROR_MODE_CHANGE -> {
                             packet as FXErrorModeChangePacket
-                            val previousErrorModeValue = packet.previousErrorModeValue
-                            if(previousErrorModeValue != null){
-                                data.add(ViewData(
-                                        "FX${packet.address}",
-                                        Modes.toString(FXErrorMode::class.java, packet.errorModeValue),
-                                        "was: ${Modes.toString(FXErrorMode::class.java, previousErrorModeValue)}",
-                                        dateMillis
-                                ))
-                            }
+                            data.add(ViewData(
+                                    "FX${packet.address}",
+                                    Modes.toString(FXErrorMode::class.java, packet.errorModeValue),
+                                    "was: ${Modes.toString(FXErrorMode::class.java, packet.previousErrorModeValue!!)}",
+                                    dateMillis
+                            ))
                         }
                         SolarEventPacketType.MXFM_ERROR_MODE_CHANGE -> {
                             packet as MXErrorModeChangePacket
-                            val previousErrorModeValue = packet.previousErrorModeValue
-                            if(previousErrorModeValue != null){
+                            data.add(ViewData(
+                                    "MX${packet.address}",
+                                    Modes.toString(MXErrorMode::class.java, packet.errorModeValue),
+                                    "was: ${Modes.toString(MXErrorMode::class.java, packet.previousErrorModeValue!!)}",
+                                    dateMillis
+                            ))
+                        }
+                        SolarEventPacketType.ROVER_CHARGING_STATE_CHANGE -> {
+                            packet as RoverChargingStateChangePacket
+                            data.add(ViewData(
+                                    "RVR",
+                                    packet.chargingMode.modeName,
+                                    "was: ${packet.previousChargingMode!!.modeName}",
+                                    dateMillis
+                            ))
+                        }
+                        SolarEventPacketType.ROVER_ERROR_MODE_CHANGE -> {
+                            packet as RoverErrorModeChangePacket
+                            data.add(ViewData(
+                                    "RVR",
+                                    Modes.toString(RoverErrorMode::class.java, packet.errorModeValue),
+                                    "was: ${Modes.toString(RoverErrorMode::class.java, packet.previousErrorModeValue!!)}",
+                                    dateMillis
+                            ))
+                        }
+                        SolarEventPacketType.TRACER_CHARGING_EQUIPMENT_STATUS_CHANGE -> {
+                            packet as TracerChargingEquipmentStatusChangePacket
+                            val current = packet.chargingEquipmentStatus
+                            val previous = packet.previousChargingEquipmentStatus!!
+                            if (current.chargingStatus != previous.chargingStatus) {
                                 data.add(ViewData(
-                                        "MX${packet.address}",
-                                        Modes.toString(MXErrorMode::class.java, packet.errorModeValue),
-                                        "was: ${Modes.toString(MXErrorMode::class.java, previousErrorModeValue)}",
+                                        "TCR",
+                                        current.chargingStatus.toString(),
+                                        "was: ${previous.chargingStatus}",
+                                        dateMillis
+                                ))
+                            }
+                            val currentErrors = current.errorModes - ChargingEquipmentError.FAULT
+                            val previousErrors = previous.errorModes - ChargingEquipmentError.FAULT
+                            if (currentErrors != previousErrors) {
+                                data.add(ViewData(
+                                        "TCR",
+                                        Modes.toString(currentErrors, -1), // -1 will make all active
+                                        "was: ${Modes.toString(previousErrors, -1)}",
                                         dateMillis
                                 ))
                             }

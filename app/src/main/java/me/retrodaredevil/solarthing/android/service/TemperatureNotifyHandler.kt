@@ -34,10 +34,9 @@ class TemperatureNotifyHandler(
         }
         return lastNotifyInfo.timeMillis + DefaultOptions.importantAlertIntervalMillis <= System.currentTimeMillis()
     }
-    private inline fun checkTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float, notificationId: Int, lastOverNotify: MutableMap<IdentifierFragment, NotifyInfo>, lastUnderNotify: MutableMap<IdentifierFragment, NotifyInfo>, useNode: (TemperatureNode) -> Boolean) {
+    private inline fun checkTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float, notificationId: Int, lastOverNotify: MutableMap<IdentifierFragment, NotifyInfo>, lastUnderNotify: MutableMap<IdentifierFragment, NotifyInfo>, temperatureName: String, useNode: (TemperatureNode) -> Boolean) {
         for(node in temperatureNodes){
             if(useNode(node)){
-                val temperatureName = "Battery Temperature"
                 if(node.isOver(temperatureCelsius) && shouldDisplay(node, lastOverNotify[identifierFragment])){
                     lastOverNotify[identifierFragment] = NotifyInfo(System.currentTimeMillis(), node.isCritical)
                     lastUnderNotify.remove(identifierFragment)
@@ -52,9 +51,9 @@ class TemperatureNotifyHandler(
         }
     }
     fun checkBatteryTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float) =
-            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getBatteryTemperatureId(identifierFragment), lastBatteryOverNotify, lastBatteryUnderNotify) { it.battery }
+            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getBatteryTemperatureId(identifierFragment), lastBatteryOverNotify, lastBatteryUnderNotify, "Battery temperature") { it.battery }
     fun checkControllerTemperature(dateMillis: Long, deviceName: String, identifierFragment: IdentifierFragment, temperatureCelsius: Float) =
-            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getControllerTemperatureId(identifierFragment), lastControllerOverNotify, lastControllerUnderNotify) { it.controller }
+            checkTemperature(dateMillis, deviceName, identifierFragment, temperatureCelsius, getControllerTemperatureId(identifierFragment), lastControllerOverNotify, lastControllerUnderNotify, "Internal temperature") { it.controller }
 
     fun checkDeviceCpuTemperature(dateMillis: Long, fragmentId: Int, temperatureCelsius: Float) {
         for(node in temperatureNodes){
