@@ -36,6 +36,8 @@ import me.retrodaredevil.solarthing.solar.tracer.TracerChargingEquipmentStatus
 import me.retrodaredevil.solarthing.solar.tracer.event.TracerChargingEquipmentStatusChangePacket
 import me.retrodaredevil.solarthing.solar.tracer.mode.ChargingEquipmentError
 import java.text.DateFormat
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 import java.util.*
 
 /*
@@ -168,8 +170,8 @@ private class MyViewAdapter(
                             if (current.chargingStatus != previous.chargingStatus) {
                                 data.add(ViewData(
                                         "TCR",
-                                        current.chargingStatus.toString(),
-                                        "was: ${previous.chargingStatus}",
+                                        current.chargingStatus.modeName,
+                                        "was: ${previous.chargingStatus.modeName}",
                                         dateMillis
                                 ))
                             }
