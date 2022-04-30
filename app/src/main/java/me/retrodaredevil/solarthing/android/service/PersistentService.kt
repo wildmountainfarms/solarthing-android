@@ -116,7 +116,7 @@ class PersistentService : Service(), Runnable{
                 .setSmallIcon(R.drawable.sun)
                 .setContentTitle("SolarThing service is running")
                 .setContentText("${millisServices.count { it.millisDataService.shouldUpdate }} service(s) are running")
-                .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, 0))
+                .setContentIntent(PendingIntent.getActivity(this, 0, mainActivityIntent, PendingIntent.FLAG_IMMUTABLE))
                 .setWhen(1) // make it the lowest priority
                 .setShowWhen(false)
                 .setGroup(getGroup(PERSISTENT_NOTIFICATION_ID))
@@ -134,7 +134,7 @@ class PersistentService : Service(), Runnable{
                         PendingIntent.getBroadcast(
                                  this, 0,
                                 Intent(STOP_SERVICE_ACTION),
-                                PendingIntent.FLAG_CANCEL_CURRENT
+                                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
                 ).build()
         )
@@ -145,7 +145,7 @@ class PersistentService : Service(), Runnable{
                         PendingIntent.getBroadcast(
                                 this, 0,
                                 Intent(RELOAD_SERVICE_ACTION),
-                                PendingIntent.FLAG_CANCEL_CURRENT
+                                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
                 ).build()
         )
@@ -156,7 +156,7 @@ class PersistentService : Service(), Runnable{
                     PendingIntent.getBroadcast(
                             this, 0,
                             Intent(RESTART_SERVICE_ACTION),
-                            PendingIntent.FLAG_CANCEL_CURRENT
+                            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
                 ).build()
         )

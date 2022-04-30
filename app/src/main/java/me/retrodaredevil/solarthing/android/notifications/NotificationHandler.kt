@@ -619,7 +619,7 @@ object NotificationHandler {
                                             putExtra("fragment", fragmentId)
                                             putExtra("number", device.number)
                                         },
-                                        PendingIntent.FLAG_CANCEL_CURRENT
+                                        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                                 )
                         ).build()
                 )

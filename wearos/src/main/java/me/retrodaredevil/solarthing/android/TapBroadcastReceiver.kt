@@ -20,7 +20,7 @@ fun getToggleIntent(context: Context, provider: ComponentName, complicationId: I
 
     // Pass complicationId as the requestCode to ensure that different complications get
     // different intents.
-    return PendingIntent.getBroadcast(context, complicationId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    return PendingIntent.getBroadcast(context, complicationId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 }
 
 class TapBroadcastReceiver : BroadcastReceiver() {
