@@ -72,7 +72,7 @@ private class DummyDataRequester(
     override fun requestData(): DataRequest {
         println("ID: $id")
         timesRequested++
-        return DataRequest(Collections.emptyList(), returnSuccessful, "simple status placeholder", null)
+        return DataRequest(Collections.emptyList(), null, returnSuccessful, "Request Failed", null)
     }
 
 }
