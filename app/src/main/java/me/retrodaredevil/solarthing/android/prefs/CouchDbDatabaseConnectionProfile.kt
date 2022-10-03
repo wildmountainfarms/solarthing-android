@@ -36,6 +36,7 @@ data class CouchDbDatabaseConnectionProfile(
             password = null
         }
 
+        // TODO Validate protocol, host, and port
         return CouchPropertiesBuilder(
                 protocol,
                 host,

@@ -682,8 +682,8 @@ object NotificationHandler {
             Voltage.V36 -> 3
             Voltage.V48 -> 4
             Voltage.V96 -> 8
-            Voltage.AUTO -> error("AUTO not valid to get raw voltage")
-        }
+            Voltage.AUTO -> null // There was a point where we thought this was not possible, but it turns out this may be the case for specific charge controllers
+        } ?: return "$rawVoltage raw"
         return Formatting.FORMAT.format(rawVoltage * multiplier / 10.0) + " V"
     }
     private fun createMoreInfoSummary(context: Context, dateMillis: Long): Notification? {
