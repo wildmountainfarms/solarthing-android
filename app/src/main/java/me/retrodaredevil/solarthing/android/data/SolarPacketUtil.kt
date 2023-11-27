@@ -24,9 +24,9 @@ fun getOperatingModeName(fx: FXStatusPacket): String =
         OperationalMode.INV_ON -> "ON"
         OperationalMode.SEARCH -> "Search"
         OperationalMode.INV_OFF -> "Off"
-        OperationalMode.CHARGE -> "Chrg"
+        OperationalMode.CHARGE -> "Chg"
         OperationalMode.SILENT -> "Silent"
-        OperationalMode.FLOAT -> "Float"
+        OperationalMode.FLOAT -> "Flt"
         OperationalMode.EQ -> "EQ"
         else -> mode.modeName
     }
@@ -35,7 +35,7 @@ fun getChargerModeName(mx: MXStatusPacket): String =
         ChargerMode.SILENT -> "Off"
         ChargerMode.FLOAT -> "Float"
         ChargerMode.BULK -> "Blk"
-        ChargerMode.ABSORB -> "Absrb"
+        ChargerMode.ABSORB -> "Absb"
         ChargerMode.EQ -> "EQ"
     }
 fun getChargingStateName(rover: RoverStatusPacket): String =

@@ -389,7 +389,7 @@ object NotificationHandler {
             }
             map.entries.joinToString(SEPARATOR) { (batteryVoltageString, deviceList) ->
                 "(" + deviceList.joinToString(",") + ")" + batteryVoltageString
-            } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString} V"
+            } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString}"
         }
         val acModeString = if(info.fxMap.isNotEmpty()) { "$SEPARATOR$fxACModesString" } else ""
 
@@ -422,12 +422,12 @@ object NotificationHandler {
                 basicChargeControllerString +
                 dailyChargeControllerString +
                 dailyFXLine +
-                "$devicesString$batteryTemperatureString$acModeString\n" +
+                "$devicesString$batteryTemperatureString\n" +
                 (if(fxErrorsString.isNotEmpty()) "FX Errors: $fxErrorsString\n" else "") +
                 (if(mxErrorsString.isNotEmpty()) "MX Errors: $mxErrorsString\n" else "") +
                 (if(roverErrorsString.isNotEmpty()) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(fxWarningsString.isNotEmpty()) "FX Warn: $fxWarningsString\n" else "") +
-                "Mode: $modesString\n" +
+                "$modesString\n" +
                 (if(info.batteryMap.size > 1) "Batt: $batteryVoltagesString\n" else "") +
                 deviceCpuTemperatureString +
                 "Aux: $auxModesString"
