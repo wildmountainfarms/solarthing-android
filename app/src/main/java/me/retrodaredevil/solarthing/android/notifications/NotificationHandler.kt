@@ -56,6 +56,8 @@ object NotificationHandler {
     private const val ROVER_COLOR_HEX_STRING = "#3e9ae9"
     private const val TRACER_COLOR_HEX_STRING = "#60808f"
     private const val BATTERY_ONLY_COLOR_HEX_STRING = "#1b876a"
+    private const val AUX_STATUS_LINE_ON_STRING = "ON"
+    private const val AUX_STATUS_LINE_OFF_STRING = "-"
 
     private val LOGGER = LoggerFactory.getLogger(NotificationHandler::class.java)
 
@@ -309,9 +311,9 @@ object NotificationHandler {
                     is FXStatusPacket -> {
                         val auxString = if (MiscMode.AUX_OUTPUT_ON.isActive(device.miscValue)) {
                             auxCount++
-                            "ON"
+                            AUX_STATUS_LINE_ON_STRING
                         } else {
-                            "Off"
+                            AUX_STATUS_LINE_OFF_STRING
                         }
                         oneWord(getDeviceString(info, device) + auxString)
                     }
@@ -322,7 +324,7 @@ object NotificationHandler {
                             auxCount++
                         }
                         val auxName = when {
-                            auxDisabled -> if(auxActive) "ON" else "Off"
+                            auxDisabled -> if(auxActive) AUX_STATUS_LINE_ON_STRING else AUX_STATUS_LINE_OFF_STRING
                             else -> device.auxModeName + (if (auxActive) "(ON)" else "")
                         }
                         oneWord(getDeviceString(info, device) + auxName)
@@ -332,14 +334,14 @@ object NotificationHandler {
                         if(on){
                             auxCount++
                         }
-                        oneWord(getDeviceString(info, device) + (if(on) "ON" else "Off"))
+                        oneWord(getDeviceString(info, device) + (if(on) AUX_STATUS_LINE_ON_STRING else AUX_STATUS_LINE_OFF_STRING))
                     }
                     is TracerStatusPacket -> {
                         val on = device.isLoadForcedOn || device.loadVoltage > 0
                         if (on) {
                             auxCount++;
                         }
-                        oneWord(getDeviceString(info, device) + (if(on) "ON" else "Off"))
+                        oneWord(getDeviceString(info, device) + (if(on) AUX_STATUS_LINE_ON_STRING else AUX_STATUS_LINE_OFF_STRING))
                     }
                     else -> null
                 }
@@ -348,7 +350,7 @@ object NotificationHandler {
                 }
             }
 
-            list.joinToString(SEPARATOR)
+            list.joinToString(SEPARATOR) + "\n"
         }
 
         val fxACModesString = if(info.fxMap.values.map { it.acMode }.toSet().size > 1){
@@ -418,7 +420,7 @@ object NotificationHandler {
             "$fragmentId: " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
         }.joinToString(SEPARATOR) + "\n")
 
-        val text = "" +
+        val text = (
                 basicChargeControllerString +
                 dailyChargeControllerString +
                 dailyFXLine +
@@ -428,14 +430,16 @@ object NotificationHandler {
                 (if(roverErrorsString.isNotEmpty()) "Rover Errors: $roverErrorsString\n" else "") +
                 (if(fxWarningsString.isNotEmpty()) "FX Warn: $fxWarningsString\n" else "") +
                 "$modesString\n" +
+                "Aux: $auxModesString" +
                 (if(info.batteryMap.size > 1) "Batt: $batteryVoltagesString\n" else "") +
                 deviceCpuTemperatureString +
-                "Aux: $auxModesString"
+                ""
+        )
         if(text.length > 5 * 1024){
             System.err.println("bigText.length: ${text.length}! Some text may be cut off")
         }
 
-        val style = Notification.BigTextStyle().bigText(fromHtml(text))
+        val style = Notification.BigTextStyle().bigText(fromHtml(text.trim()))
 
         val isOld = System.currentTimeMillis() - info.dateMillis > 7 * 60 * 1000 // more than 7 minutes old
         val builder = createNotificationBuilder(context, NotificationChannels.SOLAR_STATUS.id, SOLAR_NOTIFICATION_ID)
