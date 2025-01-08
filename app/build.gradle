@@ -4,14 +4,15 @@ apply plugin: 'kotlin-android'
 
 android {
     sourceSets.main.java.filter.exclude 'META-INF/**/*'
-    compileSdkVersion 31
+    compileSdk 32
     defaultConfig {
         multiDexEnabled true
         applicationId "me.retrodaredevil.solarthing.android"
         minSdkVersion 26
-        targetSdkVersion 31
-        versionCode 390
-        versionName "1.39"
+        // TODO upgrade to SDK 33. It has lots of requirements
+        targetSdkVersion 32
+        versionCode 400
+        versionName "1.40"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
