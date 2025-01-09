@@ -53,6 +53,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'me.retrodaredevil.solarthing.android'
 }
 repositories {
     mavenCentral()

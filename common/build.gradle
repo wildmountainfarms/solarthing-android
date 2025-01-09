@@ -13,4 +13,5 @@ targetCompatibility = "7"
 
 android {
     compileSdkVersion 29
+    namespace 'me.retrodaredevil.solarthing.android.common'
 }
