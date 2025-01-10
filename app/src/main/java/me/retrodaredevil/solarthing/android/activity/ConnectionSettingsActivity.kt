@@ -22,9 +22,6 @@ import me.retrodaredevil.solarthing.android.util.DrawerHandler
 import me.retrodaredevil.solarthing.android.util.initializeDrawerWithUnsavedPrompt
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
 import me.retrodaredevil.solarthing.packets.collection.PacketGroups
-import me.retrodaredevil.solarthing.util.TimeRange
-import java.time.Duration
-import java.time.Instant
 import java.util.*
 
 class ConnectionSettingsActivity  : AppCompatActivity() {
@@ -139,16 +136,14 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
                 .setMessage("SolarThing needs the location permission to view your WiFi's SSID (network name). This is required if you want to enable auto network switching. Please allow all the time.")
                 .setNegativeButton("Cancel") { _, _ -> }
                 .setPositiveButton("Yes") { _, _ ->
-                    requestFineLocation()
+                    startFineToBackgroundLocationRequestChain()
                 }
                 .create().show()
     }
 
-    private fun requestFineLocation(){
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION) else arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION)
-
-        ActivityCompat.requestPermissions(this, permissions, REQUEST_FINE_LOCATION_RC)
+    private fun startFineToBackgroundLocationRequestChain(){
+        // As of target SDK 33, you CANNOT ask for BACKGROUND without first asking for COARSE or FINE
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_FINE_LOCATION_RC)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -156,7 +151,16 @@ class ConnectionSettingsActivity  : AppCompatActivity() {
         if(requestCode == REQUEST_FINE_LOCATION_RC){
             val success = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
             if(success){
-                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+                if (permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION) {
+                    Toast.makeText(this, "You will now be prompted for background location access.", Toast.LENGTH_SHORT).show()
+                    val permission = when {
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        else -> Manifest.permission.ACCESS_FINE_LOCATION
+                    }
+                    ActivityCompat.requestPermissions(this, arrayOf(permission), REQUEST_FINE_LOCATION_RC)
+                } else {
+                    Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show()
             }

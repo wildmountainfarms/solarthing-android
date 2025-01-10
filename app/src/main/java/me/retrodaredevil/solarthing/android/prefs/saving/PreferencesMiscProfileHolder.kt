@@ -1,14 +1,12 @@
 package me.retrodaredevil.solarthing.android.prefs.saving
 
-import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
 import me.retrodaredevil.solarthing.android.prefs.MiscProfile
 import me.retrodaredevil.solarthing.android.prefs.ProfileHolder
 import me.retrodaredevil.solarthing.android.prefs.SaveKeys
+import me.retrodaredevil.solarthing.android.util.checkLocationBackgroundPermission
 
 class PreferencesMiscProfileHolder
 /**
@@ -22,7 +20,7 @@ constructor(
     override var profile: MiscProfile
         get() {
             val networkSwitchingEnabled =
-                    if(context != null && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) false
+                    if(context != null && checkLocationBackgroundPermission(context)) false
                     else settings.getBoolean(SaveKeys.networkSwitchingEnabled, DefaultOptions.networkSwitchingEnabled)
 
             return MiscProfile(

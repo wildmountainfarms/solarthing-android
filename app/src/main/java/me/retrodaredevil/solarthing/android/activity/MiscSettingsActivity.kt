@@ -22,7 +22,6 @@ class MiscSettingsActivity : AppCompatActivity() {
     private lateinit var startOnBoot: CheckBox
     private lateinit var networkSwitchingEnabledCheckBox: CheckBox
     private lateinit var temperatureUnitSpinner: Spinner
-    private lateinit var enableWearOsSupport: CheckBox
 
     private lateinit var drawerHandler: DrawerHandler
 
@@ -38,7 +37,6 @@ class MiscSettingsActivity : AppCompatActivity() {
         startOnBoot = findViewById(me.retrodaredevil.solarthing.android.R.id.start_on_boot)
         networkSwitchingEnabledCheckBox = findViewById(me.retrodaredevil.solarthing.android.R.id.network_switching_enabled)
         temperatureUnitSpinner = findViewById(me.retrodaredevil.solarthing.android.R.id.temperature_unit_spinner)
-        enableWearOsSupport = findViewById(me.retrodaredevil.solarthing.android.R.id.wear_os_support)
 
 
         drawerHandler = initializeDrawerWithUnsavedPrompt(
@@ -79,7 +77,7 @@ class MiscSettingsActivity : AppCompatActivity() {
                 startOnBoot.isChecked,
                 networkSwitchingEnabledCheckBox.isChecked,
                 temperatureUnit,
-                enableWearOsSupport.isChecked
+                false // TODO remove this from the profile
         )
     }
     private fun isMiscProfileNotSaved() = getMiscProfile() != miscProfileProvider.activeProfile.profile
@@ -105,7 +103,6 @@ class MiscSettingsActivity : AppCompatActivity() {
                 selection!!
                 spinner.setSelection(selection)
             }
-            enableWearOsSupport.isChecked = it.enableWearOsSupport
         }
     }
     // endregion

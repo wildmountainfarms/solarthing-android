@@ -15,7 +15,7 @@ import me.retrodaredevil.solarthing.android.util.getSSID
 class NetworkSwitchingViewHandler(
         private val context: Context,
         private val view: View,
-        requestFineLocation: () -> Unit
+        requestBackgroundLocation: () -> Unit
 ) {
     private val isEnabledCheckBox: CheckBox = view.findViewById(R.id.is_enabled)
     private val isBackupCheckBox: CheckBox = view.findViewById(R.id.is_backup)
@@ -36,7 +36,7 @@ class NetworkSwitchingViewHandler(
                 networkSSID = getSSID(context)
                 updateCurrentNetwork()
             } catch (ex: SSIDPermissionException){
-                requestFineLocation()
+                requestBackgroundLocation()
             } catch(ex: SSIDNotAvailable){
                 Toast.makeText(context, "SSID currently not available. Is location enabled?", Toast.LENGTH_LONG).show()
             }
