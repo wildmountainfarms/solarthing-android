@@ -12,6 +12,7 @@ data class MiscProfile(
         val networkSwitchingEnabled: Boolean,
         @JsonProperty(SaveKeys.temperatureUnit, required = true)
         val temperatureUnit: TemperatureUnit,
+        @Deprecated("Wear OS Is not longer supported")
         @JsonProperty(SaveKeys.wearOsSupport)
         val enableWearOsSupport: Boolean = false
 )

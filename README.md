@@ -75,3 +75,16 @@ Some of these features are in the "Features to Add that I am unable to test" and
 
 ### Code Style
 * Use continuation indent for everything Android gives you the option
+
+### Developer Notes
+
+* Upgrade to SDK Version 33 - things that changed
+  * "Permission for notifications"
+    * We need the "POST_NOTIFICATIONS" permission and must explicitly request permission to send notifications
+    * We should eventually follow best practices: https://developer.android.com/develop/ui/views/notifications/notification-permission#best-practices
+      * [trigger permission prompt](https://developer.android.com/training/permissions/requesting#request-permission)
+      * [areNotificationsEnabled()](https://developer.android.com/reference/android/app/NotificationManager#areNotificationsEnabled())
+  * "Battery resource utilization"
+    * We might need to worry about this. We can look at this later
+    * https://support.google.com/pixelphone/answer/7015477
+    * https://developer.android.com/topic/performance/background-optimization#bg-restrict

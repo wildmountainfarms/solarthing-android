@@ -18,6 +18,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.activity.*
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
 
 
@@ -109,10 +110,14 @@ fun initializeDrawer(
                         4L -> launchActivity<EventDisplayActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         5L -> launchActivity<CommandActivity>(view, activity, drawerHandler, onActivityIntentRequest)
                         100L -> {
+                            // NOTE: I could not get this to work on my Samsung Galaxy S9 (Android 10) - it would just launch the settings app.
+                            //   For some reason the intent to bring up the application details works, though.
                             // credit here: https://stackoverflow.com/a/45192258/5434860
                             val intent = Intent()
                             intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             intent.putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+//                            intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationChannels.SOLAR_STATUS.id)
                             activity.startActivity(intent)
                         }
                         101L -> {

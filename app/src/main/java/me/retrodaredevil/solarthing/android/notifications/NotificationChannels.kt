@@ -1,15 +1,12 @@
 package me.retrodaredevil.solarthing.android.notifications
 
-import android.annotation.TargetApi
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.graphics.Color
 import android.os.Build
-import androidx.core.app.NotificationManagerCompat
 import me.retrodaredevil.solarthing.android.R
 
-@TargetApi(Build.VERSION_CODES.N)
 enum class NotificationChannels(
         val id: String,
         private val nameResId: Int,

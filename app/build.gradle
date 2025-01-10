@@ -4,13 +4,13 @@ apply plugin: 'kotlin-android'
 
 android {
     sourceSets.main.java.filter.exclude 'META-INF/**/*'
-    compileSdk 32
+    compileSdk 33
     defaultConfig {
         multiDexEnabled true
         applicationId "me.retrodaredevil.solarthing.android"
         minSdkVersion 26
         // TODO upgrade to SDK 33. It has lots of requirements
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode 400
         versionName "1.40"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -62,7 +62,6 @@ repositories {
 }
 
 dependencies {
-    api project(':common')
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:multidex:2.0.1'
     //noinspection GradleDependency

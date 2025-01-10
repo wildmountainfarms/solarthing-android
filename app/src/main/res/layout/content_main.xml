@@ -13,15 +13,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
         <Button
-                android:text="Restart Service"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:id="@+id/restart_button"
-                android:onClick="restartService"/>
+                android:id="@+id/restart_button"
+                android:layout_width="180dp"
+                android:layout_height="80dp"
+                android:onClick="restartService"
+                android:text="Restart Service" />
+
         <Button
-                android:text="Stop Service"
-                android:layout_width="143dp"
-                android:layout_height="wrap_content" android:id="@+id/stop_button" android:onClick="stopService"/>
+                android:id="@+id/stop_button"
+                android:layout_width="180dp"
+                android:layout_height="80dp"
+                android:onClick="stopService"
+                android:text="Stop Service" />
+
+        <Button
+                android:id="@+id/enable_notifications_button"
+                android:layout_width="180dp"
+                android:layout_height="80dp"
+                android:onClick="enableNotifications"
+                android:text="Enable Notifications" />
+
+        <TextView
+                android:id="@+id/welcomeTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

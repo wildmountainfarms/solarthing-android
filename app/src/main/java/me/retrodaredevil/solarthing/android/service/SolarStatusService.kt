@@ -10,18 +10,12 @@ import android.content.IntentFilter
 import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.Wearable
 import me.retrodaredevil.solarthing.SolarThingConstants
-import me.retrodaredevil.solarthing.android.BasicSolarData
-import me.retrodaredevil.solarthing.android.HeartbeatData
 import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.notifications.*
 import me.retrodaredevil.solarthing.android.prefs.*
 import me.retrodaredevil.solarthing.android.request.DataRequest
-import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
 import me.retrodaredevil.solarthing.database.MillisQuery
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
@@ -36,8 +30,6 @@ import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingSettings
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.FXChargingStateHandler
 import me.retrodaredevil.solarthing.solar.outback.fx.charge.ImmutableFXChargingPacket
 import me.retrodaredevil.solarthing.solar.outback.fx.meta.FXChargingSettingsPacket
-import me.retrodaredevil.solarthing.solar.outback.mx.ChargerMode
-import me.retrodaredevil.solarthing.solar.renogy.rover.ChargingState
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverIdentifier
 import me.retrodaredevil.solarthing.solar.renogy.rover.RoverStatusPacket
 import me.retrodaredevil.solarthing.type.closed.meta.BasicMetaPacketType
@@ -78,8 +70,6 @@ class SolarStatusService(
     private var lastLowBatteryNotification: Long? = null
     private var lastCriticalBatteryNotification: Long? = null
 
-    private var lastHeartbeat: Long? = null
-
     private val moreInfoIntent: PendingIntent by lazy {
         PendingIntent.getBroadcast(
                 service,
@@ -89,15 +79,12 @@ class SolarStatusService(
         )
     }
 
-    private lateinit var dataClient: DataClient
-
     override fun onInit() {
         notify(getBuilder()
                 .loadingNotification()
                 .setSmallIcon(R.drawable.solar_panel)
                 .build())
         service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) })
-        dataClient = Wearable.getDataClient(service)
     }
     override fun onCancel() {
         service.getManager().apply {
@@ -173,36 +160,6 @@ class SolarStatusService(
         return r
     }
 
-    /**
-     * Updates [dataClient], which is so people with Wear OS watches get SolarThing data
-     * synced to their watches
-     */
-    private fun updateDataClient(solarInfo: SolarInfo) {
-        val temperatureUnit = miscProfileProvider.activeProfile.profile.temperatureUnit
-        val request = PutDataMapRequest.create(BasicSolarData.PATH).run {
-            BasicSolarData(
-                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.batteryVoltage),
-                    solarInfo.solarPacketInfo.acModeNullable?.valueCode,
-                    solarInfo.solarPacketInfo.mxMap.values.any { it.chargingMode != ChargerMode.SILENT } || solarInfo.solarPacketInfo.roverMap.values.any { it.chargingMode != ChargingState.DEACTIVATED },
-                    solarInfo.solarPacketInfo.getBatteryTemperatureString(temperatureUnit),
-                    Formatting.TENTHS.format(solarInfo.solarDailyInfo.dailyKWH),
-                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.pvWattage / 1000.0f),
-                    Formatting.TENTHS.format(solarInfo.solarPacketInfo.load / 1000.0f)
-            ).applyTo(dataMap)
-            asPutDataRequest()
-        }
-        dataClient.putDataItem(request) // done asynchronously
-
-        val lastHeartbeat = this.lastHeartbeat
-        if (lastHeartbeat == null || lastHeartbeat + 4 * 60 * 1000 < System.currentTimeMillis()) {
-            dataClient.putDataItem(PutDataMapRequest.create(HeartbeatData.PATH).run {
-                dataMap.putLong(HeartbeatData.DATE_MILLIS, solarInfo.solarPacketInfo.dateMillis)
-                asPutDataRequest()
-            })
-            this.lastHeartbeat = System.currentTimeMillis()
-        }
-    }
-
     override fun onDataRequest(dataRequest: DataRequest) {
         val summary: String
 
@@ -246,11 +203,7 @@ class SolarStatusService(
                 intent.action = SolarPacketCollectionBroadcast.ACTION
                 service.sendBroadcast(intent)
 
-                val miscProfile = miscProfileProvider.activeProfile.profile
-                if (miscProfile.enableWearOsSupport) {
-                    val solarInfo = solarInfoCollection.last()
-                    updateDataClient(solarInfo)
-                }
+                // NOTE: We used to send the update to Wear OS here, but we removed all Wear OS related features on 2025-01-08
             }
         } else {
 //            println("[123]Got unsuccessful data request")

@@ -11,6 +11,10 @@ charset = utf-8
 [.editorconfig]
 max_line_length = 100
 
+[{*.md,*.json}]
+indent_style = space
+indent_size = 2
+
 [{*.xml, *.java, *.kt}]
 indent_style = space
 indent_size = 4

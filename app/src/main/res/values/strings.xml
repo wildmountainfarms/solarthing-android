@@ -1,4 +1,6 @@
 <resources>
+    <!--NOTE: You will get an "aaptcompiler" error if you don't escape some characters. Especially `'`s-->
+
     <string name="app_name">SolarThing</string>
     <string name="main_select">Home</string>
     <string name="settings_connection_select">Connection Settings</string>
@@ -10,6 +12,33 @@
     <string name="application_settings_select">App Settings</string>
     <string name="grafana_select">Grafana</string>
     <string name="privacy_policy_select">Privacy Policy</string>
+
+
+    <string name="welcome_text">
+        <!--NOTE: The CDATA tags are extremely important here-->
+        <!--NOTE: This HTML is rendered in a TextView, so the HTML features we can use are limited here-->
+        <![CDATA[
+        <h1>
+            Welcome to SolarThing Android!
+        </h1>
+        <br/>
+        <p>
+            Use the navigation menu to access and configure your connection settings.
+        </p>
+        <br/>
+        <p>
+            SolarThing displays solar and battery data in a persistent notification to give you easy access to your data!
+        </p>
+        <br/>
+        <p>
+            Make sure to enable notifications before starting the service!
+            <br/>
+            The side bar contains a link to SolarThing\'s notification settings.
+            You can use this link to re-enable notifications if you have disabled them.
+        </p>
+        ]]>
+    </string>
+
 
     <string name="generator_done_notification">Generator Done Alert</string>
     <string name="generator_done_notification_description">Sends an alert when the generator stopped charging the batteries</string>
