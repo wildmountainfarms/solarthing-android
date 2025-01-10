@@ -10,6 +10,7 @@ import android.widget.Toast
 import me.retrodaredevil.solarthing.android.getIntExtraOrNull
 import me.retrodaredevil.solarthing.android.notifications.CANCEL_SCHEDULED_COMMAND_ALREADY_RUNNING_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
+import me.retrodaredevil.solarthing.android.util.registerReceiverNotExported
 import org.slf4j.LoggerFactory
 
 class AlterService(
@@ -22,7 +23,7 @@ class AlterService(
     fun register() {
 //        val handler = Handler(Looper.getMainLooper()) // This will cause the receiver to receive the event on a thread other than the main thread
 //        service.registerReceiver(receiver, IntentFilter().apply { addAction(AlterUpdater.CANCEL_COMMAND_ACTION) }, null, handler)
-        service.registerReceiver(receiver, IntentFilter().apply { addAction(AlterUpdater.CANCEL_COMMAND_ACTION) })
+        registerReceiverNotExported(service, receiver, IntentFilter().apply { addAction(AlterUpdater.CANCEL_COMMAND_ACTION) })
     }
     fun unregister() {
         service.unregisterReceiver(receiver)

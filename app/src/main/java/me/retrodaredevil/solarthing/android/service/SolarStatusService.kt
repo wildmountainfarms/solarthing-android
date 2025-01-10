@@ -12,10 +12,32 @@ import android.service.notification.StatusBarNotification
 import androidx.annotation.RequiresApi
 import me.retrodaredevil.solarthing.SolarThingConstants
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.data.*
-import me.retrodaredevil.solarthing.android.notifications.*
-import me.retrodaredevil.solarthing.android.prefs.*
+import me.retrodaredevil.solarthing.android.data.CreationException
+import me.retrodaredevil.solarthing.android.data.SolarInfo
+import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
+import me.retrodaredevil.solarthing.android.data.createSolarDailyInfo
+import me.retrodaredevil.solarthing.android.data.getOrderedValues
+import me.retrodaredevil.solarthing.android.notifications.BATTERY_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.DEVICE_CONNECTION_STATUS_SUMMARY_ID
+import me.retrodaredevil.solarthing.android.notifications.END_OF_DAY_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.GENERATOR_DONE_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.GENERATOR_PERSISTENT_ID
+import me.retrodaredevil.solarthing.android.notifications.MORE_SOLAR_INFO_SUMMARY_ID
+import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
+import me.retrodaredevil.solarthing.android.notifications.NotificationHandler
+import me.retrodaredevil.solarthing.android.notifications.SOLAR_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.VOLTAGE_TIMER_NOTIFICATION_ID
+import me.retrodaredevil.solarthing.android.notifications.getDeviceConnectionStatusId
+import me.retrodaredevil.solarthing.android.notifications.getGroup
+import me.retrodaredevil.solarthing.android.notifications.getMoreSolarInfoId
+import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.DefaultOptions
+import me.retrodaredevil.solarthing.android.prefs.MiscProfile
+import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
+import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
+import me.retrodaredevil.solarthing.android.util.createExplicitIntent
+import me.retrodaredevil.solarthing.android.util.registerReceiverNotExported
 import me.retrodaredevil.solarthing.android.widget.WidgetHandler
 import me.retrodaredevil.solarthing.database.MillisQuery
 import me.retrodaredevil.solarthing.packets.collection.DefaultInstanceOptions
@@ -74,7 +96,7 @@ class SolarStatusService(
         PendingIntent.getBroadcast(
                 service,
                 0,
-                Intent(MORE_INFO_ACTION),
+                createExplicitIntent(service, MORE_INFO_ACTION),
                 PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
@@ -84,7 +106,8 @@ class SolarStatusService(
                 .loadingNotification()
                 .setSmallIcon(R.drawable.solar_panel)
                 .build())
-        service.registerReceiver(receiver, IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) })
+        val moreInfoIntent = IntentFilter(MORE_INFO_ACTION).apply { addAction(MORE_INFO_ROVER_ACTION) }
+        registerReceiverNotExported(service, receiver, moreInfoIntent)
     }
     override fun onCancel() {
         service.getManager().apply {

@@ -78,13 +78,25 @@ Some of these features are in the "Features to Add that I am unable to test" and
 
 ### Developer Notes
 
-* Upgrade to SDK Version 33 - things that changed
-  * "Permission for notifications"
-    * We need the "POST_NOTIFICATIONS" permission and must explicitly request permission to send notifications
-    * We should eventually follow best practices: https://developer.android.com/develop/ui/views/notifications/notification-permission#best-practices
-      * [trigger permission prompt](https://developer.android.com/training/permissions/requesting#request-permission)
-      * [areNotificationsEnabled()](https://developer.android.com/reference/android/app/NotificationManager#areNotificationsEnabled())
-  * "Battery resource utilization"
-    * We might need to worry about this. We can look at this later
-    * https://support.google.com/pixelphone/answer/7015477
-    * https://developer.android.com/topic/performance/background-optimization#bg-restrict
+* SDK Version upgrades (only **noteworthy** steps from upgrade assistant should be documented)
+  * Upgrade to SDK Version 33 - things that changed
+    * "Permission for notifications"
+      * We need the "POST_NOTIFICATIONS" permission and must explicitly request permission to send notifications
+      * We should eventually follow best practices: https://developer.android.com/develop/ui/views/notifications/notification-permission#best-practices
+        * [trigger permission prompt](https://developer.android.com/training/permissions/requesting#request-permission)
+        * [areNotificationsEnabled()](https://developer.android.com/reference/android/app/NotificationManager#areNotificationsEnabled())
+    * "Battery resource utilization"
+      * We might need to worry about this. We can look at this later
+      * https://support.google.com/pixelphone/answer/7015477
+      * https://developer.android.com/topic/performance/background-optimization#bg-restrict
+  * Upgrade to SDK Version 34
+    * "Foreground service types are required"
+      * https://developer.android.com/about/versions/14/changes/fgs-types-required
+      * We choose `dataSync` https://developer.android.com/about/versions/14/changes/fgs-types-required#data-sync
+    * JDK 17 stuff - doesn't affect us
+    * "Restrictions to implicit and pending intents"
+      * For all intents that send a message to an internal component, they have been changed to explicit intents - specifying the packageName
+      * I made a utility for this - `createExplicitIntent()`
+    * "Runtime-registered broadcasts receivers must specify export behavior"
+      * I added `registerReceiverNotExported()` function in new `SolarThingCompatUtil` file
+    * "Additional restrictions on starting activities from the background" - doesn't affect us

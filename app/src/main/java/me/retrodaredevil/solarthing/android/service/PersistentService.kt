@@ -1,32 +1,55 @@
 package me.retrodaredevil.solarthing.android.service
 
 import android.annotation.SuppressLint
-import android.app.*
+import android.app.Notification
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.widget.Toast
-import me.retrodaredevil.solarthing.android.*
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import me.retrodaredevil.solarthing.android.R
+import me.retrodaredevil.solarthing.android.SolarThingApplication
 import me.retrodaredevil.solarthing.android.activity.MainActivity
+import me.retrodaredevil.solarthing.android.createConnectionProfileManager
+import me.retrodaredevil.solarthing.android.createMiscProfileProvider
+import me.retrodaredevil.solarthing.android.createSolarProfileManager
 import me.retrodaredevil.solarthing.android.notifications.NotificationChannels
 import me.retrodaredevil.solarthing.android.notifications.PERSISTENT_NOTIFICATION_ID
 import me.retrodaredevil.solarthing.android.notifications.getGroup
-import me.retrodaredevil.solarthing.android.prefs.*
+import me.retrodaredevil.solarthing.android.prefs.ConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.CouchDbDatabaseConnectionProfile
+import me.retrodaredevil.solarthing.android.prefs.MiscProfile
+import me.retrodaredevil.solarthing.android.prefs.NetworkSwitchingProfile
+import me.retrodaredevil.solarthing.android.prefs.ProfileManager
+import me.retrodaredevil.solarthing.android.prefs.ProfileProvider
+import me.retrodaredevil.solarthing.android.prefs.SolarProfile
 import me.retrodaredevil.solarthing.android.request.DataRequest
 import me.retrodaredevil.solarthing.android.request.DataRequester
 import me.retrodaredevil.solarthing.android.request.DataRequesterMultiplexer
 import me.retrodaredevil.solarthing.android.request.MillisDatabaseDataRequester
-import me.retrodaredevil.solarthing.android.util.*
+import me.retrodaredevil.solarthing.android.util.SSIDNotAvailable
+import me.retrodaredevil.solarthing.android.util.SSIDPermissionException
+import me.retrodaredevil.solarthing.android.util.ServiceHelper
+import me.retrodaredevil.solarthing.android.util.createCouchDbInstance
+import me.retrodaredevil.solarthing.android.util.createExplicitIntent
+import me.retrodaredevil.solarthing.android.util.getSSID
+import me.retrodaredevil.solarthing.android.util.registerReceiverNotExported
 import me.retrodaredevil.solarthing.database.MillisDatabase
 import me.retrodaredevil.solarthing.database.SolarThingDatabase
 import me.retrodaredevil.solarthing.database.couchdb.CouchDbSolarThingDatabase
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -133,7 +156,7 @@ class PersistentService : Service(), Runnable{
                          "Stop",
                         PendingIntent.getBroadcast(
                                  this, 0,
-                                Intent(STOP_SERVICE_ACTION),
+                                createExplicitIntent(this, STOP_SERVICE_ACTION),
                                 PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
                 ).build()
@@ -144,7 +167,7 @@ class PersistentService : Service(), Runnable{
                         "Reload",
                         PendingIntent.getBroadcast(
                                 this, 0,
-                                Intent(RELOAD_SERVICE_ACTION),
+                                createExplicitIntent(this, RELOAD_SERVICE_ACTION),
                                 PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
                 ).build()
@@ -155,7 +178,7 @@ class PersistentService : Service(), Runnable{
                     "Restart",
                     PendingIntent.getBroadcast(
                             this, 0,
-                            Intent(RESTART_SERVICE_ACTION),
+                            createExplicitIntent(this, RESTART_SERVICE_ACTION),
                             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
                 ).build()
@@ -164,10 +187,20 @@ class PersistentService : Service(), Runnable{
         intentFilter.addAction(STOP_SERVICE_ACTION)
         intentFilter.addAction(RELOAD_SERVICE_ACTION)
         intentFilter.addAction(RESTART_SERVICE_ACTION)
-        registerReceiver(receiver, intentFilter)
+        registerReceiverNotExported(this, receiver, intentFilter)
         val notification = builder.build()
         getManager().notify(PERSISTENT_NOTIFICATION_ID, notification)
-        startForeground(PERSISTENT_NOTIFICATION_ID, notification)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Q is SDK 29
+            // WE have access to this on SDK 29, and using it is required when targeting SDK 34 and above
+            // https://developer.android.com/about/versions/14/changes/fgs-types-required#data-sync
+            // TODO we might have to request foreground service type LOCATION here so that SSID switching works
+            startForeground(PERSISTENT_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            // TODO should we use ServiceCompat.startForeground()?
+            startForeground(PERSISTENT_NOTIFICATION_ID, notification)
+        }
     }
     private fun getBuilder(): Notification.Builder {
         return Notification.Builder(this, NotificationChannels.PERSISTENT.id)

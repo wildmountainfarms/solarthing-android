@@ -7,6 +7,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import me.retrodaredevil.solarthing.android.service.getManager
 
@@ -19,24 +20,27 @@ import me.retrodaredevil.solarthing.android.service.getManager
  */
 class RequestPostNotificationsComponent private constructor(
         private val activity: FragmentActivity
-) : DefaultLifecycleObserver {
+) {
 
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
-    private fun register(): RequestPostNotificationsComponent {
-        activity.lifecycle.addObserver(this)
-        return this
-    }
+    private val lifecycleObserver: LifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onCreate(owner: LifecycleOwner) {
+            super.onCreate(owner)
 
-    override fun onCreate(owner: LifecycleOwner) {
-        super.onCreate(owner)
-
-        requestPermissionLauncher = activity.registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-            if (!isGranted) {
-                Toast.makeText(activity, "Enable notifications by navigating to SolarThing's notification settings.", Toast.LENGTH_LONG).show()
+            requestPermissionLauncher = activity.registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+                if (!isGranted) {
+                    Toast.makeText(activity, "Enable notifications by navigating to SolarThing's notification settings.", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
+
+    private fun register(): RequestPostNotificationsComponent {
+        activity.lifecycle.addObserver(lifecycleObserver)
+        return this
+    }
+
 
 
     fun requestNotificationPermission(): Boolean {

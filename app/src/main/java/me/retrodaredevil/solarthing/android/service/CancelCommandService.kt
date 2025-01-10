@@ -2,6 +2,8 @@ package me.retrodaredevil.solarthing.android.service
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import me.retrodaredevil.solarthing.android.createConnectionProfileManager
 import me.retrodaredevil.solarthing.android.getSavedKeyPair
@@ -77,7 +79,15 @@ class CancelCommandService : Service() {
         val commandManager = CommandManager({ keyPair }, sender) // keyPair may not be initialized now, but that's OK
         val creator = commandManager.makeCreator(sourceId, ZoneId.systemDefault(), null, ImmutableDeleteAlterPacket(documentId, RevisionUpdateToken(revision)), PacketCollectionIdGenerator.Defaults.UNIQUE_GENERATOR)
         getManager().cancel(CANCEL_SCHEDULED_COMMAND_RESULT_NOTIFICATION_ID)
-        startForeground(CANCEL_SCHEDULED_COMMAND_SERVICE_NOTIFICATION_ID, NotificationHandler.createCancellingCommandNotification(this, Instant.now(), CANCEL_SCHEDULED_COMMAND_SERVICE_NOTIFICATION_ID, documentId))
+        val cancellingCommandNotification = NotificationHandler.createCancellingCommandNotification(this, Instant.now(), CANCEL_SCHEDULED_COMMAND_SERVICE_NOTIFICATION_ID, documentId)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Q is SDK 19
+            // WE have access to this on SDK 29, and using it is required when targeting SDK 34 and above
+            // https://developer.android.com/about/versions/14/changes/fgs-types-required#data-sync
+            startForeground(CANCEL_SCHEDULED_COMMAND_SERVICE_NOTIFICATION_ID, cancellingCommandNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(CANCEL_SCHEDULED_COMMAND_SERVICE_NOTIFICATION_ID, cancellingCommandNotification)
+        }
         state.executorService.submit {
             val now = Instant.now()
             val packetCollection = creator.create(now)

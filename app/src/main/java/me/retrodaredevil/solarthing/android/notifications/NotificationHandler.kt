@@ -13,6 +13,7 @@ import me.retrodaredevil.solarthing.android.R
 import me.retrodaredevil.solarthing.android.data.*
 import me.retrodaredevil.solarthing.android.service.AlterUpdater
 import me.retrodaredevil.solarthing.android.util.Formatting
+import me.retrodaredevil.solarthing.android.util.createExplicitIntent
 import me.retrodaredevil.solarthing.android.util.wattsToKilowattsString
 import me.retrodaredevil.solarthing.database.VersionedPacket
 import me.retrodaredevil.solarthing.database.couchdb.RevisionUpdateToken
@@ -542,7 +543,7 @@ object NotificationHandler {
 
         return Pair(builder.build(), summary.build())
     }
-    fun createMoreInfoNotification(context: Context, device: SolarStatusPacket, dateMillis: Long, packetInfo: SolarPacketInfo, moreRoverInfoAction: String? = null): Pair<Notification, Notification?>{
+    fun createMoreInfoNotification(context: Context, device: SolarStatusPacket, dateMillis: Long, packetInfo: SolarPacketInfo, moreRoverInfoAction: String): Pair<Notification, Notification?>{
         val builder = createNotificationBuilder(context, NotificationChannels.MORE_SOLAR_INFO.id, null)
                 .setSmallIcon(R.drawable.solar_panel)
                 .setWhen(dateMillis)
@@ -619,7 +620,7 @@ object NotificationHandler {
                                 PendingIntent.getBroadcast(
                                         context,
                                          0,
-                                        Intent(moreRoverInfoAction).apply {
+                                        createExplicitIntent(context, moreRoverInfoAction).apply {
                                             putExtra("fragment", fragmentId)
                                             putExtra("number", device.number)
                                         },
@@ -748,7 +749,7 @@ object NotificationHandler {
                     PendingIntent.getBroadcast(
                             context,
                             0,
-                            Intent(AlterUpdater.CANCEL_COMMAND_ACTION).apply {
+                            createExplicitIntent(context, AlterUpdater.CANCEL_COMMAND_ACTION).apply {
                                 putExtra("documentId", versionedPacket.packet.dbId)
                                 putExtra("revision", updateToken.revision) // for now, hard code to assume the database is CouchDB
                                 putExtra("sourceId", versionedPacket.packet.sourceId)
