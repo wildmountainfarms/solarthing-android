@@ -57,53 +57,38 @@ android {
 // NOTE: Repositories configured in settings.gradle.kts
 
 dependencies {
-    // TODO do we need this include to grab jars? We don't even use jars for dependencies
-    implementation(fileTree(mapOf("include" to listOf("*.jar"), "dir" to "libs")))
-    implementation("com.android.support:multidex:2.0.1")
-    //noinspection GradleDependency
+    implementation(libs.multidex)
 
-    // materialDrawerVersion = '8.0.1' // we'll eventually have to migrate: https://github.com/mikepenz/MaterialDrawer/blob/develop/MIGRATION.md
-    implementation("com.mikepenz:materialdrawer:7.0.0")
+    // materialDrawerVersion = '8.0.1'
+    implementation(libs.materialdrawer)
 
-    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation(libs.androidx.recyclerview)
 
-    //noinspection DifferentStdlibGradleVersion)
     implementation(libs.kotlin.stdlib.jdk7)
-    implementation("androidx.appcompat:appcompat:1.4.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.2")
-    implementation("androidx.legacy:legacy-support-v4:1.0.0")
-    implementation("com.google.android.material:material:1.4.0")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
-    implementation("androidx.navigation:navigation-ui-ktx:2.3.5")
-    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.3.5")
-    implementation("androidx.navigation:navigation-ui-ktx:2.3.5")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    implementation(libs.appcompat)
+    implementation(libs.constraintlayout)
+    implementation(libs.androidx.legacy.support.v4)
+    implementation(libs.material)
+    implementation(libs.androidx.lifecycle.extensions)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
-    // TODO move to libs.versions.toml
-    val solarthingVersion = "03de524854c55d6389cdefbde96351ac0f422586".substring(0, 10)
-
-    //noinspection GradleDependency // Since we use pre-releases, we don't need Android Studio warning us about this
-    implementation("com.github.wildmountainfarms.solarthing:core:$solarthingVersion")
+    implementation(libs.solarthingCore)
     // Note that Gradle cannot always tell that it needs to bump this couchdb-java version, so if you don't bump it to
     //   match whatever couchdb-java version solarthing:core is using, you might get problems because a new method might not be found
     //noinspection GradleDependency
     //implementation "com.github.retrodaredevil:couchdb-java:${"d41524674af822438430d5228550c3caff0ab145".substring(0, 10)}"
 
-    // TODO move to libs.versions.toml
-    val jacksonVersion = "2.13.1" // https://github.com/FasterXML/jackson-databind/releases
-    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") // { changing = true } // uncomment if we use a snapshot version of Jackson
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.annotations)
+    implementation(libs.jackson.databind) // { changing = true } // uncomment if we use a snapshot version of Jackson
+    implementation(libs.jackson.module.kotlin)
 
-    val slf4jVersion = "1.7.32" // http://www.slf4j.org/download.html
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-android
-    implementation("org.slf4j:slf4j-android:$slf4jVersion")
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.android)
 
 //    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.1'
 }

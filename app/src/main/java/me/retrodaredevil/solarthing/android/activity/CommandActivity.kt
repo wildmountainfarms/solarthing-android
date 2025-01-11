@@ -322,6 +322,7 @@ private class CouchDbUploadToDatabase(
     companion object {
         private val MAPPER = JacksonUtil.defaultMapper()
     }
+    @Deprecated("Deprecated in Java - TODO don't use Async Task :) r/mAndroidDev moment")
     override fun doInBackground(vararg params: Void?): Boolean {
         val jsonData = StringJsonData(MAPPER.writeValueAsString(packetCollection))
         val instance = createCouchDbInstance(couchProperties)
@@ -336,6 +337,7 @@ private class CouchDbUploadToDatabase(
         return true
     }
 
+    @Deprecated("Deprecated in Java - TODO don't use Async Task :) r/mAndroidDev moment")
     override fun onPostExecute(result: Boolean?) {
         onFinish(result)
     }

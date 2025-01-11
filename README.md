@@ -106,3 +106,4 @@ Some of these features are in the "Features to Add that I am unable to test" and
 * Groovy DSL to Kotlin DSL
   * https://developer.android.com/build/migrate-to-kotlin-dsl
   * https://developer.android.com/build/migrate-to-catalogs#kts
+    * The version catalogs are a pretty cool feature of Gradle. I like that you can more easily define the versions and reference a given version in multiple dependencies
