@@ -78,6 +78,9 @@ Some of these features are in the "Features to Add that I am unable to test" and
 
 ### Developer Notes
 
+* Java version used in Android: https://developer.android.com/build/jdks#compileSdk
+  * Look at that! Android 13 actually supports pretty much all of Java 11 and Android 14 supports Java 17!
+  * Maybe one day we can make the minimum SDK version 34 and we'll have have Java 17 to play with :)
 * SDK Version upgrades (only **noteworthy** steps from upgrade assistant should be documented)
   * Upgrade to SDK Version 33 - things that changed
     * "Permission for notifications"
@@ -100,3 +103,6 @@ Some of these features are in the "Features to Add that I am unable to test" and
     * "Runtime-registered broadcasts receivers must specify export behavior"
       * I added `registerReceiverNotExported()` function in new `SolarThingCompatUtil` file
     * "Additional restrictions on starting activities from the background" - doesn't affect us
+* Groovy DSL to Kotlin DSL
+  * https://developer.android.com/build/migrate-to-kotlin-dsl
+  * https://developer.android.com/build/migrate-to-catalogs#kts
