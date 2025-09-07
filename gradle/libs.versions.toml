@@ -2,7 +2,7 @@
 
 [versions]
 # Example on best practices: https://github.com/android/architecture-samples/blob/ff2046bd8fcc6b0d2ead79c6f521a614c9d04198/gradle/libs.versions.toml#L5
-androidGradlePlugin = "8.7.3"
+androidGradlePlugin = "8.12.2"
 appcompat = "1.7.0"
 constraintlayout = "2.2.0"
 espressoCore = "3.6.1"
