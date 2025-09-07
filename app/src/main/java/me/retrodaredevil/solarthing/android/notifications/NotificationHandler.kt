@@ -3,14 +3,22 @@ package me.retrodaredevil.solarthing.android.notifications
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.text.Html
 import android.text.Spanned
 import me.retrodaredevil.solarthing.android.R
-import me.retrodaredevil.solarthing.android.data.*
+import me.retrodaredevil.solarthing.android.data.SolarDailyInfo
+import me.retrodaredevil.solarthing.android.data.SolarPacketInfo
+import me.retrodaredevil.solarthing.android.data.TemperatureUnit
+import me.retrodaredevil.solarthing.android.data.convertTemperatureCelsiusTo
+import me.retrodaredevil.solarthing.android.data.getChargingStateName
+import me.retrodaredevil.solarthing.android.data.getChargingStatusName
+import me.retrodaredevil.solarthing.android.data.getModeName
+import me.retrodaredevil.solarthing.android.data.getOrderedIdentifiers
+import me.retrodaredevil.solarthing.android.data.getOrderedValues
+import me.retrodaredevil.solarthing.android.data.shortRepresentation
 import me.retrodaredevil.solarthing.android.service.AlterUpdater
 import me.retrodaredevil.solarthing.android.util.Formatting
 import me.retrodaredevil.solarthing.android.util.createExplicitIntent
@@ -45,7 +53,7 @@ import me.retrodaredevil.solarthing.type.alter.packets.ScheduledCommandPacket
 import org.slf4j.LoggerFactory
 import java.text.DateFormat
 import java.time.Instant
-import java.util.*
+import java.util.GregorianCalendar
 
 
 object NotificationHandler {
@@ -301,7 +309,7 @@ object NotificationHandler {
             }
         }
 
-        val batteryTemperatureString = info.getBatteryTemperatureString(temperatureUnit)?.let { SEPARATOR + it } ?: ""
+        val batteryTemperatureString = info.getBatteryTemperatureString(temperatureUnit) ?: ""
 
         var auxCount = 0
         val auxModesString = run {
@@ -365,9 +373,9 @@ object NotificationHandler {
             if (it !is BatteryVoltageOnlyPacket) "${getDeviceString(info, it)}${getModeName(it)}" else null
         }.joinToString(SEPARATOR)
 
-        val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
-            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.pvWattage, Formatting.MINIMAL_HUNDREDTHS)}"
-        }
+//        val pvWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
+//            "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.pvWattage, Formatting.MINIMAL_HUNDREDTHS)}"
+//        }
         val chargerWattagesString = getOrderedValues(info.basicChargeControllerMap).joinToString(SEPARATOR) {
             "${getDeviceString(info, it as SolarStatusPacket)}${wattsToKilowattsString(it.chargingPower, Formatting.MINIMAL_HUNDREDTHS)}"
         }
@@ -394,38 +402,35 @@ object NotificationHandler {
                 "(" + deviceList.joinToString(",") + ")" + batteryVoltageString
             } + "$DOUBLE_SEPARATOR${info.estimatedBatteryVoltageString}"
         }
-        val acModeString = if(info.fxMap.isNotEmpty()) { "$SEPARATOR$fxACModesString" } else ""
 
         val dailyFXInfo = dailyInfo.dailyFXInfo
         val dailyFXLine = if(dailyFXInfo == null) "" else {
             "FX: Discharge: <strong>${Formatting.TENTHS.format(dailyFXInfo.inverterKWH)}</strong> kWh | " +
                     "Charge: <strong>${Formatting.TENTHS.format(dailyFXInfo.chargerKWH)}</strong> kWh\n"
         }
+        val chargingSummary = "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW |" +
+                " Chrgr: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW | " +
+                "kWh: <strong>${dailyInfo.dailyKWHString}</strong> | " +
+                "$batteryTemperatureString\n"
+
         val basicChargeControllerString = if(info.basicChargeControllerMap.size > 1) {
-            "PV: <span style=\"float:right;\">$pvWattagesString || <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW</span>\n" +
-                    "Chrgr: <span style=\"float:right;\">$chargerWattagesString || <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW</span>\n"
-        } else {
-            "PV: <strong>${wattsToKilowattsString(info.pvWattage)}</strong> kW | " +
-                    "Charger: <strong>${wattsToKilowattsString(info.pvChargerWattage)}</strong> kW\n"
-        }
+            "Chrgr: $chargerWattagesString\n"
+        } else ""
+
         val dailyChargeControllerString = when(dailyInfo.dailyKWHMap.size) {
-            0 -> ""
-            1 -> {
-                "Daily kWh: <strong>${dailyInfo.dailyKWHString}</strong>\n"
-            }
-            else -> {
-                "kWh: $dailyKWHString | " + oneWord("Total: <strong>${dailyInfo.dailyKWHString}</strong>") + "\n"
-            }
+            0, 1 -> ""
+            else -> "kWh: $dailyKWHString\n"
         }
         val deviceCpuTemperatureString = if(info.deviceCpuTemperatureMap.isEmpty()) "" else ("CPU: " + info.deviceCpuTemperatureMap.map { (fragmentId, cpuTemperaturePacket) ->
             "$fragmentId: " + Formatting.OPTIONAL_TENTHS.format(convertTemperatureCelsiusTo(cpuTemperaturePacket, temperatureUnit)) + temperatureUnit.shortRepresentation
         }.joinToString(SEPARATOR) + "\n")
 
         val text = (
+                chargingSummary +
                 basicChargeControllerString +
                 dailyChargeControllerString +
                 dailyFXLine +
-                "$devicesString$batteryTemperatureString\n" +
+                "$devicesString\n" +
                 (if(fxErrorsString.isNotEmpty()) "FX Errors: $fxErrorsString\n" else "") +
                 (if(mxErrorsString.isNotEmpty()) "MX Errors: $mxErrorsString\n" else "") +
                 (if(roverErrorsString.isNotEmpty()) "Rover Errors: $roverErrorsString\n" else "") +

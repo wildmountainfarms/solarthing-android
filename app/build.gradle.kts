@@ -13,8 +13,8 @@ android {
         minSdk = 26
         // NOTE: Android 14 is SDK level 34 - https://apilevels.com/
         targetSdk = 34
-        versionCode = 411
-        versionName = "1.41"
+        versionCode = 420
+        versionName = "1.42"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -21,44 +21,40 @@ import java.util.*
 
 fun getOperatingModeName(fx: FXStatusPacket): String =
     when(val mode = fx.operationalMode) {
-        OperationalMode.INV_ON -> "ON"
+        OperationalMode.INV_ON -> "on"
         OperationalMode.SEARCH -> "Search"
-        OperationalMode.INV_OFF -> "Off"
-        OperationalMode.CHARGE -> "Chg"
-        OperationalMode.SILENT -> "Silent"
-        OperationalMode.FLOAT -> "Flt"
-        OperationalMode.EQ -> "EQ"
+        OperationalMode.INV_OFF -> "off"
+        OperationalMode.CHARGE -> "chg"
+        OperationalMode.SILENT -> "silent"
+        OperationalMode.FLOAT -> "flt"
+        OperationalMode.EQ -> "eq"
         else -> mode.modeName
     }
 fun getChargerModeName(mx: MXStatusPacket): String =
     when(mx.chargingMode){
-        ChargerMode.SILENT -> "Off"
-        ChargerMode.FLOAT -> "Float"
-        ChargerMode.BULK -> "Blk"
-        ChargerMode.ABSORB -> "Absb"
-        ChargerMode.EQ -> "EQ"
+        ChargerMode.SILENT -> "off"
+        ChargerMode.FLOAT -> "flt"
+        ChargerMode.BULK -> "blk"
+        ChargerMode.ABSORB -> "absb"
+        ChargerMode.EQ -> "eq"
     }
 fun getChargingStateName(rover: RoverStatusPacket): String =
     when(rover.chargingMode){
-        ChargingState.DEACTIVATED -> "Off"
-        ChargingState.ACTIVATED -> "On"
-        ChargingState.MPPT -> "MPPT"
-        ChargingState.EQ -> "EQ"
-        ChargingState.BOOST -> "Boost"
-        ChargingState.FLOAT -> "Float"
-        ChargingState.CURRENT_LIMITING -> "Curr lim"
-        ChargingState.DIRECT_CHARGE -> "Direct"
+        ChargingState.DEACTIVATED -> "off"
+        ChargingState.ACTIVATED -> "on"
+        ChargingState.MPPT -> "blk"
+        ChargingState.EQ -> "eq"
+        ChargingState.BOOST -> "boost"
+        ChargingState.FLOAT -> "float"
+        ChargingState.CURRENT_LIMITING -> "curr lim"
+        ChargingState.DIRECT_CHARGE -> "direct"
     }
 fun getChargingStatusName(tracer: TracerStatusPacket): String {
-    println(tracer.chargingStatus)
-    println(tracer.chargingEquipmentStatus)
-    println(tracer.chargingStatusValue)
-    println(tracer.chargingPower)
     return when(tracer.chargingStatus) {
-        ChargingStatus.NO_CHARGING -> "Off"
-        ChargingStatus.BOOST -> "Blk"
-        ChargingStatus.EQUALIZATION -> "EQ"
-        ChargingStatus.FLOAT -> "Float"
+        ChargingStatus.NO_CHARGING -> "off"
+        ChargingStatus.BOOST -> "blk"
+        ChargingStatus.EQUALIZATION -> "eq"
+        ChargingStatus.FLOAT -> "flt"
     }
 }
 fun getModeName(packet: SolarStatusPacket): String =
