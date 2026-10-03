@@ -103,6 +103,17 @@ Some of these features are in the "Features to Add that I am unable to test" and
     * "Runtime-registered broadcasts receivers must specify export behavior"
       * I added `registerReceiverNotExported()` function in new `SolarThingCompatUtil` file
     * "Additional restrictions on starting activities from the background" - doesn't affect us
+  * Update to SDK Version 35 - things that changed
+    * data sync foreground service timeout behavior
+      * https://developer.android.com/develop/background-work/services/fgs/timeout
+      * Only can run for 6 hours in a 24 hour time period
+    * Restrictions on BOOT_COMPLETED broadcast receivers
+      * https://developer.android.com/about/versions/15/behavior-changes-15#fgs-boot-completed
+      * Cannot be used to launch a `dataSync` foreground service
+    * With these two restrictions, I do not see how I can ever upgrade target SDK to be 35. What the fuck, Google.
+    * Maybe we don't need to update yet? This is an existing app
+      * https://developer.android.com/google/play/requirements/target-sdk
+      * https://support.google.com/googleplay/android-developer/answer/11926878
 * Groovy DSL to Kotlin DSL
   * https://developer.android.com/build/migrate-to-kotlin-dsl
   * https://developer.android.com/build/migrate-to-catalogs#kts
